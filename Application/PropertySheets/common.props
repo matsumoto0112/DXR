@@ -28,6 +28,7 @@
     <FxCompile>
       <ShaderModel>6.3</ShaderModel>
       <EntryPointName />
+      <AdditionalOptions>/Zpr</AdditionalOptions>
     </FxCompile>
     <PostBuildEvent>
       <Command>xcopy $(ProjectDir)\Resources $(OutDir)\Resources /I /Y /D /S</Command>
