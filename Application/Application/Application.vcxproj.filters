@@ -6,5 +6,10 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Source\stdafx.h" />
+    <ClInclude Include="Source\targetvar.h" />
+    <ClInclude Include="Libs\d3dx12.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="packages.config" />
   </ItemGroup>
 </Project>
