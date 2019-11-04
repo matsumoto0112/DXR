@@ -1,4 +1,5 @@
 #include "Game.h"
+#include "ImGui/ImGuiManager.h"
 #include "Utility/Debug.h"
 #include "Window/Procedure/CreateProc.h"
 #include "Window/Procedure/DestroyProc.h"
@@ -6,6 +7,7 @@
 #include "Window/Procedure/Procedures.h"
 #include "Window/Procedure/SysKeyDown.h"
 #include "Window/Procedure/SizeChanged.h"
+#include "Window/Procedure/ImGuiProc.h"
 #include "Window/Procedure/WindowMoved.h"
 
 namespace Framework {
@@ -18,6 +20,7 @@ namespace Framework {
         Window::Procedures::addProc(new Window::SysKeyDown());
         Window::Procedures::addProc(new Window::SizeChanged());
         Window::Procedures::addProc(new Window::WindowMoved());
+        Window::Procedures::addProc(new Window::ImGuiProc());
     }
     //デストラクタ
     Game::~Game() { }
@@ -64,11 +67,14 @@ namespace Framework {
 
         mDeviceResource->createDeviceResources();
         mDeviceResource->createWindowDependentResources();
+
+        ImGuiManager::getInstance()->init(mWindow->getHWnd(), mDeviceResource->getDevice(), mDeviceResource->getBackBufferFormat());
     }
     //更新
     void Game::onUpdate() { }
     //描画
-    void Game::onRender() { }
+    void Game::onRender() {
+    }
     //終了時
     void Game::onDestroy() {
         mDeviceResource->waitForGPU();

@@ -1,5 +1,6 @@
 #include "Framework/Game.h"
 #include "Utility/Debug.h"
+#include "Framework/ImGui/ImGuiManager.h"
 
 /**
 * @class MainApp
@@ -24,12 +25,21 @@ public:
     }
     void onRender() override {
         Game::onRender();
+
         mDeviceResource->prepare();
+        Framework::ImGuiManager::getInstance()->beginFrame();
         ID3D12GraphicsCommandList* list = mDeviceResource->getCommandList();
         D3D12_CPU_DESCRIPTOR_HANDLE rtv[] = { mDeviceResource->getRenderTargetView() };
         list->OMSetRenderTargets(1, rtv, FALSE, nullptr);
-        float color[4] = { 0.0f,0.0f,0.0f,0.0f };
+        static float color[4] = { 0.0f,0.0f,0.0f,0.0f };
         list->ClearRenderTargetView(mDeviceResource->getRenderTargetView(), color, 0, nullptr);
+
+        ImGui::Begin("TEST WINDOW");
+        ImGui::Text("Test");
+        ImGui::SliderFloat4("COLOR", color, 0.0f, 1.0f);
+        ImGui::End();
+
+        Framework::ImGuiManager::getInstance()->endFrame(mDeviceResource->getCommandList());
 
         mDeviceResource->present();
     }
@@ -37,7 +47,6 @@ public:
         Game::onDestroy();
     }
 private:
-
 };
 
 //ƒƒCƒ“ŠÖ”
