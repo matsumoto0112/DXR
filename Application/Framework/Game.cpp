@@ -45,12 +45,25 @@ namespace Framework {
 
     }
 
-    void Game::onInit() { }
+    void Game::onInit() {
+        mDeviceResource = std::make_unique<DX::DeviceResource>(
+            DXGI_FORMAT::DXGI_FORMAT_R8G8B8A8_UNORM,
+            DXGI_FORMAT::DXGI_FORMAT_D32_FLOAT,
+            DX::DeviceResource::REQUIRE_TEARING_SUPPORT);
+
+        mDeviceResource->setWindow(mWindow.get());
+        mDeviceResource->initializeDXGIAdapter();
+
+        mDeviceResource->createDeviceResources();
+        mDeviceResource->createWindowDependentResources();
+    }
 
     void Game::onUpdate() { }
 
     void Game::onRender() { }
 
-    void Game::onDestroy() { }
+    void Game::onDestroy() {
+        mDeviceResource->waitForGPU();
+    }
 
 } //Framework

@@ -24,22 +24,34 @@
 #define MY_DEBUG_LOG(format, ...) do{ Framework::Utility::debugLog(format, __VA_ARGS__);} while(0)
 #else
 #define MY_ASSERTION(expr,format ,...)
-#define MY_DEBUG_LOG(format,...) 
+#define MY_DEBUG_LOG(format,...)
 #endif
 /**
-* @def MY_THROW_IF_FALSE
+* @def MY_THROW_IF_FALSE_FORMAT_LOG
 * @brief 失敗していたら例外を投げる
 * @param[in] expr 条件式
 * @paran format 書式設定
 */
-#define MY_THROW_IF_FALSE(expr, format, ...) do{ Framework::Utility::throwIfFalse(expr, format, __VA_ARGS__); }while(0)
+#define MY_THROW_IF_FALSE_LOG(expr, format, ...) do{ Framework::Utility::throwIfFalse(expr, format, __VA_ARGS__); }while(0)
 /**
-* @def MY_THROW_IF_FAILED
+* @def MY_THROW_IF_FALSE
+* @brief 失敗していたら例外を投げる
+* @param[in] expr 条件式
+*/
+#define MY_THROW_IF_FALSE(expr) do{ Framework::Utility::throwIfFalse(expr); }while(0)
+/**
+* @def MY_THROW_IF_FAILED_LOG
 * @brief 失敗していたら例外を投げる
 * @param[in] hr 処理結果
 * @param format 書式設定
 */
-#define MY_THROW_IF_FAILED(hr,format,...) do{ Framework::Utility::throwIfFailed(hr, format, __VA_ARGS__); } while(0)
+#define MY_THROW_IF_FAILED_LOG(hr,format,...) do{ Framework::Utility::throwIfFailed(hr, format, __VA_ARGS__); } while(0)
+/**
+* @def MY_THROW_IF_FAILED
+* @brief 失敗していたら例外を投げる
+* @param[in] hr 処理結果
+*/
+#define MY_THROW_IF_FAILED(hr) do{ Framework::Utility::throwIfFailed(hr); } while(0)
 
 namespace Framework::Utility {
     /**
@@ -66,6 +78,26 @@ namespace Framework::Utility {
     * @brief 失敗していたら例外を投げる
     */
     template <class ... Args>
+    inline void throwIfFailed(HRESULT hr, const std::string& fmt, Args... args) {
+        if (FAILED(hr)) {
+            std::string mes = format(fmt, args...);
+            throw HrException(hr, mes);
+        }
+    }
+
+    /**
+    * @brief 失敗していたら例外を投げる
+    */
+    inline void throwIfFailed(HRESULT hr) {
+        if (FAILED(hr)) {
+            throw HrException(hr);
+        }
+    }
+
+    /**
+    * @brief 失敗していたら例外を投げる
+    */
+    template <class ... Args>
     inline void throwIfFalse(bool expr, const std::string& fmt, Args ... args) {
         if (!expr) {
             std::string mes = format(fmt, args...);
@@ -76,13 +108,10 @@ namespace Framework::Utility {
     /**
     * @brief 失敗していたら例外を投げる
     */
-    template <class ... Args>
-    inline void throwIfFailed(HRESULT hr, const std::string& fmt, Args... args) {
-        if (FAILED(hr)) {
-            std::string mes = format(fmt, args...);
-            throw HrException(hr, mes);
-        }
+    inline void throwIfFalse(bool expr) {
+        throwIfFailed(expr ? S_OK : E_FAIL);
     }
+
     /**
     * @brief エラーウィンドウを表示する
     */
@@ -93,4 +122,4 @@ namespace Framework::Utility {
             MessageBoxA(nullptr, mes.c_str(), "エラー", MB_APPLMODAL);
         }
     }
-} //Framework::Utility 
+} //Framework::Utility

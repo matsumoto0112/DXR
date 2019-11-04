@@ -19,7 +19,7 @@
 
 #include <d3d12.h>
 #include <dxgi1_6.h>
-#include "Application/Libs/d3dx12.h"
+#include "Framework/Libs/d3dx12.h"
 
 #ifdef _DEBUG
 #include <dxgidebug.h>

@@ -4,6 +4,7 @@
 #include <string>
 #include "Device/ISystemEventNotify.h"
 #include "Window/Window.h"
+#include "DX/DeviceResource.h"
 
 namespace Framework {
     /**
@@ -25,10 +26,11 @@ namespace Framework {
         virtual void onUpdate() override;
         virtual void onRender() override;
         virtual void onDestroy() override;
-    private:
+    protected:
         UINT mWidth;
         UINT mHeight;
         std::wstring mTitle;
         std::unique_ptr<Window::Window> mWindow;
+        std::unique_ptr<DX::DeviceResource> mDeviceResource;
     };
 } //Framework

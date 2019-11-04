@@ -46,4 +46,14 @@ namespace Framework::Utility {
         std::snprintf(&buf[0], len + 1, fmt.c_str(), args...);
         return std::string(&buf[0], &buf[0] + len);
     }
-} //Framework::Utility 
+    /**
+    * @brief フォーマットから文字列を生成する
+    */
+    template <class... Args>
+    std::wstring format(const std::wstring& fmt, Args... args) {
+        size_t len = std::swprintf(nullptr, 0, fmt.c_str(), args...);
+        std::vector<wchar_t> buf(len + 1);
+        std::swprintf(&buf[0], len + 1, fmt.c_str(), args...);
+        return std::wstring(&buf[0], &buf[0] + len);
+    }
+} //Framework::Utility
