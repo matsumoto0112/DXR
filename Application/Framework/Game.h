@@ -26,9 +26,16 @@ namespace Framework {
         virtual void onUpdate() override;
         virtual void onRender() override;
         virtual void onDestroy() override;
+        virtual void toggleFullScreenWindow() override;
+        virtual void updateForSizeChange(UINT clientWidth, UINT cliendHeight) override;
+        virtual void setWindowBounds(const RECT & rect) override;
+        virtual void onSizeChanged(UINT width, UINT height, bool minimized) override;
+        virtual void onWindowMoved(int x, int y) override;
     protected:
         UINT mWidth;
         UINT mHeight;
+        float mAspectRatio;
+        RECT mWindowBounds;
         std::wstring mTitle;
         std::unique_ptr<Window::Window> mWindow;
         std::unique_ptr<DX::DeviceResource> mDeviceResource;

@@ -35,6 +35,9 @@
     <ClInclude Include="$(MSBuildThisFileDirectory)Window\Procedure\IWindowProc.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)Window\Procedure\PaintProc.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)Window\Procedure\Procedures.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)Window\Procedure\SizeChanged.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)Window\Procedure\SysKeyDown.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)Window\Procedure\WindowMoved.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)Window\Window.h" />
   </ItemGroup>
   <ItemGroup>
@@ -48,6 +51,9 @@
     <ClCompile Include="$(MSBuildThisFileDirectory)Window\Procedure\DestroyProc.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)Window\Procedure\PaintProc.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)Window\Procedure\Procedures.cpp" />
+    <ClCompile Include="$(MSBuildThisFileDirectory)Window\Procedure\SizeChanged.cpp" />
+    <ClCompile Include="$(MSBuildThisFileDirectory)Window\Procedure\SysKeyDown.cpp" />
+    <ClCompile Include="$(MSBuildThisFileDirectory)Window\Procedure\WindowMoved.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)Window\Window.cpp" />
   </ItemGroup>
 </Project>

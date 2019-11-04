@@ -18,15 +18,12 @@ public:
     ~MainApp() { }
     void onInit() override {
         Game::onInit();
-        MY_DEBUG_LOG("OnInit\n");
     }
     void onUpdate() override {
         Game::onUpdate();
-        MY_DEBUG_LOG("OnUpdate\n");
     }
     void onRender() override {
         Game::onRender();
-        MY_DEBUG_LOG("Render\n");
         mDeviceResource->prepare();
         ID3D12GraphicsCommandList* list = mDeviceResource->getCommandList();
         D3D12_CPU_DESCRIPTOR_HANDLE rtv[] = { mDeviceResource->getRenderTargetView() };
@@ -38,7 +35,6 @@ public:
     }
     void onDestroy()override {
         Game::onDestroy();
-        MY_DEBUG_LOG("OnDestroy\n");
     }
 private:
 

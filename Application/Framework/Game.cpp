@@ -4,6 +4,9 @@
 #include "Window/Procedure/DestroyProc.h"
 #include "Window/Procedure/PaintProc.h"
 #include "Window/Procedure/Procedures.h"
+#include "Window/Procedure/SysKeyDown.h"
+#include "Window/Procedure/SizeChanged.h"
+#include "Window/Procedure/WindowMoved.h"
 
 namespace Framework {
 
@@ -12,6 +15,9 @@ namespace Framework {
         Window::Procedures::addProc(new Window::CreateProc());
         Window::Procedures::addProc(new Window::DestroyProc());
         Window::Procedures::addProc(new Window::PaintProc());
+        Window::Procedures::addProc(new Window::SysKeyDown());
+        Window::Procedures::addProc(new Window::SizeChanged());
+        Window::Procedures::addProc(new Window::WindowMoved());
     }
 
     Game::~Game() { }
@@ -65,5 +71,28 @@ namespace Framework {
     void Game::onDestroy() {
         mDeviceResource->waitForGPU();
     }
+
+    void Game::toggleFullScreenWindow() {
+        if (!mDeviceResource->isTearingSupported())return;
+        mWindow->toggleFullScreenWindow(mDeviceResource->getSwapChain());
+    }
+
+    void Game::updateForSizeChange(UINT clientWidth, UINT clientHeight) {
+        mWidth = clientWidth;
+        mHeight = clientHeight;
+        mAspectRatio = static_cast<float>(clientWidth) / static_cast<float>(clientHeight);
+    }
+
+    void Game::setWindowBounds(const RECT& rect) {
+        mWindowBounds = rect;
+    }
+
+    void Game::onSizeChanged(UINT width, UINT height, bool minimized) {
+        MY_DEBUG_LOG("W:%u H:%u\n", width, height);
+        mDeviceResource->windowSizeChanged(width, height, minimized);
+        updateForSizeChange(width, height);
+    }
+
+    void Game::onWindowMoved(int, int) { }
 
 } //Framework
