@@ -15,6 +15,8 @@
     <ProjectCapability Include="SourceItemsFromImports" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="$(MSBuildThisFileDirectory)Game.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)Device\ISystemEventNotify.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)Math\MathUtility.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)Math\Matrix4x4.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)Math\Vector2.h" />
@@ -24,11 +26,23 @@
     <ClInclude Include="$(MSBuildThisFileDirectory)Utility\Debug.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)Utility\HrException.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)Utility\StringUtil.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)Window\Procedure\CreateProc.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)Window\Procedure\DestroyProc.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)Window\Procedure\IWindowProc.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)Window\Procedure\PaintProc.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)Window\Procedure\Procedures.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)Window\Window.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="$(MSBuildThisFileDirectory)Game.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)Math\Matrix4x4.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)Math\Vector2.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)Math\Vector3.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)Math\Vector4.cpp" />
+    <ClCompile Include="$(MSBuildThisFileDirectory)Window\Procedure\CreateProc.cpp" />
+    <ClCompile Include="$(MSBuildThisFileDirectory)Window\Procedure\DestroyProc.cpp" />
+    <ClCompile Include="$(MSBuildThisFileDirectory)Window\Procedure\PaintProc.cpp" />
+    <ClCompile Include="$(MSBuildThisFileDirectory)Window\Procedure\Procedures.cpp" />
+    <ClCompile Include="$(MSBuildThisFileDirectory)Window\Window.cpp" />
   </ItemGroup>
 </Project>
