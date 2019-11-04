@@ -7,11 +7,22 @@
 #include "Window/Window.h"
 
 namespace Framework::DX {
-
+    /**
+    * @brief デバイスイベント通知
+    */
     class IDeviceNotify {
     public:
+        /**
+        * @brief デストラクタ
+        */
         virtual  ~IDeviceNotify() { }
+        /**
+        * @brief デバイスロスト
+        */
         virtual void onDeviceLost() = 0;
+        /**
+        * @brief デバイスの再登録
+        */
         virtual void onDeviceRestored() = 0;
     };
 
@@ -21,11 +32,15 @@ namespace Framework::DX {
     */
     class DeviceResource {
     public:
-        static constexpr UINT REQUIRE_TEARING_SUPPORT = 0x2;
-        static constexpr size_t MAX_BACK_BUFFER_COUNT = 3;
+        static constexpr UINT ALLOW_TEARING = 0x1; //!< テアリングを許可するフラグ
+        static constexpr UINT REQUIRE_TEARING_SUPPORT = 0x2; //!< テアリングをサポートする際のフラグ
+        static constexpr size_t BACK_BUFFER_COUNT = 3; //!< バックバッファの枚数
     public:
         /**
         * @brief コンストラクタ
+        * @param backBufferFormat バックバッファのフォーマット
+        * @param depthBufferFormat デプス・ステンシルバッファのフォーマット
+        * @param flags スワップチェインのフラグ
         */
         DeviceResource(DXGI_FORMAT backBufferFormat = DXGI_FORMAT::DXGI_FORMAT_R8G8B8A8_UNORM,
             DXGI_FORMAT depthBufferFormat = DXGI_FORMAT::DXGI_FORMAT_D32_FLOAT,
@@ -34,89 +49,199 @@ namespace Framework::DX {
         * @brief デストラクタ
         */
         ~DeviceResource();
+        /**
+        * @brief アダプターの初期化
+        */
         void initializeDXGIAdapter();
+        /**
+        * @brief デバイスリソースの作成
+        */
         void createDeviceResources();
+        /**
+        * @brief ウィンドウに依存するリソースの作成
+        */
         void createWindowDependentResources();
+        /**
+        * @brief ウィンドウをセットする
+        * @param[in] window ウィンドウ
+        */
         void setWindow(Window::Window* window);
+        /**
+        * @brief ウィンドウのサイズを変更する
+        * @param width ウィンドウ幅
+        * @param height ウィンドウ高さ
+        * @param minimized 最小化かどうか
+        */
         bool windowSizeChanged(UINT width, UINT height, bool minimized);
+        /**
+        * @brief デバイスロスト
+        */
         void handleDeviceLost();
+        /**
+        * @brief デバイスのイベントの通知先をセットする
+        * @param deviceNotify 通知先
+        */
         void registerDeviceNotify(IDeviceNotify* deviceNotify);
+        /**
+        * @brief 描画準備
+        * @param beforeState 前のリソースの状態
+        */
         void prepare(D3D12_RESOURCE_STATES beforeState = D3D12_RESOURCE_STATES::D3D12_RESOURCE_STATE_PRESENT);
+        /**
+        * @brief プレゼント
+        * @param beforeState 前のリソースの状態
+        */
         void present(D3D12_RESOURCE_STATES beforeState = D3D12_RESOURCE_STATES::D3D12_RESOURCE_STATE_RENDER_TARGET);
+        /**
+        * @brief コマンドを実行する
+        */
         void executeCommandList();
+        /**
+        * @brief GPUの処理を待機する
+        */
         void waitForGPU() noexcept;
     public:
+        /**
+        * @brief 出力先の矩形を取得する
+        */
         RECT getOutputSize() const { return mOutputSize; }
+        /**
+        * @brief ウィンドウが可視状態か
+        */
         bool isWindowVisible() const { return mIsWindowVisible; }
+        /**
+        * @brief テアリングサポートしているか
+        */
         bool isTearingSupported() const { return mOptions & ALLOW_TEARING; }
-
+        /**
+        * @brief アダプタを取得する
+        */
         IDXGIAdapter1* getAdapter() const { return mAdapter.Get(); }
+        /**
+        * @brief デバイスを取得する
+        */
         ID3D12Device* getDevice()const { return mDevice.Get(); }
+        /**
+        * @brief ファクトリを取得する
+        */
         IDXGIFactory4* getFactory() const { return mFactory.Get(); }
+        /**
+        * @brief スワップチェインを取得する
+        */
         IDXGISwapChain3* getSwapChain() const { return mSwapChain.Get(); }
+        /**
+        * @brief 機能レベルを取得する
+        */
         D3D_FEATURE_LEVEL getFeatureLevel() const { return mFeatureLevel; }
+        /**
+        * @brief レンダーターゲットを取得する
+        */
         ID3D12Resource* getRenderTarget()const { return mRenderTargets[mBackBufferIndex].Get(); }
+        /**
+        * @brief デプス・ステンシルを取得する
+        */
         ID3D12Resource* getDepthStencil() const { return mDepthStencil.Get(); }
+        /**
+        * @brief コマンドキューを取得する
+        */
         ID3D12CommandQueue* getCommandQueue() const { return mCommandQueue.Get(); }
+        /**
+        * @brief コマンドアロケータを取得する
+        */
         ID3D12CommandAllocator* getCommandAllocator() const { return mCommandAllocators[mBackBufferIndex].Get(); }
+        /**
+        * @brief コマンドリストを取得する
+        */
         ID3D12GraphicsCommandList* getCommandList() const { return mCommandList.Get(); }
+        /**
+        * @brief バックバッファのフォーマットを取得する
+        */
         DXGI_FORMAT getBackBufferFormat() const { return mBackBufferFormat; }
+        /**
+        * @brief デプス・ステンシルバッファのフォーマットを取得する
+        */
         DXGI_FORMAT getDepthBufferFormat() const { return mDepthBufferFormat; }
+        /**
+        * @brief ビューポートを取得する
+        */
         D3D12_VIEWPORT getScreenViewport() const { return mScreenViewport; }
+        /**
+        * @brief シザー矩形を取得する
+        */
         D3D12_RECT getScissorRect() const { return mScissorRect; }
+        /**
+        * @brief 現在のフレームインデックスを取得する
+        */
         UINT getCurrentFrameIndex() const { return mBackBufferIndex; }
-        UINT getPreviousFrameIndex() const { return mBackBufferIndex == 0 ? MAX_BACK_BUFFER_COUNT - 1 : mBackBufferIndex - 1; }
-        UINT getBackBufferCount() const { return MAX_BACK_BUFFER_COUNT; }
+        /**
+        * @brief 前のフレームインデックスを取得する
+        */
+        UINT getPreviousFrameIndex() const { return mBackBufferIndex == 0 ? BACK_BUFFER_COUNT - 1 : mBackBufferIndex - 1; }
+        /**
+        * @brief バックバッファの枚数を取得する
+        */
+        UINT getBackBufferCount() const { return BACK_BUFFER_COUNT; }
+        /**
+        * @brief デバイスのオプションを取得する
+        */
         UINT getDeviceOptions() const { return mOptions; }
+        /**
+        * @brief アダプタの説明を取得する
+        */
         const std::wstring& getAdapterDescription() const { return mAdapterDescription; }
+        /**
+        * @brief アダプタIDを取得する
+        */
         UINT getAdapterID() const { return mAdapterID; }
+        /**
+        * @brief レンダーターゲットのハンドルを取得する
+        */
         CD3DX12_CPU_DESCRIPTOR_HANDLE getRenderTargetView()const {
             return CD3DX12_CPU_DESCRIPTOR_HANDLE(mRTVDescriptorHeap->GetCPUDescriptorHandleForHeapStart(), mBackBufferIndex, mRTVDescriptorSize);
         }
+        /**
+        * @brief デプス・ステンシルのハンドルを取得する
+        */
         CD3DX12_CPU_DESCRIPTOR_HANDLE getDepthStencilView() const {
             return CD3DX12_CPU_DESCRIPTOR_HANDLE(mDSVDescriptorHeap->GetCPUDescriptorHandleForHeapStart());
         }
     private:
+        /**
+        * @brief 次のフレームに遷移する
+        */
         void moveToNextFrame();
+        /**
+        * @brief アダプタを初期化する
+        */
         void initializeAdapter(IDXGIAdapter1** adapter);
     private:
-        static constexpr UINT ALLOW_TEARING = 0x1;
-    private:
-        UINT mAdapterIDoverride;
-        UINT mBackBufferIndex;
-        ComPtr<IDXGIAdapter1> mAdapter;
-        UINT mAdapterID;
-        std::wstring mAdapterDescription;
-
-        ComPtr<ID3D12Device> mDevice;
-        ComPtr<ID3D12CommandQueue> mCommandQueue;
-        ComPtr<ID3D12GraphicsCommandList> mCommandList;
-        std::array<ComPtr<ID3D12CommandAllocator>, MAX_BACK_BUFFER_COUNT> mCommandAllocators;
-
-        ComPtr<IDXGIFactory4> mFactory;
-        ComPtr<IDXGISwapChain3> mSwapChain;
-        ComPtr<ID3D12Resource> mRenderTargets[MAX_BACK_BUFFER_COUNT];
-        ComPtr<ID3D12Resource> mDepthStencil;
-
-        ComPtr<ID3D12Fence> mFence;
-        std::array<UINT64, MAX_BACK_BUFFER_COUNT> mFenceValues;
-        Microsoft::WRL::Wrappers::Event mFenceEvent;
-        ComPtr<ID3D12DescriptorHeap> mRTVDescriptorHeap;
-        ComPtr<ID3D12DescriptorHeap> mDSVDescriptorHeap;
-        UINT mRTVDescriptorSize;
-        D3D12_VIEWPORT mScreenViewport;
-        D3D12_RECT mScissorRect;
-
-        DXGI_FORMAT mBackBufferFormat;
-        DXGI_FORMAT mDepthBufferFormat;
-        D3D_FEATURE_LEVEL mMinFeatureLevel;
-
-        Window::Window* mWindow;
-        D3D_FEATURE_LEVEL mFeatureLevel;
-        RECT mOutputSize;
-        bool mIsWindowVisible;
-
-        UINT mOptions;
-        IDeviceNotify* mDeviceNotify;
+        UINT mBackBufferIndex; //!< バックバッファのインデックス
+        ComPtr<IDXGIAdapter1> mAdapter; //!< アダプタ
+        UINT mAdapterID; //!< アダプタID
+        std::wstring mAdapterDescription; //!< アダプタの説明
+        ComPtr<ID3D12Device> mDevice; //!< デバイス
+        ComPtr<ID3D12CommandQueue> mCommandQueue; //!< コマンドキュー
+        ComPtr<ID3D12GraphicsCommandList> mCommandList; //!< コマンドリスト
+        std::array<ComPtr<ID3D12CommandAllocator>, BACK_BUFFER_COUNT> mCommandAllocators; //!< コマンドアロケータ
+        ComPtr<IDXGIFactory4> mFactory; //!< ファクトリ
+        ComPtr<IDXGISwapChain3> mSwapChain; //!< スワップチェイン
+        ComPtr<ID3D12Resource> mRenderTargets[BACK_BUFFER_COUNT]; //!< レンダーターゲット
+        ComPtr<ID3D12Resource> mDepthStencil; //!< デプス・ステンシル
+        ComPtr<ID3D12Fence> mFence; //!< フェンス
+        std::array<UINT64, BACK_BUFFER_COUNT> mFenceValues; //!< フェンスの値
+        Microsoft::WRL::Wrappers::Event mFenceEvent; //!< フェンスイベント
+        ComPtr<ID3D12DescriptorHeap> mRTVDescriptorHeap; //!< レンダーターゲットのディスクリプタヒープ
+        ComPtr<ID3D12DescriptorHeap> mDSVDescriptorHeap; //!< デプス・ステンシルのディスクリプタヒープ
+        UINT mRTVDescriptorSize; //!< レンダーターゲット1つのメモリサイズ
+        D3D12_VIEWPORT mScreenViewport; //!< ビューポート
+        D3D12_RECT mScissorRect; //!< シザー矩形
+        DXGI_FORMAT mBackBufferFormat; //!< バックバッファのフォーマット
+        DXGI_FORMAT mDepthBufferFormat; //!< デプス・ステンシルフォーマット
+        D3D_FEATURE_LEVEL mFeatureLevel; //!< 機能レベル
+        RECT mOutputSize; //!< 出力先の矩形
+        bool mIsWindowVisible; //!< ウィンドウが可視状態か
+        UINT mOptions; //!< デバイスのオプション
+        Window::Window* mWindow; //!< ウィンドウ
+        IDeviceNotify* mDeviceNotify; //!< デバイスイベントの通知先
     };
 } //Framework::DX

@@ -7,6 +7,11 @@
 #include "Utility/Debug.h"
 
 namespace {
+    static constexpr D3D_FEATURE_LEVEL MIN_FEATURE_LEVEL = D3D_FEATURE_LEVEL::D3D_FEATURE_LEVEL_12_0; //最低要求機能レベル
+
+    /**
+    * @brief SRGBフォーマットを差し替える
+    */
     inline DXGI_FORMAT noSRGB(DXGI_FORMAT fmt) {
         switch (fmt) {
             case DXGI_FORMAT::DXGI_FORMAT_R8G8B8A8_UNORM_SRGB:   return DXGI_FORMAT::DXGI_FORMAT_R8G8B8A8_UNORM;
@@ -16,6 +21,7 @@ namespace {
         }
     }
 
+    //矩形の比較
     bool operator==(const RECT& r1, const RECT& r2) {
         return r1.left == r2.left
             && r1.top == r2.top
@@ -25,10 +31,9 @@ namespace {
 }
 
 namespace Framework::DX {
-
+    //コンストラクタ
     DeviceResource::DeviceResource(DXGI_FORMAT backBufferFormat, DXGI_FORMAT depthBufferFormat, UINT flags)
-        :mAdapterIDoverride(0),
-        mBackBufferIndex(0),
+        : mBackBufferIndex(0),
         mAdapterID(0),
         mAdapterDescription(),
         mFenceEvent{},
@@ -37,24 +42,27 @@ namespace Framework::DX {
         mScissorRect{},
         mBackBufferFormat(backBufferFormat),
         mDepthBufferFormat(depthBufferFormat),
-        mMinFeatureLevel(D3D_FEATURE_LEVEL::D3D_FEATURE_LEVEL_11_0),
-        mWindow(nullptr),
         mFeatureLevel(D3D_FEATURE_LEVEL::D3D_FEATURE_LEVEL_11_0),
         mOutputSize{},
         mIsWindowVisible(true),
         mOptions(flags),
+        mWindow(nullptr),
         mDeviceNotify(nullptr)
     {
+        //テアリングサポートが要求されているならオプションにテアリングを追加する
         if (mOptions & REQUIRE_TEARING_SUPPORT) {
             mOptions |= ALLOW_TEARING;
         }
     }
-
+    //デストラクタ
     DeviceResource::~DeviceResource() {
+        //終了前にGPUの処理を終わらせる
         waitForGPU();
     }
+    //アダプタを初期化する
     void DeviceResource::initializeDXGIAdapter() {
         bool useDebug = false;
+        //デバッグ時はデバッグレイヤーを有効にする
 #ifdef _DEBUG
         ComPtr<ID3D12Debug> debug;
         if (SUCCEEDED(D3D12GetDebugInterface(IID_PPV_ARGS(&debug)))) {
@@ -76,6 +84,7 @@ namespace Framework::DX {
             MY_THROW_IF_FAILED(CreateDXGIFactory1(IID_PPV_ARGS(&mFactory)));
         }
 
+        //テアリング
         if (mOptions & (ALLOW_TEARING | REQUIRE_TEARING_SUPPORT)) {
             BOOL allowTearing = FALSE;
 
@@ -95,6 +104,7 @@ namespace Framework::DX {
 
         initializeAdapter(&mAdapter);
     }
+    //デバイスリソースを作成する
     void DeviceResource::createDeviceResources() {
         MY_THROW_IF_FAILED(D3D12CreateDevice(mAdapter.Get(), mFeatureLevel, IID_PPV_ARGS(&mDevice)));
 
@@ -117,38 +127,35 @@ namespace Framework::DX {
         }
 #endif
 
+        //機能レベルを調べる
         static constexpr D3D_FEATURE_LEVEL FEATURE_LEVELS[] =
         {
             D3D_FEATURE_LEVEL::D3D_FEATURE_LEVEL_12_1,
             D3D_FEATURE_LEVEL::D3D_FEATURE_LEVEL_12_0,
-            D3D_FEATURE_LEVEL::D3D_FEATURE_LEVEL_11_1,
-            D3D_FEATURE_LEVEL::D3D_FEATURE_LEVEL_11_0,
         };
 
         D3D12_FEATURE_DATA_FEATURE_LEVELS featLevels =
         {
             _countof(FEATURE_LEVELS),FEATURE_LEVELS,D3D_FEATURE_LEVEL::D3D_FEATURE_LEVEL_11_0
         };
-        HRESULT hr = mDevice->CheckFeatureSupport(D3D12_FEATURE::D3D12_FEATURE_FEATURE_LEVELS, &featLevels, sizeof(featLevels));
-        if (SUCCEEDED(hr)) {
-            mFeatureLevel = featLevels.MaxSupportedFeatureLevel;
-        }
-        else {
-            mFeatureLevel = mMinFeatureLevel;
-        }
+        MY_THROW_IF_FAILED(mDevice->CheckFeatureSupport(D3D12_FEATURE::D3D12_FEATURE_FEATURE_LEVELS, &featLevels, sizeof(featLevels)));
+        mFeatureLevel = featLevels.MaxSupportedFeatureLevel;
 
+        //コマンドキューを作成する
         D3D12_COMMAND_QUEUE_DESC queueDesc = {};
         queueDesc.Flags = D3D12_COMMAND_QUEUE_FLAGS::D3D12_COMMAND_QUEUE_FLAG_NONE;
         queueDesc.Type = D3D12_COMMAND_LIST_TYPE::D3D12_COMMAND_LIST_TYPE_DIRECT;
         MY_THROW_IF_FAILED(mDevice->CreateCommandQueue(&queueDesc, IID_PPV_ARGS(&mCommandQueue)));
 
+        //レンダーターゲットのディスクリプタヒープを作成する
         D3D12_DESCRIPTOR_HEAP_DESC rtvDescriptorHeapDesc = {};
-        rtvDescriptorHeapDesc.NumDescriptors = MAX_BACK_BUFFER_COUNT;
+        rtvDescriptorHeapDesc.NumDescriptors = BACK_BUFFER_COUNT;
         rtvDescriptorHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE::D3D12_DESCRIPTOR_HEAP_TYPE_RTV;
         MY_THROW_IF_FAILED(mDevice->CreateDescriptorHeap(&rtvDescriptorHeapDesc, IID_PPV_ARGS(&mRTVDescriptorHeap)));
 
         mRTVDescriptorSize = mDevice->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE::D3D12_DESCRIPTOR_HEAP_TYPE_RTV);
 
+        //デプス・ステンシルを使用するならディスクリプタヒープを作成する
         if (mDepthBufferFormat != DXGI_FORMAT::DXGI_FORMAT_UNKNOWN) {
             D3D12_DESCRIPTOR_HEAP_DESC dsvDescriptorHeapDesc = {};
             dsvDescriptorHeapDesc.NumDescriptors = 1;
@@ -156,14 +163,17 @@ namespace Framework::DX {
             MY_THROW_IF_FAILED(mDevice->CreateDescriptorHeap(&dsvDescriptorHeapDesc, IID_PPV_ARGS(&mDSVDescriptorHeap)));
         }
 
-        for (UINT n = 0; n < MAX_BACK_BUFFER_COUNT; n++) {
+        //バックバッファの枚数分アロケータを作成する
+        for (UINT n = 0; n < BACK_BUFFER_COUNT; n++) {
             MY_THROW_IF_FAILED(mDevice->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE::D3D12_COMMAND_LIST_TYPE_DIRECT, IID_PPV_ARGS(&mCommandAllocators[n])));
         }
 
+        //コマンドリストを作成する
         MY_THROW_IF_FAILED(mDevice->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE::D3D12_COMMAND_LIST_TYPE_DIRECT,
             mCommandAllocators[0].Get(), nullptr, IID_PPV_ARGS(&mCommandList)));
         MY_THROW_IF_FAILED(mCommandList->Close());
 
+        //フェンス作成
         MY_THROW_IF_FAILED(mDevice->CreateFence(mFenceValues[mBackBufferIndex], D3D12_FENCE_FLAGS::D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&mFence)));
         mFenceValues[mBackBufferIndex]++;
         mFenceEvent.Attach(CreateEvent(nullptr, FALSE, FALSE, nullptr));
@@ -171,11 +181,13 @@ namespace Framework::DX {
             MY_THROW_IF_FAILED(E_FAIL);
         }
     }
+    //ウィンドウに関連するリソース作成
     void DeviceResource::createWindowDependentResources() {
         MY_THROW_IF_FALSE_LOG(mWindow, "ウィンドウがセットされていません");
-
         waitForGPU();
-        for (UINT n = 0; n < MAX_BACK_BUFFER_COUNT; n++) {
+
+        //レンダーターゲットを初期化する
+        for (UINT n = 0; n < BACK_BUFFER_COUNT; n++) {
             mRenderTargets[n].Reset();
             mFenceValues[n] = mFenceValues[mBackBufferIndex];
         }
@@ -184,9 +196,10 @@ namespace Framework::DX {
         UINT backBufferHeight = Math::MathUtil::mymax(mOutputSize.bottom - mOutputSize.top, 1L);
         DXGI_FORMAT backBufferFormat = noSRGB(mBackBufferFormat);
 
+        //スワップチェインがもうあるなら再設定する
         if (mSwapChain) {
             HRESULT hr = mSwapChain->ResizeBuffers(
-                MAX_BACK_BUFFER_COUNT,
+                BACK_BUFFER_COUNT,
                 backBufferWidth,
                 backBufferHeight,
                 backBufferFormat,
@@ -203,13 +216,14 @@ namespace Framework::DX {
                 MY_THROW_IF_FAILED(hr);
             }
         }
+        //まだ存在しなければ新しく作成
         else {
             DXGI_SWAP_CHAIN_DESC1 swapChainDesc = {};
             swapChainDesc.Width = backBufferWidth;
             swapChainDesc.Height = backBufferHeight;
             swapChainDesc.Format = backBufferFormat;
             swapChainDesc.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
-            swapChainDesc.BufferCount = MAX_BACK_BUFFER_COUNT;
+            swapChainDesc.BufferCount = BACK_BUFFER_COUNT;
             swapChainDesc.SampleDesc.Count = 1;
             swapChainDesc.SampleDesc.Quality = 0;
             swapChainDesc.Scaling = DXGI_SCALING::DXGI_SCALING_STRETCH;
@@ -222,6 +236,7 @@ namespace Framework::DX {
 
             ComPtr<IDXGISwapChain1> swapChain;
 
+            //フルスクリーン状態だと作成できないので一時的に後ろにする
             bool prevIsFullScreen = mWindow->isFullScreen();
             if (prevIsFullScreen) {
                 mWindow->setWindowZOrderToTopMost(false);
@@ -240,7 +255,8 @@ namespace Framework::DX {
             }
         }
 
-        for (UINT n = 0; n < MAX_BACK_BUFFER_COUNT; n++) {
+        //バックバッファのレンダーターゲットの作成
+        for (UINT n = 0; n < BACK_BUFFER_COUNT; n++) {
             MY_THROW_IF_FAILED(mSwapChain->GetBuffer(n, IID_PPV_ARGS(&mRenderTargets[n])));
 
             mRenderTargets[n]->SetName(Utility::format(L"RenderTarget[%u]", n).c_str());
@@ -254,6 +270,7 @@ namespace Framework::DX {
 
         mBackBufferIndex = mSwapChain->GetCurrentBackBufferIndex();
 
+        //デプス・ステンシル作成
         if (mDepthBufferFormat != DXGI_FORMAT::DXGI_FORMAT_UNKNOWN) {
             CD3DX12_HEAP_PROPERTIES depthHeapProps(D3D12_HEAP_TYPE::D3D12_HEAP_TYPE_DEFAULT);
             D3D12_RESOURCE_DESC dsvResourceDesc = CD3DX12_RESOURCE_DESC::Tex2D(
@@ -295,10 +312,12 @@ namespace Framework::DX {
         mScissorRect.right = backBufferWidth;
         mScissorRect.bottom = backBufferHeight;
     }
+    //ウィンドウを設定する
     void DeviceResource::setWindow(Window::Window* window) {
         mWindow = window;
         mOutputSize = mWindow->getWindowRect();
     }
+    //ウィンドウのサイズを変更
     bool DeviceResource::windowSizeChanged(UINT width, UINT height, bool minimized) {
         mIsWindowVisible = !minimized;
 
@@ -311,6 +330,7 @@ namespace Framework::DX {
         newRect.right = width;
         newRect.bottom = height;
 
+        //前と同じ大きさなら終了
         if (newRect == mOutputSize) {
             return false;
         }
@@ -319,12 +339,14 @@ namespace Framework::DX {
         createWindowDependentResources();
         return true;
     }
+    //デバイスロスト発生
     void DeviceResource::handleDeviceLost() {
+        //ロストしたことを通知
         if (mDeviceNotify) {
             mDeviceNotify->onDeviceLost();
         }
 
-        for (UINT n = 0; n < MAX_BACK_BUFFER_COUNT; n++) {
+        for (UINT n = 0; n < BACK_BUFFER_COUNT; n++) {
             mCommandAllocators[n].Reset();
             mRenderTargets[n].Reset();
         }
@@ -352,11 +374,14 @@ namespace Framework::DX {
         createDeviceResources();
         createWindowDependentResources();
 
+        //デバイスの復活を通知
         if (mDeviceNotify) {
             mDeviceNotify->onDeviceRestored();
         }
 
     }
+
+    //デバイスイベントの通知先をセット
     void DeviceResource::registerDeviceNotify(IDeviceNotify* deviceNotify) {
         mDeviceNotify = deviceNotify;
 
@@ -368,16 +393,21 @@ namespace Framework::DX {
             }
         }
     }
+
+    //描画準備
     void DeviceResource::prepare(D3D12_RESOURCE_STATES beforeState) {
         MY_THROW_IF_FAILED(mCommandAllocators[mBackBufferIndex]->Reset());
         MY_THROW_IF_FAILED(mCommandList->Reset(mCommandAllocators[mBackBufferIndex].Get(), nullptr));
 
+        //レンダーターゲットのバリア
         if (beforeState != D3D12_RESOURCE_STATES::D3D12_RESOURCE_STATE_RENDER_TARGET) {
             D3D12_RESOURCE_BARRIER barrier = CD3DX12_RESOURCE_BARRIER::Transition(mRenderTargets[mBackBufferIndex].Get(),
                 beforeState, D3D12_RESOURCE_STATES::D3D12_RESOURCE_STATE_RENDER_TARGET);
             mCommandList->ResourceBarrier(1, &barrier);
         }
     }
+
+    //描画プレゼント
     void DeviceResource::present(D3D12_RESOURCE_STATES beforeState) {
         if (beforeState != D3D12_RESOURCE_STATES::D3D12_RESOURCE_STATE_PRESENT) {
             D3D12_RESOURCE_BARRIER barrier = CD3DX12_RESOURCE_BARRIER::Transition(mRenderTargets[mBackBufferIndex].Get(),
@@ -388,10 +418,12 @@ namespace Framework::DX {
         executeCommandList();
 
         HRESULT hr;
+        //テアリング許容時はsyncIntervalを0にする
         if (mOptions & ALLOW_TEARING) {
             hr = mSwapChain->Present(0, DXGI_PRESENT_ALLOW_TEARING);
         }
         else {
+            //テアリング非許容時はVsyncを待機する
             hr = mSwapChain->Present(1, 0);
         }
 
@@ -406,11 +438,13 @@ namespace Framework::DX {
             moveToNextFrame();
         }
     }
+    //コマンドを実行する
     void DeviceResource::executeCommandList() {
         MY_THROW_IF_FAILED(mCommandList->Close());
         ID3D12CommandList* lists[] = { mCommandList.Get() };
         mCommandQueue->ExecuteCommandLists(_countof(lists), lists);
     }
+    //GPUの待機
     void DeviceResource::waitForGPU() noexcept {
         if (mCommandQueue && mFence && mFenceEvent.IsValid()) {
             UINT64 fenceValue = mFenceValues[mBackBufferIndex];
@@ -422,11 +456,13 @@ namespace Framework::DX {
             }
         }
     }
+    //次のフレームの準備
     void DeviceResource::moveToNextFrame() {
         const UINT64 currentFenceValue = mFenceValues[mBackBufferIndex];
         MY_THROW_IF_FAILED(mCommandQueue->Signal(mFence.Get(), currentFenceValue));
         mBackBufferIndex = mSwapChain->GetCurrentBackBufferIndex();
 
+        //準備が完了するまで待機
         if (mFence->GetCompletedValue() < mFenceValues[mBackBufferIndex]) {
             MY_THROW_IF_FAILED(mFence->SetEventOnCompletion(mFenceValues[mBackBufferIndex], mFenceEvent.Get()));
             WaitForSingleObjectEx(mFenceEvent.Get(), INFINITE, FALSE);
@@ -434,49 +470,23 @@ namespace Framework::DX {
 
         mFenceValues[mBackBufferIndex] = currentFenceValue + 1;
     }
+    //アダプターの初期化
     void DeviceResource::initializeAdapter(IDXGIAdapter1** adapter) {
         *adapter = nullptr;
 
         ComPtr<IDXGIAdapter1> adap;
-        for (UINT adapterID = 0; mFactory->EnumAdapters1(adapterID, &adap); ++adapterID) {
-            if (mAdapterIDoverride != UINT_MAX && adapterID != mAdapterIDoverride) {
-                continue;
-            }
+        MY_THROW_IF_FAILED(mFactory->EnumAdapters1(0, &adap));
+        DXGI_ADAPTER_DESC1 desc;
+        MY_THROW_IF_FAILED(adap->GetDesc1(&desc));
 
-            DXGI_ADAPTER_DESC1 desc;
-            MY_THROW_IF_FAILED(adap->GetDesc1(&desc));
-            if (desc.Flags & DXGI_ADAPTER_FLAG::DXGI_ADAPTER_FLAG_SOFTWARE) {
-                continue;
-            }
-
-            if (SUCCEEDED(D3D12CreateDevice(adap.Get(), mMinFeatureLevel, __uuidof(ID3D12Device), nullptr))) {
-                mAdapterID = adapterID;
-                mAdapterDescription = desc.Description;
 #ifdef _DEBUG
-                MY_DEBUG_LOG("Direct3D Adapter (%u): VID:%04X, PID:%04X - %ls\n", adapterID, desc.VendorId, desc.DeviceId, desc.Description);
+        MY_DEBUG_LOG("Direct3D Adapter (%u): VID:%04X, PID:%04X - %ls\n", mAdapter, desc.VendorId, desc.DeviceId, desc.Description);
 #endif
-                break;
-            }
-        }
-
-#ifndef NDEBUG
-        if (!adap && mAdapterIDoverride == UINT_MAX) {
-            if (FAILED(mFactory->EnumWarpAdapter(IID_PPV_ARGS(&adap)))) {
-                throw std::exception("WARP12 not available. Enable the 'Graphics Tools' optional feature");
-            }
-            MY_DEBUG_LOG("Direct3D Adapter - WARP12\n");
-        }
-#endif
-
         if (!adap) {
-            if (mAdapterIDoverride != UINT_MAX) {
-                throw std::exception("Unavailable adapter requested.");
-            }
-            else {
-                throw std::exception("Unavailable adapter.");
-            }
+            throw std::exception("Unavailable adapter.");
         }
 
+        mAdapterDescription = desc.Description;
         *adapter = adap.Detach();
     }
 } //Framework::DX
