@@ -9,7 +9,7 @@
 #include "Window/Procedure/WindowMoved.h"
 
 namespace Framework {
-
+    //コンストラクタ
     Game::Game(UINT width, UINT height, const std::wstring& title)
         :mWidth(width), mHeight(height), mTitle(title), mWindow(nullptr) {
         Window::Procedures::addProc(new Window::CreateProc());
@@ -19,18 +19,19 @@ namespace Framework {
         Window::Procedures::addProc(new Window::SizeChanged());
         Window::Procedures::addProc(new Window::WindowMoved());
     }
-
+    //デストラクタ
     Game::~Game() { }
-
+    //実行
     int Game::run(HINSTANCE hInstance, int nCmdShow) {
         try {
             mWindow = std::make_unique<Window::Window>(mWidth, mHeight, mTitle, hInstance, this);
 
             this->onInit();
-
+            //初期化後にウィンドウを表示
             mWindow->show(nCmdShow);
 
             MSG msg = {};
+            //メインループ
             while (msg.message != WM_QUIT) {
                 if (PeekMessage(&msg, NULL, 0, 0, PM_REMOVE)) {
                     TranslateMessage(&msg);
@@ -51,6 +52,7 @@ namespace Framework {
 
     }
 
+    //初期化
     void Game::onInit() {
         mDeviceResource = std::make_unique<DX::DeviceResource>(
             DXGI_FORMAT::DXGI_FORMAT_R8G8B8A8_UNORM,
@@ -63,36 +65,35 @@ namespace Framework {
         mDeviceResource->createDeviceResources();
         mDeviceResource->createWindowDependentResources();
     }
-
+    //更新
     void Game::onUpdate() { }
-
+    //描画
     void Game::onRender() { }
-
+    //終了時
     void Game::onDestroy() {
         mDeviceResource->waitForGPU();
     }
-
+    //フルスクリーン切り替え
     void Game::toggleFullScreenWindow() {
         if (!mDeviceResource->isTearingSupported())return;
         mWindow->toggleFullScreenWindow(mDeviceResource->getSwapChain());
     }
-
+    //ウィンドウサイズの変更
     void Game::updateForSizeChange(UINT clientWidth, UINT clientHeight) {
         mWidth = clientWidth;
         mHeight = clientHeight;
         mAspectRatio = static_cast<float>(clientWidth) / static_cast<float>(clientHeight);
     }
-
+    //ウィンドウの矩形のセット
     void Game::setWindowBounds(const RECT& rect) {
         mWindowBounds = rect;
     }
-
+    //ウィンドウサイズの変更イベント
     void Game::onSizeChanged(UINT width, UINT height, bool minimized) {
-        MY_DEBUG_LOG("W:%u H:%u\n", width, height);
         mDeviceResource->windowSizeChanged(width, height, minimized);
         updateForSizeChange(width, height);
     }
-
+    //ウィンドウの移動
     void Game::onWindowMoved(int, int) { }
 
 } //Framework

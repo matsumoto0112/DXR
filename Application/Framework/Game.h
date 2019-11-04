@@ -21,23 +21,53 @@ namespace Framework {
         * @brief デストラクタ
         */
         virtual ~Game();
+        /**
+        * @brief アプリケーションの実行
+        */
         int run(HINSTANCE hInstance, int nCmdShow);
+        /**
+        * @brief 初期化
+        */
         virtual void onInit() override;
+        /**
+        * @brief 更新
+        */
         virtual void onUpdate() override;
+        /**
+        * @brief　描画
+        */
         virtual void onRender() override;
+        /**
+        * @brief 破棄時
+        */
         virtual void onDestroy() override;
+        /**
+        * @brief フルスクリーン切り替え
+        */
         virtual void toggleFullScreenWindow() override;
+        /**
+        * @brief ウィンドウサイズを更新する
+        */
         virtual void updateForSizeChange(UINT clientWidth, UINT cliendHeight) override;
+        /**
+        * @brief ウィンドウの大きさをセットする
+        */
         virtual void setWindowBounds(const RECT & rect) override;
+        /**
+        * @brief ウィンドウサイズの切り替えイベント
+        */
         virtual void onSizeChanged(UINT width, UINT height, bool minimized) override;
+        /**
+        * @brief ウィンドウの移動
+        */
         virtual void onWindowMoved(int x, int y) override;
     protected:
-        UINT mWidth;
-        UINT mHeight;
-        float mAspectRatio;
-        RECT mWindowBounds;
-        std::wstring mTitle;
-        std::unique_ptr<Window::Window> mWindow;
-        std::unique_ptr<DX::DeviceResource> mDeviceResource;
+        UINT mWidth; //!< ウィンドウ幅
+        UINT mHeight; //!< ウィンドウ高さ
+        float mAspectRatio; //!< アスペクト比
+        RECT mWindowBounds; //!< ウィンドウの矩形
+        std::wstring mTitle; //!< ウィンドウタイトル
+        std::unique_ptr<Window::Window> mWindow; //!< ウィンドウ
+        std::unique_ptr<DX::DeviceResource> mDeviceResource; //!< デバイスリソース
     };
 } //Framework
