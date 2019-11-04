@@ -1,0 +1,34 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup Label="Globals">
+    <MSBuildAllProjects>$(MSBuildAllProjects);$(MSBuildThisFileFullPath)</MSBuildAllProjects>
+    <HasSharedItems>true</HasSharedItems>
+    <ItemsProjectGuid>{2746b46e-9f72-4e97-9f06-47fa7f345942}</ItemsProjectGuid>
+    <ItemsRootNamespace>Framework</ItemsRootNamespace>
+  </PropertyGroup>
+  <ItemDefinitionGroup>
+    <ClCompile>
+      <AdditionalIncludeDirectories>%(AdditionalIncludeDirectories);$(MSBuildThisFileDirectory)</AdditionalIncludeDirectories>
+    </ClCompile>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <ProjectCapability Include="SourceItemsFromImports" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="$(MSBuildThisFileDirectory)Math\MathUtility.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)Math\Matrix4x4.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)Math\Vector2.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)Math\Vector3.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)Math\Vector4.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)Math\VectorUtil.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)Utility\Debug.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)Utility\HrException.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)Utility\StringUtil.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="$(MSBuildThisFileDirectory)Math\Matrix4x4.cpp" />
+    <ClCompile Include="$(MSBuildThisFileDirectory)Math\Vector2.cpp" />
+    <ClCompile Include="$(MSBuildThisFileDirectory)Math\Vector3.cpp" />
+    <ClCompile Include="$(MSBuildThisFileDirectory)Math\Vector4.cpp" />
+  </ItemGroup>
+</Project>

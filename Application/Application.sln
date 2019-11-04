@@ -5,7 +5,13 @@ VisualStudioVersion = 15.0.28307.902
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Application", "Application\Application.vcxproj", "{E9A5F56B-73DD-4658-982F-D8E169976A1F}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Framework", "Framework\Framework.vcxitems", "{2746B46E-9F72-4E97-9F06-47FA7F345942}"
+EndProject
 Global
+	GlobalSection(SharedMSBuildProjectFiles) = preSolution
+		Framework\Framework.vcxitems*{2746b46e-9f72-4e97-9f06-47fa7f345942}*SharedItemsImports = 9
+		Framework\Framework.vcxitems*{e9a5f56b-73dd-4658-982f-d8e169976a1f}*SharedItemsImports = 4
+	EndGlobalSection
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|x64 = Debug|x64
 		Release|x64 = Release|x64
