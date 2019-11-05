@@ -34,9 +34,13 @@ namespace Framework {
         */
         virtual void onUpdate() override;
         /**
-        * @brief@•`‰æ
+        * @brief •`‰æŠJn
         */
-        virtual void onRender() override;
+        void renderStart();
+        /**
+        * @brief •`‰æI—¹
+        */
+        void renderEnd();
         /**
         * @brief ”jŠü
         */

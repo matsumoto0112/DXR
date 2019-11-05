@@ -28,21 +28,11 @@ public:
         Game::onUpdate();
     }
     void onRender() override {
-        Game::onRender();
-
-        mDeviceResource->prepare();
-        Framework::ImGuiManager::getInstance()->beginFrame();
-        ID3D12GraphicsCommandList* list = mDeviceResource->getCommandList();
-        D3D12_CPU_DESCRIPTOR_HANDLE rtv[] = { mDeviceResource->getRenderTargetView() };
-        list->OMSetRenderTargets(1, rtv, FALSE, nullptr);
-        static float color[4] = { 0.0f,0.0f,0.0f,0.0f };
-        list->ClearRenderTargetView(mDeviceResource->getRenderTargetView(), color, 0, nullptr);
+        Game::renderStart();
 
         mDebugWindow->draw();
 
-        Framework::ImGuiManager::getInstance()->endFrame(mDeviceResource->getCommandList());
-
-        mDeviceResource->present();
+        Game::renderEnd();
     }
     void onDestroy()override {
         Game::onDestroy();

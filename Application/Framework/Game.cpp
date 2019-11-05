@@ -72,8 +72,22 @@ namespace Framework {
     }
     //更新
     void Game::onUpdate() { }
-    //描画
-    void Game::onRender() {
+    void Game::renderStart() {
+        mDeviceResource->prepare();
+        Framework::ImGuiManager::getInstance()->beginFrame();
+
+        //レンダーターゲットのクリア
+        ID3D12GraphicsCommandList* list = mDeviceResource->getCommandList();
+        D3D12_CPU_DESCRIPTOR_HANDLE rtv[] = { mDeviceResource->getRenderTargetView() };
+
+        list->OMSetRenderTargets(1, rtv, FALSE, &mDeviceResource->getDepthStencilView());
+        static float color[4] = { 0.0f,0.0f,0.0f,0.0f };
+        list->ClearRenderTargetView(mDeviceResource->getRenderTargetView(), color, 0, nullptr);
+    }
+    void Game::renderEnd() {
+        Framework::ImGuiManager::getInstance()->endFrame(mDeviceResource->getCommandList());
+
+        mDeviceResource->present();
     }
     //終了時
     void Game::onDestroy() {
