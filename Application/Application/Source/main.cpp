@@ -19,6 +19,10 @@ public:
     ~MainApp() { }
     void onInit() override {
         Game::onInit();
+        mDebugWindow = std::make_unique<Framework::ImGUI::Window>("Debug");
+        mFPSText = std::make_shared<Framework::ImGUI::Text>("FPS:");
+        mDebugWindow->addItem(mFPSText);
+
     }
     void onUpdate() override {
         Game::onUpdate();
@@ -34,10 +38,7 @@ public:
         static float color[4] = { 0.0f,0.0f,0.0f,0.0f };
         list->ClearRenderTargetView(mDeviceResource->getRenderTargetView(), color, 0, nullptr);
 
-        ImGui::Begin("TEST WINDOW");
-        ImGui::Text("Test");
-        ImGui::SliderFloat4("COLOR", color, 0.0f, 1.0f);
-        ImGui::End();
+        mDebugWindow->draw();
 
         Framework::ImGuiManager::getInstance()->endFrame(mDeviceResource->getCommandList());
 
@@ -47,6 +48,8 @@ public:
         Game::onDestroy();
     }
 private:
+    std::unique_ptr<Framework::ImGUI::Window> mDebugWindow;
+    std::shared_ptr<Framework::ImGUI::Text> mFPSText;
 };
 
 //ƒƒCƒ“ŠÖ”
