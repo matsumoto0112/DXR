@@ -302,7 +302,7 @@ CODE
  - The examples/ folders contains many actual implementation of the pseudo-codes above.
  - When calling NewFrame(), the 'io.WantCaptureMouse', 'io.WantCaptureKeyboard' and 'io.WantTextInput' flags are updated.
    They tell you if Dear ImGui intends to use your inputs. When a flag is set you want to hide the corresponding inputs from the
-   rest of your application. In every cases you need to pass on the inputs to Dear ImGui. 
+   rest of your application. In every cases you need to pass on the inputs to Dear ImGui.
  - Refer to the FAQ for more information. Amusingly, it is called a FAQ because people frequently run into the same issues!
 
  USING GAMEPAD/KEYBOARD NAVIGATION CONTROLS
@@ -605,7 +605,7 @@ CODE
     Note: Text input widget releases focus on "Return KeyDown", so the subsequent "Return KeyUp" event that your application receive will typically
      have 'io.WantCaptureKeyboard=false'. Depending on your application logic it may or not be inconvenient. You might want to track which key-downs
      were targeted for Dear ImGui, e.g. with an array of bool, and filter out the corresponding key-ups.)
- 
+
  Q: How can I use this without a mouse, without a keyboard or without a screen? (gamepad, input share, remote display)
  Q: I integrated Dear ImGui in my engine and the text or lines are blurry..
  Q: I integrated Dear ImGui in my engine and some elements are clipping or disappearing when I move windows around..

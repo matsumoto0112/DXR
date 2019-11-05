@@ -3,11 +3,13 @@
   <ItemGroup>
     <ClCompile Include="Source\main.cpp" />
     <ClCompile Include="Source\stdafx.cpp" />
+    <ClCompile Include="Source\Scene.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Source\stdafx.h" />
     <ClInclude Include="Source\targetvar.h" />
     <ClInclude Include="Assets\Shader\Raytracing\Util\Compat.h" />
+    <ClInclude Include="Source\Scene.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
