@@ -38,6 +38,7 @@ namespace Framework::DX {
         mAdapterDescription(),
         mFenceEvent{},
         mRTVHeap(std::make_unique<DescriptorTable>()),
+        mDSVHeap(std::make_unique<DescriptorTable>()),
         mScreenViewport{},
         mScissorRect{},
         mBackBufferFormat(backBufferFormat),
@@ -152,10 +153,7 @@ namespace Framework::DX {
 
         //デプス・ステンシルを使用するならディスクリプタヒープを作成する
         if (mDepthBufferFormat != DXGI_FORMAT::DXGI_FORMAT_UNKNOWN) {
-            D3D12_DESCRIPTOR_HEAP_DESC dsvDescriptorHeapDesc = {};
-            dsvDescriptorHeapDesc.NumDescriptors = 1;
-            dsvDescriptorHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE::D3D12_DESCRIPTOR_HEAP_TYPE_DSV;
-            MY_THROW_IF_FAILED(mDevice->CreateDescriptorHeap(&dsvDescriptorHeapDesc, IID_PPV_ARGS(&mDSVDescriptorHeap)));
+            mDSVHeap->create(mDevice.Get(), HeapType::DSV, HeapFlag::None, 1, L"DepthStencilHeap");
         }
 
         //バックバッファの枚数分アロケータを作成する
@@ -294,7 +292,7 @@ namespace Framework::DX {
             dsvDesc.Format = mDepthBufferFormat;
             dsvDesc.ViewDimension = D3D12_DSV_DIMENSION::D3D12_DSV_DIMENSION_TEXTURE2D;
 
-            mDevice->CreateDepthStencilView(mDepthStencil.Get(), &dsvDesc, mDSVDescriptorHeap->GetCPUDescriptorHandleForHeapStart());
+            mDevice->CreateDepthStencilView(mDepthStencil.Get(), &dsvDesc, mDSVHeap->getCPUHandle(0));
         }
 
         mScreenViewport.TopLeftX = mScreenViewport.TopLeftY = 0.0f;
@@ -351,8 +349,7 @@ namespace Framework::DX {
         mCommandList.Reset();
         mFence.Reset();
         mRTVHeap->reset();
-        //mRTVDescriptorHeap.Reset();
-        mDSVDescriptorHeap.Reset();
+        mDSVHeap->reset();
         mSwapChain.Reset();
         mDevice.Reset();
         mFactory.Reset();
