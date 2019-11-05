@@ -18,6 +18,7 @@
     <ClInclude Include="$(MSBuildThisFileDirectory)DX\ConstantBuffer.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)DX\DeviceResource.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)DX\DescriptorTable.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)DX\Raytracing\Helper.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)DX\Util\DXHelper.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)DX\Raytracing\DXRDevice.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)DX\Util\Buffer.h" />

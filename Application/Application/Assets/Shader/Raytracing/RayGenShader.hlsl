@@ -26,6 +26,8 @@ void RayGenShader() {
         0,
         rayDesc,
         payload); 
+
+    g_renderTarget[DispatchRaysIndex().xy] = payload.color;
 }
 
 #endif //! SHADER_RAYTRACING_RAYGENSHADER_HLSL

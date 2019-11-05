@@ -6,7 +6,7 @@
 
 [shader("miss")]
 void Miss(inout RayPayload payload) {
-    payload.color = float4(1, 1, 1, 1);
+    payload.color = float4(1, 0, 1, 1);
 }
 
 #endif //! SHADER_RAYTRACING_MISSSHADER_MISS_HLSL

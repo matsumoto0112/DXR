@@ -15,7 +15,7 @@ inline Ray generateCameraRay(in uint2 index, in float3 cameraPosition, in float4
     float2 screenPos = xy / DispatchRaysDimensions().xy * 2.0 - 1.0;
     screenPos.y = -screenPos.y;
 
-    float4 world = mul(float4(xy, 0.0, 1.0), projectionToWorld);
+    float4 world = mul(float4(screenPos, 0.0, 1.0), projectionToWorld);
     world.xyz /= world.w;
 
     Ray ray;

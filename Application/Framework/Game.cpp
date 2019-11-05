@@ -62,7 +62,7 @@ namespace Framework {
             DXGI_FORMAT::DXGI_FORMAT_D32_FLOAT,
             DX::DeviceResource::REQUIRE_TEARING_SUPPORT);
 
-        mDeviceResource->setWindow(mWindow.get());
+        mDeviceResource->setWindow(mWindow.get(), mWidth, mHeight);
         mDeviceResource->initializeDXGIAdapter();
 
         mDeviceResource->createDeviceResources();
@@ -72,6 +72,7 @@ namespace Framework {
     }
     //更新
     void Game::onUpdate() { }
+    //描画開始
     void Game::renderStart() {
         mDeviceResource->prepare();
         Framework::ImGuiManager::getInstance()->beginFrame();
@@ -81,9 +82,10 @@ namespace Framework {
         D3D12_CPU_DESCRIPTOR_HANDLE rtv[] = { mDeviceResource->getRenderTargetView() };
 
         list->OMSetRenderTargets(1, rtv, FALSE, &mDeviceResource->getDepthStencilView());
-        static float color[4] = { 0.0f,0.0f,0.0f,0.0f };
+        static float color[4] = { 0,0,0,0 };
         list->ClearRenderTargetView(mDeviceResource->getRenderTargetView(), color, 0, nullptr);
     }
+    //描画終了
     void Game::renderEnd() {
         Framework::ImGuiManager::getInstance()->endFrame(mDeviceResource->getCommandList());
 

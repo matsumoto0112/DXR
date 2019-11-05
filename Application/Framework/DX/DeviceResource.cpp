@@ -306,9 +306,11 @@ namespace Framework::DX {
         mScissorRect.bottom = backBufferHeight;
     }
     //ウィンドウを設定する
-    void DeviceResource::setWindow(Window::Window* window) {
+    void DeviceResource::setWindow(Window::Window* window, UINT width, UINT height) {
         mWindow = window;
-        mOutputSize = mWindow->getWindowRect();
+        mOutputSize.left = mOutputSize.top = 0;
+        mOutputSize.right = width;
+        mOutputSize.bottom = height;
     }
     //ウィンドウのサイズを変更
     bool DeviceResource::windowSizeChanged(UINT width, UINT height, bool minimized) {

@@ -24,3 +24,17 @@ namespace RayType {
         Count
     };
 } //RayType
+
+namespace BottomLevelASType {
+    enum MyEnum {
+        Triangle,
+
+        Count
+    };
+} //BottomLevelASType
+
+namespace TopLevelASType {
+    enum MyEnum {
+        One,
+    };
+} //TopLevelASType

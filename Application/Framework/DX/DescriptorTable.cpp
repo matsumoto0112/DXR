@@ -32,7 +32,7 @@ namespace Framework::DX {
         heapDesc.Type = TYPES.at(heapType);
         heapDesc.Flags = FLAGS.at(heapFlag);
         heapDesc.NodeMask = 0;
-        device->CreateDescriptorHeap(&heapDesc, IID_PPV_ARGS(&mHeap));
+        MY_THROW_IF_FAILED(device->CreateDescriptorHeap(&heapDesc, IID_PPV_ARGS(&mHeap)));
         mHeap->SetName(name);
 
         mDescriptorSize = device->GetDescriptorHandleIncrementSize(TYPES.at(heapType));

@@ -10,6 +10,8 @@ using namespace DirectX;
 typedef UINT16 Index;
 #endif
 
+static const UINT MAX_RECURSION_NUM = 2;
+
 struct SceneConstantBuffer {
     XMFLOAT4 cameraPosition;
     XMMATRIX projectionToWorld;

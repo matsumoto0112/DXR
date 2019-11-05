@@ -66,7 +66,7 @@ namespace Framework::DX {
         * @brief ウィンドウをセットする
         * @param[in] window ウィンドウ
         */
-        void setWindow(Window::Window* window);
+        void setWindow(Window::Window* window, UINT width, UINT height);
         /**
         * @brief ウィンドウのサイズを変更する
         * @param width ウィンドウ幅

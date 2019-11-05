@@ -16,6 +16,8 @@
 
 #define NOMINMAX
 #include <Windows.h>
+#include <vector>
+#include <string>
 
 #include <d3d12.h>
 #include <dxgi1_6.h>

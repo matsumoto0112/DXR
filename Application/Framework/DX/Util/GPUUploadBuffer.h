@@ -26,6 +26,10 @@ namespace Framework::DX {
         * @brief CPU書き込み専用のメモリを返す
         */
         uint8_t* getMapCPUWriteOnly();
+        /**
+        * @brief リソースを取得する
+        */
+        ComPtr<ID3D12Resource> getResource() const { return mResource; }
     protected:
         ComPtr<ID3D12Resource> mResource;
     };
