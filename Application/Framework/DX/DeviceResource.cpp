@@ -37,7 +37,7 @@ namespace Framework::DX {
         mAdapterID(0),
         mAdapterDescription(),
         mFenceEvent{},
-        mRTVDescriptorSize(0),
+        mRTVHeap(std::make_unique<DescriptorTable>()),
         mScreenViewport{},
         mScissorRect{},
         mBackBufferFormat(backBufferFormat),
@@ -148,12 +148,7 @@ namespace Framework::DX {
         MY_THROW_IF_FAILED(mDevice->CreateCommandQueue(&queueDesc, IID_PPV_ARGS(&mCommandQueue)));
 
         //レンダーターゲットのディスクリプタヒープを作成する
-        D3D12_DESCRIPTOR_HEAP_DESC rtvDescriptorHeapDesc = {};
-        rtvDescriptorHeapDesc.NumDescriptors = BACK_BUFFER_COUNT;
-        rtvDescriptorHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE::D3D12_DESCRIPTOR_HEAP_TYPE_RTV;
-        MY_THROW_IF_FAILED(mDevice->CreateDescriptorHeap(&rtvDescriptorHeapDesc, IID_PPV_ARGS(&mRTVDescriptorHeap)));
-
-        mRTVDescriptorSize = mDevice->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE::D3D12_DESCRIPTOR_HEAP_TYPE_RTV);
+        mRTVHeap->create(mDevice.Get(), HeapType::RTV, HeapFlag::None, BACK_BUFFER_COUNT, L"RenderTargetHeap");
 
         //デプス・ステンシルを使用するならディスクリプタヒープを作成する
         if (mDepthBufferFormat != DXGI_FORMAT::DXGI_FORMAT_UNKNOWN) {
@@ -264,7 +259,7 @@ namespace Framework::DX {
             rtvDesc.Format = mBackBufferFormat;
             rtvDesc.ViewDimension = D3D12_RTV_DIMENSION::D3D12_RTV_DIMENSION_TEXTURE2D;
 
-            CD3DX12_CPU_DESCRIPTOR_HANDLE rtvDescriptor(mRTVDescriptorHeap->GetCPUDescriptorHandleForHeapStart(), n, mRTVDescriptorSize);
+            D3D12_CPU_DESCRIPTOR_HANDLE rtvDescriptor = mRTVHeap->getCPUHandle(n);
             mDevice->CreateRenderTargetView(mRenderTargets[n].Get(), &rtvDesc, rtvDescriptor);
         }
 
@@ -355,7 +350,8 @@ namespace Framework::DX {
         mCommandQueue.Reset();
         mCommandList.Reset();
         mFence.Reset();
-        mRTVDescriptorHeap.Reset();
+        mRTVHeap->reset();
+        //mRTVDescriptorHeap.Reset();
         mDSVDescriptorHeap.Reset();
         mSwapChain.Reset();
         mDevice.Reset();

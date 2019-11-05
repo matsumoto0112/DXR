@@ -5,6 +5,7 @@
 #include "Libs/d3dx12.h"
 #include "Utility/Typedef.h"
 #include "Window/Window.h"
+#include "DX/DescriptorTable.h"
 
 namespace Framework::DX {
     /**
@@ -196,8 +197,8 @@ namespace Framework::DX {
         /**
         * @brief レンダーターゲットのハンドルを取得する
         */
-        CD3DX12_CPU_DESCRIPTOR_HANDLE getRenderTargetView()const {
-            return CD3DX12_CPU_DESCRIPTOR_HANDLE(mRTVDescriptorHeap->GetCPUDescriptorHandleForHeapStart(), mBackBufferIndex, mRTVDescriptorSize);
+        D3D12_CPU_DESCRIPTOR_HANDLE getRenderTargetView()const {
+            return mRTVHeap->getCPUHandle(mBackBufferIndex);
         }
         /**
         * @brief デプス・ステンシルのハンドルを取得する
@@ -230,9 +231,10 @@ namespace Framework::DX {
         ComPtr<ID3D12Fence> mFence; //!< フェンス
         std::array<UINT64, BACK_BUFFER_COUNT> mFenceValues; //!< フェンスの値
         Microsoft::WRL::Wrappers::Event mFenceEvent; //!< フェンスイベント
-        ComPtr<ID3D12DescriptorHeap> mRTVDescriptorHeap; //!< レンダーターゲットのディスクリプタヒープ
+        std::unique_ptr<DescriptorTable> mRTVHeap;
+        //ComPtr<ID3D12DescriptorHeap> mRTVDescriptorHeap; //!< レンダーターゲットのディスクリプタヒープ
+        //UINT mRTVDescriptorSize; //!< レンダーターゲット1つのメモリサイズ
         ComPtr<ID3D12DescriptorHeap> mDSVDescriptorHeap; //!< デプス・ステンシルのディスクリプタヒープ
-        UINT mRTVDescriptorSize; //!< レンダーターゲット1つのメモリサイズ
         D3D12_VIEWPORT mScreenViewport; //!< ビューポート
         D3D12_RECT mScissorRect; //!< シザー矩形
         DXGI_FORMAT mBackBufferFormat; //!< バックバッファのフォーマット

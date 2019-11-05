@@ -99,10 +99,7 @@ namespace Framework::Utility {
     */
     template <class ... Args>
     inline void throwIfFalse(bool expr, const std::string& fmt, Args ... args) {
-        if (!expr) {
-            std::string mes = format(fmt, args...);
-            throw std::exception(mes.c_str());
-        }
+        throwIfFailed(expr ? S_OK : E_FAIL, fmt, args...);
     }
 
     /**

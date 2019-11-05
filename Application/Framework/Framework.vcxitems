@@ -17,6 +17,7 @@
   <ItemGroup>
     <ClInclude Include="$(MSBuildThisFileDirectory)DX\ConstantBuffer.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)DX\DeviceResource.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)DX\DescriptorTable.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)DX\Util\DXHelper.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)DX\Raytracing\DXRDevice.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)DX\Util\Buffer.h" />
@@ -67,6 +68,7 @@
     <ClInclude Include="$(MSBuildThisFileDirectory)Window\Window.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="$(MSBuildThisFileDirectory)DX\DescriptorTable.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)DX\DeviceResource.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)DX\Raytracing\DXRDevice.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)DX\Util\GPUUploadBuffer.cpp" />
