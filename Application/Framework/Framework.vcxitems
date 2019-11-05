@@ -46,9 +46,11 @@
     <ClInclude Include="$(MSBuildThisFileDirectory)Math\Vector4.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)Math\VectorUtil.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)Utility\Debug.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)Utility\GPUTimer.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)Utility\HrException.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)Utility\Singleton.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)Utility\StringUtil.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)Utility\Time.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)Utility\Typedef.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)Window\Procedure\CreateProc.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)Window\Procedure\DestroyProc.h" />
@@ -80,6 +82,8 @@
     <ClCompile Include="$(MSBuildThisFileDirectory)Math\Vector2.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)Math\Vector3.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)Math\Vector4.cpp" />
+    <ClCompile Include="$(MSBuildThisFileDirectory)Utility\GPUTimer.cpp" />
+    <ClCompile Include="$(MSBuildThisFileDirectory)Utility\Time.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)Window\Procedure\CreateProc.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)Window\Procedure\DestroyProc.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)Window\Procedure\ImGuiProc.cpp" />

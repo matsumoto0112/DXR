@@ -19,29 +19,24 @@ public:
     ~MainApp() { }
     void onInit() override {
         Game::onInit();
-        mDebugWindow = std::make_unique<Framework::ImGUI::Window>("Debug");
-        mFPSText = std::make_shared<Framework::ImGUI::Text>("FPS:");
-        mDebugWindow->addItem(mFPSText);
 
         mScene = std::make_unique<Scene>(mDeviceResource.get());
         mScene->create();
     }
     void onUpdate() override {
         Game::onUpdate();
+        mScene->update();
     }
     void onRender() override {
         Game::renderStart();
 
-        mDebugWindow->draw();
-
+        mScene->render();
         Game::renderEnd();
     }
     void onDestroy()override {
         Game::onDestroy();
     }
 private:
-    std::unique_ptr<Framework::ImGUI::Window> mDebugWindow;
-    std::shared_ptr<Framework::ImGUI::Text> mFPSText;
     std::unique_ptr<Scene> mScene;
 };
 
