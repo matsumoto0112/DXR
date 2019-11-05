@@ -2,6 +2,10 @@
 #include "Utility/Debug.h"
 #include "Framework/ImGui/ImGuiManager.h"
 
+#include "CompiledShaders/RayGenShader.hlsl.h"
+#include "CompiledShaders/Normal.hlsl.h"
+#include "CompiledShaders/Miss.hlsl.h"
+
 /**
 * @class MainApp
 * @brief メインアプリケーション
@@ -22,7 +26,6 @@ public:
         mDebugWindow = std::make_unique<Framework::ImGUI::Window>("Debug");
         mFPSText = std::make_shared<Framework::ImGUI::Text>("FPS:");
         mDebugWindow->addItem(mFPSText);
-
     }
     void onUpdate() override {
         Game::onUpdate();

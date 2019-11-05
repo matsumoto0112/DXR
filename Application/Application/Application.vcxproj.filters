@@ -7,8 +7,17 @@
   <ItemGroup>
     <ClInclude Include="Source\stdafx.h" />
     <ClInclude Include="Source\targetvar.h" />
+    <ClInclude Include="Assets\Shader\Raytracing\Util\Compat.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
+    <None Include="Assets\Shader\Raytracing\Util\Helper.hlsli" />
+    <None Include="Assets\Shader\Raytracing\Util\Global.hlsli" />
+    <None Include="Assets\Shader\Raytracing\Util\Typedef.hlsli" />
+  </ItemGroup>
+  <ItemGroup>
+    <FxCompile Include="Assets\Shader\Raytracing\RayGenShader.hlsl" />
+    <FxCompile Include="Assets\Shader\Raytracing\HitGroup\ClosestHit\Normal.hlsl" />
+    <FxCompile Include="Assets\Shader\Raytracing\MissShader\Miss.hlsl" />
   </ItemGroup>
 </Project>
