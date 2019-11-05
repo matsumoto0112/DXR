@@ -10,6 +10,7 @@
     <ClInclude Include="Source\targetvar.h" />
     <ClInclude Include="Assets\Shader\Raytracing\Util\Compat.h" />
     <ClInclude Include="Source\Scene.h" />
+    <ClInclude Include="Source\Define.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />

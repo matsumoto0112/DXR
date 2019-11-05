@@ -2,7 +2,7 @@
 #ifdef _DEBUG
 #include <dxgidebug.h>
 #endif
-#include "DX/DXHelper.h"
+#include "DX/Util/DXHelper.h"
 #include "Math/MathUtility.h"
 #include "Utility/Debug.h"
 

@@ -15,9 +15,12 @@
     <ProjectCapability Include="SourceItemsFromImports" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="$(MSBuildThisFileDirectory)DX\ConstantBuffer.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)DX\DeviceResource.h" />
-    <ClInclude Include="$(MSBuildThisFileDirectory)DX\DXHelper.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)DX\Util\DXHelper.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)DX\Raytracing\DXRDevice.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)DX\Util\Buffer.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)DX\Util\GPUUploadBuffer.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)Game.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)Device\ISystemEventNotify.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)ImGui\ImGuiInclude.h" />
@@ -66,6 +69,7 @@
   <ItemGroup>
     <ClCompile Include="$(MSBuildThisFileDirectory)DX\DeviceResource.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)DX\Raytracing\DXRDevice.cpp" />
+    <ClCompile Include="$(MSBuildThisFileDirectory)DX\Util\GPUUploadBuffer.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)Game.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)ImGui\ImGuiManager.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)ImGui\Item\Button.cpp" />

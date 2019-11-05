@@ -3,6 +3,7 @@
 #include "DX/Raytracing/DXRDevice.h"
 #include "Utility/Time.h"
 #include "Utility/GPUTimer.h"
+#include "Define.h"
 
 /**
 * @class Scene
@@ -28,8 +29,12 @@ public:
 private:
     Framework::DX::DeviceResource* mDeviceResource;
     std::unique_ptr<Framework::DX::DXRDevice> mDXRDevice;
+private:
+
+private:
     Framework::Utility::Time mTime;
     Framework::Utility::GPUTimer mGpuTimer;
+private:
     std::unique_ptr<Framework::ImGUI::Window> mDebugWindow;
     std::shared_ptr<Framework::ImGUI::Text> mFPSText;
 };
