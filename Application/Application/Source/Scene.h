@@ -47,7 +47,7 @@ public:
 private:
     Framework::DX::DeviceResource* mDeviceResource;
     std::unique_ptr<Framework::DX::DXRDevice> mDXRDevice;
-    AccelerationBuffer mBLASBuffer;
+    std::array<AccelerationBuffer, BottomLevelASType::Count> mBLASBuffers;
     AccelerationBuffer mTLASBuffer;
     ComPtr<ID3D12Resource> mRayGenTable;
     ComPtr<ID3D12Resource> mMissTable;

@@ -27,6 +27,7 @@ namespace RayType {
 namespace BottomLevelASType {
     enum MyEnum {
         Triangle,
+        Quad,
 
         Count
     };
