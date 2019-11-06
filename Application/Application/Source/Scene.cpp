@@ -73,15 +73,13 @@ void Scene::create() {
         };
         //グローバルルートシグネチャをまずは作る
         {
-            CD3DX12_DESCRIPTOR_RANGE ranges[2];
+            CD3DX12_DESCRIPTOR_RANGE ranges[1];
             ranges[0].Init(D3D12_DESCRIPTOR_RANGE_TYPE::D3D12_DESCRIPTOR_RANGE_TYPE_UAV, 1, 0); //レンダーターゲット
-            ranges[1].Init(D3D12_DESCRIPTOR_RANGE_TYPE::D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 2, 1); //頂点・インデックスバッファ
 
             CD3DX12_ROOT_PARAMETER rootParams[GlobalRootSignature::Slot::Count];
             rootParams[GlobalRootSignature::Slot::RenderTarget].InitAsDescriptorTable(1, &ranges[0]);
             rootParams[GlobalRootSignature::Slot::AccelerationStructure].InitAsShaderResourceView(0);
             rootParams[GlobalRootSignature::Slot::SceneConstant].InitAsConstantBufferView(0);
-            rootParams[GlobalRootSignature::Slot::VertexBuffers].InitAsDescriptorTable(1, &ranges[1]);
 
             CD3DX12_ROOT_SIGNATURE_DESC global(_countof(rootParams), rootParams);
             serializeAndCreateRootSignature(mDeviceResource->getDevice(),
@@ -257,7 +255,7 @@ void Scene::create() {
         ComPtr<ID3D12Resource> instanceDescs;
         std::vector<D3D12_RAYTRACING_INSTANCE_DESC> instanceDesc(TLAS_NUM);
         for (UINT n = 0; n < TLAS_NUM; n++) {
-            XMMATRIX transform = XMMatrixScaling(3, 3, 1) * XMMatrixTranslation(n * 3, 0, 0);
+            XMMATRIX transform = XMMatrixScaling(3, 3, 1) * XMMatrixTranslation((float)n * 3, 0, 0);
             instanceDesc[n].InstanceID = 0;
             instanceDesc[n].InstanceMask = 0xff;
             instanceDesc[n].Flags = D3D12_RAYTRACING_INSTANCE_FLAGS::D3D12_RAYTRACING_INSTANCE_FLAG_NONE;
@@ -376,7 +374,6 @@ void Scene::render() {
     ID3D12DescriptorHeap* heaps[] = { mDescriptorTable->getHeap() };
     commandList->SetDescriptorHeaps(1, heaps);
     commandList->SetComputeRootDescriptorTable(GlobalRootSignature::Slot::RenderTarget, mRaytracingOutput.gpuHandle);
-    commandList->SetComputeRootDescriptorTable(GlobalRootSignature::Slot::VertexBuffers, mIndexBuffer.gpuHandle);
     commandList->SetComputeRootConstantBufferView(GlobalRootSignature::Slot::SceneConstant, mSceneCB.gpuVirtualAddress());
     commandList->SetComputeRootShaderResourceView(GlobalRootSignature::Slot::AccelerationStructure, mTLASBuffer->GetGPUVirtualAddress());
 
