@@ -52,8 +52,6 @@ private:
     ComPtr<ID3D12RootSignature> mGlobalRootSignature; //!< グローバルルートシグネチャ
     ComPtr<ID3D12StateObject> mDXRStateObject; //!< レイトレーシングパイプラインステート
     std::unique_ptr<Framework::DX::DescriptorTable> mDescriptorTable;
-    Framework::DX::Buffer mVertexBuffer;
-    Framework::DX::Buffer mIndexBuffer;
     Framework::DX::Buffer mRaytracingOutput;
 private:
     UINT mWidth;
