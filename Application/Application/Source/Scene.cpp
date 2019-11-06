@@ -19,6 +19,8 @@ namespace {
     static const std::wstring RAY_GEN_NAME = L"RayGenShader";
     static const std::wstring HIT_GROUP_NAME = L"HitGroup";
 
+    static constexpr UINT TLAS_NUM = 3;
+
     auto createBuffer = [](ID3D12Device* device, ID3D12Resource** resource, void* data, UINT64 size, LPCWSTR name = nullptr) {
         CD3DX12_HEAP_PROPERTIES heapProps(D3D12_HEAP_TYPE::D3D12_HEAP_TYPE_UPLOAD);
         CD3DX12_RESOURCE_DESC bufferDesc = CD3DX12_RESOURCE_DESC::Buffer(size);
@@ -29,9 +31,9 @@ namespace {
             D3D12_RESOURCE_STATES::D3D12_RESOURCE_STATE_GENERIC_READ,
             nullptr,
             IID_PPV_ARGS(resource)));
-        (*resource)->SetName(name);
+        MY_THROW_IF_FAILED((*resource)->SetName(name));
         void* mapped;
-        (*resource)->Map(0, nullptr, &mapped);
+        MY_THROW_IF_FAILED((*resource)->Map(0, nullptr, &mapped));
         memcpy(mapped, data, size);
         (*resource)->Unmap(0, nullptr);
     };
@@ -230,7 +232,7 @@ void Scene::create() {
         auto& topLevelInputs = topLevelBuildDesc.Inputs;
         topLevelInputs.DescsLayout = D3D12_ELEMENTS_LAYOUT::D3D12_ELEMENTS_LAYOUT_ARRAY;
         topLevelInputs.Flags = buildFlags;
-        topLevelInputs.NumDescs = 1;
+        topLevelInputs.NumDescs = TLAS_NUM;
         topLevelInputs.pGeometryDescs = nullptr;
         topLevelInputs.Type = D3D12_RAYTRACING_ACCELERATION_STRUCTURE_TYPE::D3D12_RAYTRACING_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL;
 
@@ -253,12 +255,17 @@ void Scene::create() {
         }
 
         ComPtr<ID3D12Resource> instanceDescs;
-        D3D12_RAYTRACING_INSTANCE_DESC instanceDesc = {};
-        XMMATRIX transform = XMMatrixScaling(5, 5, 1);
-        XMStoreFloat3x4(reinterpret_cast<XMFLOAT3X4*>(instanceDesc.Transform), transform);
-        instanceDesc.InstanceMask = 1;
-        instanceDesc.AccelerationStructure = mBLASBuffer->GetGPUVirtualAddress();
-        createBuffer(device, &instanceDescs, &instanceDesc, sizeof(instanceDesc), L"InstanceDescs");
+        std::vector<D3D12_RAYTRACING_INSTANCE_DESC> instanceDesc(TLAS_NUM);
+        for (UINT n = 0; n < TLAS_NUM; n++) {
+            XMMATRIX transform = XMMatrixScaling(3, 3, 1) * XMMatrixTranslation(n * 3, 0, 0);
+            instanceDesc[n].InstanceID = 0;
+            instanceDesc[n].InstanceMask = 0xff;
+            instanceDesc[n].Flags = D3D12_RAYTRACING_INSTANCE_FLAGS::D3D12_RAYTRACING_INSTANCE_FLAG_NONE;
+            instanceDesc[n].InstanceContributionToHitGroupIndex = 0;
+            instanceDesc[n].AccelerationStructure = mBLASBuffer->GetGPUVirtualAddress();
+            XMStoreFloat3x4(reinterpret_cast<XMFLOAT3X4*>(instanceDesc[n].Transform), transform);
+        }
+        createBuffer(device, &instanceDescs, &instanceDesc[0], instanceDesc.size() * sizeof(D3D12_RAYTRACING_INSTANCE_DESC), L"InstanceDescs");
         {
             bottomLevelBuildDesc.ScratchAccelerationStructureData = scratchResource->GetGPUVirtualAddress();
             bottomLevelBuildDesc.DestAccelerationStructureData = mBLASBuffer->GetGPUVirtualAddress();
