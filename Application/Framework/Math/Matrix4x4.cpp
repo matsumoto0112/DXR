@@ -1,5 +1,5 @@
 #include "Matrix4x4.h"
-#include "Math/MathUtility.h"
+#include "MathUtility.h"
 
 namespace Framework::Math {
     //定数宣言
@@ -35,6 +35,7 @@ namespace Framework::Math {
         this->m = mat.m;
         return *this;
     }
+    //代入
     Matrix4x4 & Matrix4x4::operator=(Matrix4x4&& mat) & noexcept {
         this->m = mat.m;
         return *this;
@@ -86,9 +87,9 @@ namespace Framework::Math {
         );
     }
     //X軸に回転する回転行列を作成
-    Matrix4x4 Matrix4x4::createRotationX(float degree) {
-        const float sin = MathUtil::sin(degree);
-        const float cos = MathUtil::cos(degree);
+    Matrix4x4 Matrix4x4::createRotationX(const Radians& rad) {
+        const float sin = MathUtil::sin(rad);
+        const float cos = MathUtil::cos(rad);
         return Matrix4x4
         (
             1.0f, 0, 0, 0,
@@ -98,9 +99,9 @@ namespace Framework::Math {
         );
     }
     //Y軸に回転する回転行列を作成
-    Matrix4x4 Matrix4x4::createRotationY(float degree) {
-        const float sin = MathUtil::sin(degree);
-        const float cos = MathUtil::cos(degree);
+    Matrix4x4 Matrix4x4::createRotationY(const Radians& rad) {
+        const float sin = MathUtil::sin(rad);
+        const float cos = MathUtil::cos(rad);
         return Matrix4x4
         (
             cos, 0, -sin, 0,
@@ -110,9 +111,9 @@ namespace Framework::Math {
         );
     }
     //Z軸に回転する回転行列を作成
-    Matrix4x4 Matrix4x4::createRotationZ(float degree) {
-        const float sin = MathUtil::sin(degree);
-        const float cos = MathUtil::cos(degree);
+    Matrix4x4 Matrix4x4::createRotationZ(const Radians& rad) {
+        const float sin = MathUtil::sin(rad);
+        const float cos = MathUtil::cos(rad);
         return Matrix4x4
         (
             cos, sin, 0, 0,
@@ -121,17 +122,13 @@ namespace Framework::Math {
             0, 0, 0, 1
         );
     }
+
     //3軸に回転する回転行列を作成
     Matrix4x4 Matrix4x4::createRotation(const Vector3& r) {
-        Matrix4x4 mx(createRotationX(r.x));
-        Matrix4x4 my(createRotationY(r.y));
-        Matrix4x4 mz(createRotationZ(r.z));
+        Matrix4x4 mx(createRotationX(Radians(r.x)));
+        Matrix4x4 my(createRotationY(Radians(r.y)));
+        Matrix4x4 mz(createRotationZ(Radians(r.z)));
         return mx * my * mz;
-    }
-    //3軸に回転する行列でセットアップ
-    Matrix4x4& Matrix4x4::setupRotation(const Vector3& r) {
-        *this = createRotation(r);
-        return *this;
     }
 
     //スケーリング行列を作成
@@ -159,7 +156,7 @@ namespace Framework::Math {
     }
 
     //プロジェクション行列を作成
-    Matrix4x4 Matrix4x4::createProjection(float fovY, float aspect, float nearZ, float farZ) {
+    Matrix4x4 Matrix4x4::createProjection(const Radians& fovY, float aspect, float nearZ, float farZ) {
         const float yScale = 1.0f / MathUtil::tan(fovY / 2.0f);
         const float xScale = yScale / aspect;
         float subZ = farZ - nearZ;
@@ -270,14 +267,7 @@ namespace Framework::Math {
         v = v * mat;
         return v;
     }
-    //出力
-    std::ostream& operator<<(std::ostream& os, const Matrix4x4& mat) {
-        os << mat.m[0][0] << " " << mat.m[0][1] << " " << mat.m[0][2] << " " << mat.m[0][3] << "\n"
-            << mat.m[1][0] << " " << mat.m[1][1] << " " << mat.m[1][2] << " " << mat.m[1][3] << "\n"
-            << mat.m[2][0] << " " << mat.m[2][1] << " " << mat.m[2][2] << " " << mat.m[2][3] << "\n"
-            << mat.m[3][0] << " " << mat.m[3][1] << " " << mat.m[3][2] << " " << mat.m[3][3] << "\n";
-        return os;
-    }
+
     //加算
     Matrix4x4 operator+(const Matrix4x4& m1, const Matrix4x4& m2) {
         Matrix4x4 result(m1);

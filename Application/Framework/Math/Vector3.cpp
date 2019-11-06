@@ -1,5 +1,5 @@
 #include "Vector3.h"
-#include "Math/MathUtility.h"
+#include "MathUtility.h"
 
 namespace Framework::Math {
     //’è”
@@ -76,7 +76,7 @@ namespace Framework::Math {
         return normalize(*this);
     }
     //³‹K‰»
-    Vector3 Vector3::normalize(const Vector3 & v) {
+    Vector3 Vector3::normalize(const Vector3& v) {
         Vector3 res(v);
         const float len = v.length();
         if (len > 0.0f) {
@@ -123,4 +123,4 @@ namespace Framework::Math {
     Vector3 operator/(const Vector3& v, float s) {
         return Vector3(v.x / s, v.y / s, v.z / s);
     }
-} //Framework::Math
+} //Framework::Math 

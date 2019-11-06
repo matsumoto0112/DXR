@@ -47,7 +47,7 @@ namespace Framework {
             return static_cast<char>(msg.wParam);
         }
         catch (const std::exception& e) {
-            MY_DEBUG_LOG("エラー アプリケーションに問題が発生しました\n%s\n", e.what());
+            MY_THROW_IF_FALSE_LOG(false, "エラー アプリケーションに問題が発生しました\n%s\n", e.what());
 
             this->onDestroy();
             return EXIT_FAILURE;

@@ -44,8 +44,10 @@
     <ClInclude Include="$(MSBuildThisFileDirectory)Libs\ImGui\imstb_rectpack.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)Libs\ImGui\imstb_textedit.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)Libs\ImGui\imstb_truetype.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)Math\Angle.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)Math\MathUtility.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)Math\Matrix4x4.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)Math\Quaternion.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)Math\Vector2.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)Math\Vector3.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)Math\Vector4.h" />
@@ -85,7 +87,9 @@
     <ClCompile Include="$(MSBuildThisFileDirectory)Libs\ImGui\imgui_impl_dx12.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)Libs\ImGui\imgui_impl_win32.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)Libs\ImGui\imgui_widgets.cpp" />
+    <ClCompile Include="$(MSBuildThisFileDirectory)Math\Angle.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)Math\Matrix4x4.cpp" />
+    <ClCompile Include="$(MSBuildThisFileDirectory)Math\Quaternion.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)Math\Vector2.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)Math\Vector3.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)Math\Vector4.cpp" />

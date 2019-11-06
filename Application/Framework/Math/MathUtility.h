@@ -1,124 +1,111 @@
-#pragma once
+ï»¿#pragma once
 #undef max
 #undef min
 #include <initializer_list>
 #include <algorithm>
 #include <cmath>
+#include "Angle.h"
 
 namespace Framework::Math {
-    static constexpr float PI = 3.141592654f;//!< ‰~ü—¦
-    static constexpr float PI2 = PI * 2; //!< 2ƒÎ
-    static constexpr float EPSILON = 0.001f; //!< Œë·
+    static constexpr float PI = 3.1415926536f; //!< å††å‘¨ç‡
+    static constexpr float PI2 = PI * 2; //!< 2Ï€
+    static constexpr float EPSILON = 0.001f; //!< èª¤å·®
 
     /**
     * @class MathUtil
-    * @brief ”ŠwŠÖŒW‚Ìƒ†[ƒeƒBƒŠƒeƒBƒNƒ‰ƒX
+    * @brief æ•°å­¦é–¢ä¿‚ã®ãƒ¦ãƒ¼ãƒ†ã‚£ãƒªãƒ†ã‚£ã‚¯ãƒ©ã‚¹
     */
     class MathUtil {
     public:
         /**
-        * @brief ƒTƒCƒ“
+        * @brief ã‚µã‚¤ãƒ³
         */
-        static inline float sin(float degree) { return std::sinf(toRadian(degree)); }
+        static inline float sin(const Radians& rad) { return std::sinf(rad.getRad()); }
 
         /**
-        * @brief ƒRƒTƒCƒ“
+        * @brief ã‚³ã‚µã‚¤ãƒ³
         */
-        static inline float cos(float degree) { return std::cosf(toRadian(degree)); }
+        static inline float cos(const Radians& rad) { return std::cosf(rad.getRad()); }
 
         /**
-        * @brief ƒ^ƒ“ƒWƒFƒ“ƒg
+        * @brief ã‚¿ãƒ³ã‚¸ã‚§ãƒ³ãƒˆ
         */
-        static inline float tan(float degree) { return std::tanf(toRadian(degree)); }
+        static inline float tan(const Radians& rad) { return std::tanf(rad.getRad()); }
 
         /**
-        * @brief ƒA[ƒNƒ^ƒ“ƒWƒFƒ“ƒg
-        * @return Šp“x(deg)‚ğ•Ô‚·
+        * @brief ã‚¢ãƒ¼ã‚¯ã‚¿ãƒ³ã‚¸ã‚§ãƒ³ãƒˆ
+        * @return ãƒ©ã‚¸ã‚¢ãƒ³è§’ã‚’è¿”ã™
         */
-        static inline float atan2(float y, float x) { return toDegree(std::atan2f(y, x)); }
+        static inline Radians atan2(float y, float x) { return Radians(std::atan2f(y, x)); }
         /**
-        * @brief ƒA[ƒNƒTƒCƒ“
-        * @return Šp“x(deg)‚ğ•Ô‚·
+        * @brief ã‚¢ãƒ¼ã‚¯ã‚µã‚¤ãƒ³
+        * @return ãƒ©ã‚¸ã‚¢ãƒ³è§’ã‚’è¿”ã™
         */
-        static inline float asin(float x) { return toDegree(std::asin(x)); }
+        static inline Radians asin(float x) { return Radians(std::asin(x)); }
         /**
-        * @brief ƒA[ƒNƒRƒTƒCƒ“
-        * @param Šp“x(deg)‚ğ•Ô‚·
+        * @brief ã‚¢ãƒ¼ã‚¯ã‚³ã‚µã‚¤ãƒ³
+        * @return ãƒ©ã‚¸ã‚¢ãƒ³è§’ã‚’è¿”ã™
         */
-        static inline float acos(float x) { return toDegree(std::acos(x)); }
+        static inline Radians acos(float x) { return Radians(std::acos(x)); }
 
         /**
-        * @brief ƒ‹[ƒg
+        * @brief ãƒ«ãƒ¼ãƒˆ
         */
         static inline float sqrt(float a) { return std::sqrtf(a); }
-
         /**
-        * @brief “x‚©‚çƒ‰ƒWƒAƒ“‚Ö•ÏŠ·‚·‚é
-        * @param deg “x
-        * @return •ÏŠ·‚³‚ê‚½ƒ‰ƒWƒAƒ“
-        */
-        static inline float toRadian(float deg) { return deg / 180.0f * PI; }
-
-        /**
-        * @brief ƒ‰ƒWƒAƒ“‚©‚ç“x‚Ö•ÏŠ·‚·‚é
-        * @param rad ƒ‰ƒWƒAƒ“
-        * @return •ÏŠ·‚³‚ê‚½“x
-        */
-        static inline float toDegree(float rad) { return rad / PI * 180.0f; }
-        /**
-        * @brief —İæ
-        * @param X Šî”
-        * @param e w”
+        * @brief ç´¯ä¹—
+        * @param X åŸºæ•°
+        * @param e æŒ‡æ•°
         */
         static inline float pow(float X, float e) { return std::powf(X, e); }
         /**
-        * @brief â‘Î’l
+        * @brief çµ¶å¯¾å€¤
         */
         static inline float abs(float X) { return std::fabsf(X); }
 
         /**
-        * @brief ƒNƒ‰ƒ“ƒvˆ—
-        * @tparam t ƒNƒ‰ƒ“ƒv‚·‚é’l
-        * @tparam min ‰ºŒÀ’l
-        * @tparam max ãŒÀ’l
-        * @return ƒNƒ‰ƒ“ƒv‚³‚ê‚½’l
+        * @brief ã‚¯ãƒ©ãƒ³ãƒ—å‡¦ç†
+        * @tparam t ã‚¯ãƒ©ãƒ³ãƒ—ã™ã‚‹å€¤
+        * @tparam min ä¸‹é™å€¤
+        * @tparam max ä¸Šé™å€¤
+        * @return ã‚¯ãƒ©ãƒ³ãƒ—ã•ã‚ŒãŸå€¤
         */
         template<class T>
         static inline T clamp(const T& t, const T& minValue, const T& maxValue);
 
         /**
-        * @brief •âŠÔ
-        * @tparam a ŠJn’l
-        * @tparam b I—¹’l
-        * @tparam t •âŠÔ’li‚O`‚Pj
+        * @brief è£œé–“
+        * @tparam a é–‹å§‹å€¤
+        * @tparam b çµ‚äº†å€¤
+        * @tparam t è£œé–“å€¤ï¼ˆï¼ï½ï¼‘ï¼‰
         */
         template <class T>
         static inline T lerp(const T& a, const T& b, float t);
 
         /**
-        * @brief Å‘å’l‚Ìæ“¾
+        * @brief æœ€å¤§å€¤ã®å–å¾—
         */
         template <class T>
         static inline T mymax(const std::initializer_list<T>& param);
         /**
-        * @brief Å‘å’l‚Ìæ“¾
+        * @brief æœ€å¤§å€¤ã®å–å¾—
         */
         template <class T>
         static inline T mymax(const T& t1, const T& t2);
 
         /**
-        * @brief Å¬’l‚Ìæ“¾
+        * @brief æœ€å°å€¤ã®å–å¾—
         */
         template <class T>
         static inline T mymin(const std::initializer_list<T>& param);
         /**
-        * @brief Å¬’l‚Ìæ“¾
+        * @brief æœ€å°å€¤ã®å–å¾—
         */
         template <class T>
         static inline T mymin(const T& t1, const T& t2);
     };
 
-    //ƒNƒ‰ƒ“ƒvˆ—
+    //ã‚¯ãƒ©ãƒ³ãƒ—å‡¦ç†
     template<class T>
     T MathUtil::clamp(const T& t, const T& minValue, const T& maxValue) {
         T res(t);
@@ -127,32 +114,32 @@ namespace Framework::Math {
         return res;
     }
 
-    //•âŠÔ
+    //è£œé–“
     template<class T>
     inline T MathUtil::lerp(const T& a, const T& b, float t) {
-        //0`1‚ÉƒNƒ‰ƒ“ƒv
+        //0ï½1ã«ã‚¯ãƒ©ãƒ³ãƒ—
         t = clamp(t, 0.0f, 1.0f);
         return a * (1.0f - t) + b * t;
     }
 
-    //Å‘å’l‚Ìæ“¾
+    //æœ€å¤§å€¤ã®å–å¾—
     template<class T>
     inline T MathUtil::mymax(const std::initializer_list<T>& param) {
         return std::max(param);
     }
 
-    //Å‘å’l‚Ìæ“¾
+    //æœ€å¤§å€¤ã®å–å¾—
     template<class T>
     inline T MathUtil::mymax(const T& t1, const T& t2) {
         return std::max(t1, t2);
     }
 
-    //Å¬’l‚Ìæ“¾
+    //æœ€å°å€¤ã®å–å¾—
     template<class T>
     inline T MathUtil::mymin(const std::initializer_list<T>& param) {
         return std::min(param);
     }
-    //Å¬’l‚Ìæ“¾
+    //æœ€å°å€¤ã®å–å¾—
     template<class T>
     inline T MathUtil::mymin(const T& t1, const T& t2) {
         return std::min(t1, t2);

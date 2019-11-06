@@ -1,6 +1,7 @@
 #pragma once
 
 #include <array>
+#include "Angle.h"
 #include "Vector2.h"
 #include "Vector3.h"
 
@@ -78,29 +79,24 @@ namespace Framework::Math {
         static Matrix4x4 createTranslate(const Vector3& v);
         /**
         * @brief X²‰ñ“]s—ñ‚Ìì¬
-        * @param degree ‰ñ“]—Ê(“x)
+        * @param rad ‰ñ“]—Ê
         */
-        static Matrix4x4 createRotationX(float degree);
+        static Matrix4x4 createRotationX(const Radians& rad);
         /**
         * @brief Y²‰ñ“]s—ñ‚Ìì¬
-        * @param degree ‰ñ“]—Ê(“x)
+        * @param rad ‰ñ“]—Ê
         */
-        static Matrix4x4 createRotationY(float degree);
+        static Matrix4x4 createRotationY(const Radians& rad);
         /**
         * @brief Z²‰ñ“]s—ñ‚Ìì¬
-        * @param degree ‰ñ“]—Ê(“x)
+        * @param rad ‰ñ“]—Ê
         */
-        static Matrix4x4 createRotationZ(float degree);
+        static Matrix4x4 createRotationZ(const Radians& rad);
         /**
         * @brief ‰ñ“]s—ñ‚Ìì¬
-        * @param r Še²‚Ì‰ñ“]—Ê(“x)
+        * @param r Še²‚Ì‰ñ“]—Ê
         */
         static Matrix4x4 createRotation(const Vector3& r);
-        /**
-        * @brief ‰ñ“]s—ñ‚ÌƒZƒbƒgƒAƒbƒv
-        * @param r Še²‚Ì‰ñ“]—Ê(“x)
-        */
-        Matrix4x4& setupRotation(const Vector3& r);
         /**
         * @brief Šg‘åEk¬s—ñ‚Ìì¬
         * @param s Še²‚ÌŠg‘åEk¬‚Ì‘å‚«‚³
@@ -120,7 +116,7 @@ namespace Framework::Math {
         * @param nearZ Å‹ß“_
         * @param farZ Å‰““_
         */
-        static Matrix4x4 createProjection(float fovY, float aspect, float nearZ, float farZ);
+        static Matrix4x4 createProjection(const Radians& fovY, float aspect, float nearZ, float farZ);
         /**
         * @brief ³“Š‰es—ñ‚Ìì¬
         * @param screenSize ‰æ–Ê‚Ì‘å‚«‚³
@@ -163,13 +159,13 @@ namespace Framework::Math {
     /**
     * @brief “™‰¿”äŠr‰‰Zq
     */
-    bool operator ==(const Matrix4x4& m1, const Matrix4x4& m2) {
+    inline bool operator ==(const Matrix4x4& m1, const Matrix4x4& m2) {
         return m1.m == m2.m;
     }
     /**
     * @brief “™‰¿”äŠr‰‰Zq
     */
-    bool operator !=(const Matrix4x4& m1, const Matrix4x4& m2) {
+    inline bool operator !=(const Matrix4x4& m1, const Matrix4x4& m2) {
         return !(m1 == m2);
     }
     /**

@@ -1,5 +1,5 @@
 #include "Vector4.h"
-#include "Math/MathUtility.h"
+#include "MathUtility.h"
 
 namespace Framework::Math {
     //’è”
