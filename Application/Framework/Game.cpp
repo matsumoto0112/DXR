@@ -68,10 +68,13 @@ namespace Framework {
         mDeviceResource->createDeviceResources();
         mDeviceResource->createWindowDependentResources();
 
+        mInputManager = std::make_unique<Input::InputManager>(mWindow->getHWnd());
         ImGuiManager::getInstance()->init(mWindow->getHWnd(), mDeviceResource->getDevice(), mDeviceResource->getBackBufferFormat());
     }
     //更新
-    void Game::onUpdate() { }
+    void Game::onUpdate() {
+        mInputManager->update();
+    }
     //描画開始
     void Game::renderStart() {
         mDeviceResource->prepare();

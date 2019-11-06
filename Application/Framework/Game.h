@@ -3,8 +3,9 @@
 #include <Windows.h>
 #include <string>
 #include "Device/ISystemEventNotify.h"
-#include "Window/Window.h"
 #include "DX/DeviceResource.h"
+#include "Input/InputManager.h"
+#include "Window/Window.h"
 
 namespace Framework {
     /**
@@ -73,5 +74,6 @@ namespace Framework {
         std::wstring mTitle; //!< ウィンドウタイトル
         std::unique_ptr<Window::Window> mWindow; //!< ウィンドウ
         std::unique_ptr<DX::DeviceResource> mDeviceResource; //!< デバイスリソース
+        std::unique_ptr<Input::InputManager> mInputManager; //!< 入力管理
     };
 } //Framework
