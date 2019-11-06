@@ -18,6 +18,11 @@ namespace DescriptorIndex {
     };
 } //DescriptorIndex
 
+struct AccelerationBuffer {
+    ComPtr<ID3D12Resource> buffer;
+    ComPtr<ID3D12Resource> scratch;
+};
+
 /**
 * @class Scene
 * @brief
@@ -42,8 +47,8 @@ public:
 private:
     Framework::DX::DeviceResource* mDeviceResource;
     std::unique_ptr<Framework::DX::DXRDevice> mDXRDevice;
-    ComPtr<ID3D12Resource> mBLASBuffer;
-    ComPtr<ID3D12Resource> mTLASBuffer;
+    AccelerationBuffer mBLASBuffer;
+    AccelerationBuffer mTLASBuffer;
     ComPtr<ID3D12Resource> mRayGenTable;
     ComPtr<ID3D12Resource> mMissTable;
     ComPtr<ID3D12Resource> mHitGroupTable;
