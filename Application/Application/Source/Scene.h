@@ -55,6 +55,7 @@ private:
     Framework::DX::ConstantBuffer<SceneConstantBuffer> mSceneCB;
 private:
     ComPtr<ID3D12RootSignature> mGlobalRootSignature; //!< グローバルルートシグネチャ
+    ComPtr<ID3D12RootSignature> mMissLocalRootSignature; //!< Missシェーダー用ローカルルートシグネチャ
     ComPtr<ID3D12StateObject> mDXRStateObject; //!< レイトレーシングパイプラインステート
     std::unique_ptr<Framework::DX::DescriptorTable> mDescriptorTable;
     Framework::DX::Buffer mRaytracingOutput;

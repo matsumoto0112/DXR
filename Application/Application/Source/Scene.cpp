@@ -87,6 +87,20 @@ void Scene::create() {
             serializeAndCreateRootSignature(mDeviceResource->getDevice(),
                 global, &mGlobalRootSignature);
         }
+        //ローカルルートシグネチャを作る
+        {
+            //Missシェーダー用ローカルルートシグネチャ
+            {
+                CD3DX12_ROOT_PARAMETER rootParams[LocalRootSignature::Miss::Count];
+                rootParams[0].InitAsConstants(align(sizeof(XMFLOAT4), 32), 1);
+
+                CD3DX12_ROOT_SIGNATURE_DESC local(_countof(rootParams), rootParams);
+                local.Flags = D3D12_ROOT_SIGNATURE_FLAGS::D3D12_ROOT_SIGNATURE_FLAG_LOCAL_ROOT_SIGNATURE;
+                serializeAndCreateRootSignature(mDeviceResource->getDevice(),
+                    local, &mMissLocalRootSignature);
+            }
+
+        }
     }
     //パイプライン作成
     {
@@ -125,7 +139,15 @@ void Scene::create() {
         }
         //ローカルルートシグネチャの設定
         {
+            //Missシェーダー
+            {
+                CD3DX12_LOCAL_ROOT_SIGNATURE_SUBOBJECT* local = pipeline.CreateSubobject<CD3DX12_LOCAL_ROOT_SIGNATURE_SUBOBJECT>();
+                local->SetRootSignature(mMissLocalRootSignature.Get());
 
+                CD3DX12_SUBOBJECT_TO_EXPORTS_ASSOCIATION_SUBOBJECT* asso = pipeline.CreateSubobject<CD3DX12_SUBOBJECT_TO_EXPORTS_ASSOCIATION_SUBOBJECT>();
+                asso->SetSubobjectToAssociate(*local);
+                asso->AddExport(MISS_SHADER_NAME.c_str());
+            }
         }
         //グローバルルートシグネチャの設定
         {
@@ -319,10 +341,14 @@ void Scene::create() {
         }
         //MissShader
         {
+            struct RootArgument {
+                XMFLOAT4 color;
+            } rootArgument;
+            rootArgument.color = { 0,1,0,1 };
             UINT num = 1;
-            UINT recordSize = shaderIDSize;
+            UINT recordSize = shaderIDSize + sizeof(RootArgument);
             ShaderTable table(device, num, recordSize, L"MissShaderTable");
-            table.push_back(ShaderRecord(missShaderID, shaderIDSize));
+            table.push_back(ShaderRecord(missShaderID, shaderIDSize, &rootArgument, sizeof(RootArgument)));
             mMissTable = table.getResource();
         }
         //HitGroup

@@ -17,6 +17,7 @@
     <None Include="Assets\Shader\Raytracing\Util\Helper.hlsli" />
     <None Include="Assets\Shader\Raytracing\Util\Global.hlsli" />
     <None Include="Assets\Shader\Raytracing\Util\Typedef.hlsli" />
+    <None Include="Assets\Shader\Raytracing\MissShader\Local.hlsli" />
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="Assets\Shader\Raytracing\RayGenShader.hlsl" />

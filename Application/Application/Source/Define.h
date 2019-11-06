@@ -13,7 +13,13 @@ namespace GlobalRootSignature {
 } //GlobalRootSignature
 
 namespace LocalRootSignature {
+    namespace Miss {
+        enum MyEnum {
+            Back,
 
+            Count
+        };
+    } //Miss
 } //LocalRootSignature
 
 namespace RayType {

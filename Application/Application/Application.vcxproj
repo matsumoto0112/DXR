@@ -86,6 +86,7 @@
     <ClInclude Include="Source\targetvar.h" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="Assets\Shader\Raytracing\MissShader\Local.hlsli" />
     <None Include="Assets\Shader\Raytracing\Util\Global.hlsli" />
     <None Include="Assets\Shader\Raytracing\Util\Helper.hlsli" />
     <None Include="Assets\Shader\Raytracing\Util\Typedef.hlsli" />
