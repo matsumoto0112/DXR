@@ -15,6 +15,8 @@
     <ProjectCapability Include="SourceItemsFromImports" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="$(MSBuildThisFileDirectory)Camera\Perspective.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)Camera\Transform.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)DX\ConstantBuffer.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)DX\DeviceResource.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)DX\DescriptorTable.h" />
@@ -35,6 +37,10 @@
     <ClInclude Include="$(MSBuildThisFileDirectory)ImGui\Item\IntField.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)ImGui\Item\Text.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)ImGui\Item\Window.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)Input\InputManager.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)Input\Keyboard.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)Input\KeyCode.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)Input\Mouse.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)Libs\d3dx12.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)Libs\ImGui\imconfig.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)Libs\ImGui\imgui.h" />
@@ -72,6 +78,7 @@
     <ClInclude Include="$(MSBuildThisFileDirectory)Window\Window.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="$(MSBuildThisFileDirectory)Camera\Perspective.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)DX\DescriptorTable.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)DX\DeviceResource.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)DX\Raytracing\DXRDevice.cpp" />
@@ -83,6 +90,9 @@
     <ClCompile Include="$(MSBuildThisFileDirectory)ImGui\Item\IntField.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)ImGui\Item\Text.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)ImGui\Item\Window.cpp" />
+    <ClCompile Include="$(MSBuildThisFileDirectory)Input\InputManager.cpp" />
+    <ClCompile Include="$(MSBuildThisFileDirectory)Input\Keyboard.cpp" />
+    <ClCompile Include="$(MSBuildThisFileDirectory)Input\Mouse.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)Libs\ImGui\imgui.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)Libs\ImGui\imgui_draw.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)Libs\ImGui\imgui_impl_dx12.cpp" />
