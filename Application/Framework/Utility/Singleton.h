@@ -2,6 +2,7 @@
 
 namespace Framework::Utility {
     /**
+    * @class Singleton
     * @brief シングルトン基底クラス
     */
     template <class T>
@@ -11,7 +12,10 @@ namespace Framework::Utility {
         * @brief インスタンスの取得
         */
         static inline T* getInstance() {
-            static T instance;
+            struct temp : T {
+                temp() :T() { }
+            };
+            static temp instance;
             return &instance;
         }
     protected:
