@@ -8,6 +8,7 @@ typedef float4x4 XMMATRIX;
 typedef uint UINT;
 
 typedef float4x4 Mat4;
+typedef float2 Vec2;
 typedef float3 Vec3;
 typedef float4 Vec4;
 typedef float4 Color;

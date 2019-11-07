@@ -55,12 +55,17 @@ namespace {
         return res;
     }
 
-    inline std::vector<Vertex> toLinearVertices(const std::vector<std::vector<Framework::Math::Vector3>>& positions) {
+    inline std::vector<Vertex> toLinearVertices(
+        const std::vector<std::vector<Framework::Math::Vector3>>& positions,
+        const std::vector<std::vector<Framework::Math::Vector3>>& normals = {},
+        const std::vector<std::vector<Framework::Math::Vector2>>& uvs = {}) {
         std::vector<Vertex> res;
         for (size_t i = 0; i < positions.size(); i++) {
             for (size_t j = 0; j < positions[i].size(); j++) {
                 Vertex v;
                 v.position = positions[i][j];
+                v.normal = normals.empty() ? Vec3(0, 0, 0) : normals[i][j];
+                v.uv = uvs.empty() ? Vec2(0, 0) : uvs[i][j];
                 res.emplace_back(v);
             }
         }
@@ -240,7 +245,7 @@ void Scene::create() {
             {
                 Framework::Utility::GLBLoader loader(resourcePath + MODEL_NAMES.at(BottomLevelASType::WaterTower));
                 auto indices = toLinearList(loader.getIndicesPerSubMeshes());
-                auto vertices = toLinearVertices(loader.getPositionsPerSubMeshes());
+                auto vertices = toLinearVertices(loader.getPositionsPerSubMeshes(), loader.getNormalsPerSubMeshes(), loader.getUVsPerSubMeshes());
                 createBuffer(mDeviceResource->getDevice(), &mIndexBuffer[BottomLevelASType::WaterTower].resource, indices.data(), indices.size() * sizeof(indices[0]), L"IndexBuffer");
                 createBuffer(mDeviceResource->getDevice(), &mVertexBuffer[BottomLevelASType::WaterTower].resource, vertices.data(), vertices.size() * sizeof(vertices[0]), L"VertexBuffer");
             }
