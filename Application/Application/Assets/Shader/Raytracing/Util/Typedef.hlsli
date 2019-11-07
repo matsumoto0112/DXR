@@ -9,6 +9,7 @@ typedef uint UINT;
 
 typedef float4x4 Mat4;
 typedef float3 Vec3;
+typedef float4 Vec4;
 typedef float4 Color;
 
 #endif //! SHADER_RAYTRACING_UTIL_TYPEDEF_HLSLI

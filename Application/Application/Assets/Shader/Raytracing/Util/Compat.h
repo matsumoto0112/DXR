@@ -15,7 +15,7 @@ static const UINT MAX_RECURSION_NUM = 2;
 
 struct SceneConstantBuffer {
     Mat4 projectionToWorld;
-    XMFLOAT4 cameraPosition;
+    Vec4 cameraPosition;
 };
 
 struct Vertex {

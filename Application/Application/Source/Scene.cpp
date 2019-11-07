@@ -143,7 +143,7 @@ void Scene::create() {
             //Missシェーダー用ローカルルートシグネチャ
             {
                 CD3DX12_ROOT_PARAMETER rootParams[LocalRootSignature::Miss::Count];
-                rootParams[0].InitAsConstants(align(sizeof(XMFLOAT4), 32), 1);
+                rootParams[0].InitAsConstants(align(sizeof(MissConstant), 32), 1);
 
                 CD3DX12_ROOT_SIGNATURE_DESC local(_countof(rootParams), rootParams);
                 local.Flags = D3D12_ROOT_SIGNATURE_FLAGS::D3D12_ROOT_SIGNATURE_FLAG_LOCAL_ROOT_SIGNATURE;
@@ -451,7 +451,7 @@ void Scene::update() {
     mTime.update();
     mFPSText->setText(format("FPS:%0.3f", mTime.getFPS()));
 
-    mSceneCB->cameraPosition = { mCameraPosition.x,mCameraPosition.y,mCameraPosition.z,1.0f };
+    mSceneCB->cameraPosition = Vec4(mCameraPosition, 1.0f);
     const float aspect = static_cast<float>(mWidth) / static_cast<float>(mHeight);
 
     Mat4 view =
