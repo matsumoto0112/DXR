@@ -26,6 +26,4 @@ typedef BuiltInTriangleIntersectionAttributes MyAttr;
 //線形サンプラー
 SamplerState samLinear : register(s0);
 
-Texture2D texGlobal : register(t10);
-
 #endif //! SHADER_RAYTRACING_GLOBAL_HLSLI

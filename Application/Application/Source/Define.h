@@ -8,7 +8,6 @@ namespace GlobalRootSignature {
             SceneConstant,
             IndexBuffer,
             VertexBuffer,
-            GlobalTexture,
 
             Count
         };
@@ -29,8 +28,8 @@ namespace LocalRootSignature {
     namespace HitGroup {
         namespace Constants {
             enum MyEnum {
-                SceneConstants,
                 Texture0,
+                //SceneConstants,
 
                 Count
             };
