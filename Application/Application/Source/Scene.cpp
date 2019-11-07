@@ -22,7 +22,7 @@ namespace {
 
     static const std::unordered_map<BottomLevelASType::MyEnum, std::string> MODEL_NAMES =
     {
-        {BottomLevelASType::WaterTower , "sphere.glb" },
+        {BottomLevelASType::WaterTower , "igloo.glb" },
     };
 
     static constexpr UINT TRIANGLE_COUNT = 1;
@@ -369,7 +369,7 @@ void Scene::create() {
                 UINT offset = 0;
                 for (UINT n = 0; n < TRIANGLE_COUNT; n++) {
                     XMMATRIX transform = XMMatrixScaling(1, 1, 1) *
-                        XMMatrixRotationRollPitchYaw(XMConvertToRadians(102), XMConvertToRadians(0), XMConvertToRadians(86)) *
+                        XMMatrixRotationRollPitchYaw(0,0,0) *
                         XMMatrixTranslation((float)n * 5, 0, 0);
                     instanceDesc[n + offset].InstanceID = 0;
                     instanceDesc[n + offset].InstanceMask = 0xff;

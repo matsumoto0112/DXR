@@ -31,7 +31,6 @@ void Normal(inout RayPayload payload, in MyAttr attr) {
     float3 N = getNormal(getIndices(), attr);
     N = mul((float3x3)ObjectToWorld3x4(), N);
     N = N * 0.5 + 0.5;
-    N = saturate(N);
     payload.color = float4(N, 1.0);
 }
 
