@@ -66,6 +66,9 @@ private:
     Framework::Utility::GPUTimer mGpuTimer;
     Vec3 mCameraPosition;
     Vec3 mCameraRotation;
+    Vec3 mLightPosition;
+    Color mLightDiffuse;
+    Color mLightAmbient;
 private:
     std::unique_ptr<Framework::ImGUI::Window> mDebugWindow;
     std::shared_ptr<Framework::ImGUI::Text> mFPSText;

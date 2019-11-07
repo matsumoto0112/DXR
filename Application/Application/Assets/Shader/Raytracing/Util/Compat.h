@@ -16,6 +16,9 @@ static const UINT MAX_RECURSION_NUM = 2;
 struct SceneConstantBuffer {
     Mat4 projectionToWorld;
     Vec4 cameraPosition;
+    Vec4 lightPosition;
+    Color lightDiffuse;
+    Color lightAmbient;
 };
 
 struct Vertex {

@@ -6,7 +6,7 @@
 
 [shader("closesthit")]
 void Normal(inout RayPayload payload, in MyAttr attr) {
-    payload.color = float4(1, 0, 0, 1);
+    payload.color = g_sceneCB.lightAmbient;
 }
 
 #endif //! SHADER_RAYTRACING_HITGROUP_CLOSESTHIT_NORMAL_HLSL

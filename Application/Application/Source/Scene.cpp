@@ -78,6 +78,9 @@ Scene::Scene(Framework::DX::DeviceResource* device, UINT width, UINT height)
     mDebugWindow->addItem(mFPSText);
     mDescriptorTable = std::make_unique<DescriptorTable>();
     mCameraPosition = Vec3(0, 0, -10);
+    mLightPosition = Vec3(0, 100, -100);
+    mLightDiffuse = Color4(1.0f, 1.0f, 1.0f, 1.0f);
+    mLightAmbient = Color4(0.3f, 0.3f, 0.3f, 1.0f);
 
 #define CAMERA_POSITION_PARAMS(name,type,min,max) {\
         std::shared_ptr<Framework::ImGUI::FloatField> field = \
@@ -95,12 +98,19 @@ Scene::Scene(Framework::DX::DeviceResource* device, UINT width, UINT height)
         field->setMaxValue(max); \
         mDebugWindow->addItem(field); \
     }
+    mDebugWindow->addItem(std::make_shared<Framework::ImGUI::Text>("Camera"));
+    mDebugWindow->addItem(std::make_shared<Framework::ImGUI::Text>("Position"));
     CAMERA_POSITION_PARAMS("X", mCameraPosition.x, -100.0f, 100.0f);
     CAMERA_POSITION_PARAMS("Y", mCameraPosition.y, -100.0f, 100.0f);
     CAMERA_POSITION_PARAMS("Z", mCameraPosition.z, -100.0f, 100.0f);
+    mDebugWindow->addItem(std::make_shared<Framework::ImGUI::Text>("Rotation"));
     CAMERA_ROTATION_PARAMS("RX", mCameraRotation.x, 0.0f, 360.0f);
     CAMERA_ROTATION_PARAMS("RY", mCameraRotation.y, 0.0f, 360.0f);
     CAMERA_ROTATION_PARAMS("RZ", mCameraRotation.z, 0.0f, 360.0f);
+    mDebugWindow->addItem(std::make_shared<Framework::ImGUI::Text>("LightPosition"));
+    CAMERA_POSITION_PARAMS("LX", mLightPosition.x, -100.0f, 100.0f);
+    CAMERA_POSITION_PARAMS("LY", mLightPosition.y, -100.0f, 100.0f);
+    CAMERA_POSITION_PARAMS("LZ", mLightPosition.z, -100.0f, 100.0f);
 }
 
 Scene::~Scene() { }
@@ -462,6 +472,9 @@ void Scene::update() {
         Mat4::createProjection(Deg(45.0f), aspect, 0.1f, 100.0f);
     Mat4 vp = view * proj;
     mSceneCB->projectionToWorld = vp.inverse();
+    mSceneCB->lightPosition = Vec4(mLightPosition, 1.0f);
+    mSceneCB->lightDiffuse = mLightDiffuse;
+    mSceneCB->lightAmbient = mLightAmbient;
 }
 
 void Scene::render() {
