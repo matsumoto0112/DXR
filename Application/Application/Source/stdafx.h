@@ -38,3 +38,5 @@
 #include "Framework/Math/VectorUtil.h"
 
 #include "Framework/ImGui/Item/ImGUI.h"
+
+#include "Application/Source/Typedef.h"

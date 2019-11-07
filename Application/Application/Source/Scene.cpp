@@ -25,8 +25,8 @@ namespace {
         {BottomLevelASType::WaterTower , "igloo.glb" },
     };
 
-    static constexpr UINT TRIANGLE_COUNT = 0;
-    static constexpr UINT QUAD_COUNT = 1;
+    static constexpr UINT TRIANGLE_COUNT = 1;
+    static constexpr UINT QUAD_COUNT = 0;
     static constexpr UINT TLAS_NUM = TRIANGLE_COUNT + QUAD_COUNT;
 
     auto createBuffer = [](ID3D12Device* device, ID3D12Resource** resource, void* data, UINT64 size, LPCWSTR name = nullptr) {
@@ -444,12 +444,16 @@ void Scene::update() {
     mFPSText->setText(format("FPS:%0.3f", mTime.getFPS()));
 
     mSceneCB->cameraPosition = mCameraPosition;
-    XMMATRIX view = XMMatrixRotationRollPitchYaw(mCameraRotation.x, mCameraRotation.y, mCameraRotation.z) * XMMatrixTranslation(mCameraPosition.x, mCameraPosition.y, mCameraPosition.z);
-    view = XMMatrixInverse(nullptr, view);
     const float aspect = static_cast<float>(mWidth) / static_cast<float>(mHeight);
-    XMMATRIX proj = XMMatrixPerspectiveFovLH(XMConvertToDegrees(45.0f), aspect, 0.1f, 100.0f);
-    XMMATRIX vp = view * proj;
-    mSceneCB->projectionToWorld = XMMatrixInverse(nullptr, vp);
+
+    Mat4 view =
+        Mat4::createRotation(Vec3((float)Deg(mCameraRotation.x), (float)Deg(mCameraRotation.y), (float)Deg(mCameraRotation.z))) *
+        Mat4::createTranslate(Vec3(mCameraPosition.x, mCameraPosition.y, mCameraPosition.z));
+    view = view.inverse();
+    Mat4 proj =
+        Mat4::createProjection(Deg(45.0f), aspect, 0.1f, 100.0f);
+    Mat4 vp = view * proj;
+    mSceneCB->projectionToWorld = vp.inverse();
 }
 
 void Scene::render() {

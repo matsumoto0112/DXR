@@ -11,6 +11,7 @@
     <ClInclude Include="Assets\Shader\Raytracing\Util\Compat.h" />
     <ClInclude Include="Source\Scene.h" />
     <ClInclude Include="Source\Define.h" />
+    <ClInclude Include="Source\Typedef.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />

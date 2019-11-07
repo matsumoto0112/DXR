@@ -6,6 +6,7 @@
 #else
 #include <DirectXMath.h>
 #include <Windows.h>
+#include "Application/Source/Typedef.h"
 using namespace DirectX;
 typedef UINT16 Index;
 #endif
@@ -13,8 +14,8 @@ typedef UINT16 Index;
 static const UINT MAX_RECURSION_NUM = 2;
 
 struct SceneConstantBuffer {
+    Mat4 projectionToWorld;
     XMFLOAT4 cameraPosition;
-    XMMATRIX projectionToWorld;
 };
 
 struct Vertex {

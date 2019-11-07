@@ -84,6 +84,7 @@
     <ClInclude Include="Source\Scene.h" />
     <ClInclude Include="Source\stdafx.h" />
     <ClInclude Include="Source\targetvar.h" />
+    <ClInclude Include="Source\Typedef.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Assets\Shader\Raytracing\MissShader\Local.hlsli" />
