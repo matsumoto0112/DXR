@@ -639,19 +639,17 @@ void Scene::create() {
             //Sphere
             {
                 //rootArguments.cb.color = Color4(1, 1, 0, 1);
-                //rootArguments.cb.indexOffset = std::get<0>(getOffset(LocalRootSignature::HitGroupIndex::Sphere));
-                //rootArguments.cb.vertexOffset = std::get<1>(getOffset(LocalRootSignature::HitGroupIndex::Sphere));
-                rootArguments.tex0 = mTextures[1].gpuHandle;
-                rootArguments.cb.i = 0.0f;
+                rootArguments.cb.indexOffset = std::get<0>(getOffset(LocalRootSignature::HitGroupIndex::Sphere));
+                rootArguments.cb.vertexOffset = std::get<1>(getOffset(LocalRootSignature::HitGroupIndex::Sphere));
+                rootArguments.tex0 = mTextures[0].gpuHandle;
                 table.push_back(ShaderRecord(hitGroup_SphereShaderID, shaderIDSize, &rootArguments, sizeof(RootArgument)));
             }
             //Quad
             {
                 //rootArguments.cb.color = Color4(1, 0, 0, 1);
-                //rootArguments.cb.indexOffset = std::get<0>(getOffset(LocalRootSignature::HitGroupIndex::Quad));
-                //rootArguments.cb.vertexOffset = std::get<1>(getOffset(LocalRootSignature::HitGroupIndex::Quad));
-                rootArguments.tex0 = mTextures[0].gpuHandle;
-                rootArguments.cb.i = 0.8f;
+                rootArguments.cb.indexOffset = std::get<0>(getOffset(LocalRootSignature::HitGroupIndex::Quad));
+                rootArguments.cb.vertexOffset = std::get<1>(getOffset(LocalRootSignature::HitGroupIndex::Quad));
+                rootArguments.tex0 = mTextures[1].gpuHandle;
                 table.push_back(ShaderRecord(hitGroup_QuadShaderID, shaderIDSize, &rootArguments, sizeof(RootArgument)));
             }
             mHitGroupStride = table.getShaderRecordSize();

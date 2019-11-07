@@ -11,10 +11,9 @@ using namespace DirectX;
 #endif
 
 struct HitGroupConstant {
-    float i;
     //Color color;
-    //UINT vertexOffset;
-    //UINT indexOffset;
+    UINT vertexOffset;
+    UINT indexOffset;
 
 //#ifndef HLSL
 //    D3D12_GPU_DESCRIPTOR_HANDLE tex0;
