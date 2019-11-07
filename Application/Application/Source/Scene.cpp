@@ -9,7 +9,7 @@
 #include "CompiledShaders/Normal.hlsl.h"
 #include "CompiledShaders/RayGenShader.hlsl.h"
 
-#include "Application/Assets/Shader/Raytracing/Util/Compat.h"
+#include "Application/Assets/Shader/Raytracing/Util/MissCompat.h"
 
 using namespace Framework::DX;
 using namespace Framework::Utility;
@@ -168,6 +168,14 @@ void Scene::create() {
                 local.Flags = D3D12_ROOT_SIGNATURE_FLAGS::D3D12_ROOT_SIGNATURE_FLAG_LOCAL_ROOT_SIGNATURE;
                 serializeAndCreateRootSignature(mDeviceResource->getDevice(),
                     local, &mMissLocalRootSignature);
+            }
+            //HitGroupシェーダー用ローカルルートシグネチャ
+            {
+                //WaterTower
+                CD3DX12_ROOT_PARAMETER params[LocalRootSignature::HitGroup::Count];
+                //params[0].InitAsConstants(align())
+                {
+                }
             }
         }
     }
@@ -369,7 +377,7 @@ void Scene::create() {
                 UINT offset = 0;
                 for (UINT n = 0; n < TRIANGLE_COUNT; n++) {
                     XMMATRIX transform = XMMatrixScaling(1, 1, 1) *
-                        XMMatrixRotationRollPitchYaw(0,0,0) *
+                        XMMatrixRotationRollPitchYaw(0, 0, 0) *
                         XMMatrixTranslation((float)n * 5, 0, 0);
                     instanceDesc[n + offset].InstanceID = 0;
                     instanceDesc[n + offset].InstanceMask = 0xff;

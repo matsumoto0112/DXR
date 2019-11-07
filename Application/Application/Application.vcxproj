@@ -79,7 +79,8 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="Assets\Shader\Raytracing\Util\Compat.h" />
+    <ClInclude Include="Assets\Shader\Raytracing\Util\GlobalCompat.h" />
+    <ClInclude Include="Assets\Shader\Raytracing\Util\MissCompat.h" />
     <ClInclude Include="Source\Define.h" />
     <ClInclude Include="Source\Scene.h" />
     <ClInclude Include="Source\stdafx.h" />
@@ -87,6 +88,7 @@
     <ClInclude Include="Source\Typedef.h" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="Assets\Shader\Raytracing\HitGroup\Local.hlsli" />
     <None Include="Assets\Shader\Raytracing\MissShader\Local.hlsli" />
     <None Include="Assets\Shader\Raytracing\Util\Global.hlsli" />
     <None Include="Assets\Shader\Raytracing\Util\Helper.hlsli" />

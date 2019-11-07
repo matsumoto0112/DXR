@@ -22,6 +22,22 @@ namespace LocalRootSignature {
             Count
         };
     } //Miss
+    //マテリアルとして使用する
+    //使用するテクスチャなどの種類ごとに作成する必要がある
+    namespace HitGroup {
+        enum MyEnum {
+            WaterTower,
+            Quad,
+
+            Count
+        };
+    } //HitGroup
+    struct WaterTowerRootArgument {
+        Color color;
+    };
+    struct QuadRootArgument {
+        Color color;
+    };
 } //LocalRootSignature
 
 namespace RayType {

@@ -8,10 +8,11 @@
   <ItemGroup>
     <ClInclude Include="Source\stdafx.h" />
     <ClInclude Include="Source\targetvar.h" />
-    <ClInclude Include="Assets\Shader\Raytracing\Util\Compat.h" />
     <ClInclude Include="Source\Scene.h" />
     <ClInclude Include="Source\Define.h" />
     <ClInclude Include="Source\Typedef.h" />
+    <ClInclude Include="Assets\Shader\Raytracing\Util\GlobalCompat.h" />
+    <ClInclude Include="Assets\Shader\Raytracing\Util\MissCompat.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
@@ -19,6 +20,7 @@
     <None Include="Assets\Shader\Raytracing\Util\Global.hlsli" />
     <None Include="Assets\Shader\Raytracing\Util\Typedef.hlsli" />
     <None Include="Assets\Shader\Raytracing\MissShader\Local.hlsli" />
+    <None Include="Assets\Shader\Raytracing\HitGroup\Local.hlsli" />
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="Assets\Shader\Raytracing\RayGenShader.hlsl" />

@@ -1,3 +1,8 @@
+/**
+* @file Typedef.hlsli
+* @brief シェーダーとcpp内で共通した変数名を使用するための定義
+*/
+
 #ifndef SHADER_RAYTRACING_UTIL_TYPEDEF_HLSLI
 #define SHADER_RAYTRACING_UTIL_TYPEDEF_HLSLI
 

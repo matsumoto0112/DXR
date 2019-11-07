@@ -1,8 +1,14 @@
+/**
+* @file Global.hlsli
+* @brief シェーダーファイル全体で使用するグローバルヘッダー
+*/
+
+
 #ifndef SHADER_RAYTRACING_GLOBAL_HLSLI
 #define SHADER_RAYTRACING_GLOBAL_HLSLI
 
 #define HLSL
-#include "Compat.h"
+#include "GlobalCompat.h"
 
 //Top-Level-AS構造体
 RaytracingAccelerationStructure g_scene : register(t0, space0);
@@ -14,7 +20,7 @@ ConstantBuffer<SceneConstantBuffer> g_sceneCB : register(b0);
 ByteAddressBuffer Indices : register(t1, space0);
 //頂点配列
 StructuredBuffer<Vertex> Vertices : register(t2, space0);
-
+//三角形の衝突情報
 typedef BuiltInTriangleIntersectionAttributes MyAttr;
 
 #endif //! SHADER_RAYTRACING_GLOBAL_HLSLI

@@ -6,7 +6,7 @@
 #include "Utility/GPUTimer.h"
 #include "Utility/Time.h"
 #include "Define.h"
-#include "Application/Assets/Shader/Raytracing/Util/Compat.h"
+#include "Application/Assets/Shader/Raytracing/Util/GlobalCompat.h"
 
 namespace DescriptorIndex {
     enum MyEnum {
@@ -56,6 +56,7 @@ private:
 private:
     ComPtr<ID3D12RootSignature> mGlobalRootSignature; //!< グローバルルートシグネチャ
     ComPtr<ID3D12RootSignature> mMissLocalRootSignature; //!< Missシェーダー用ローカルルートシグネチャ
+    std::array<ComPtr<ID3D12RootSignature>, LocalRootSignature::HitGroup::Count> mHitGroupLocalRootSignature;
     ComPtr<ID3D12StateObject> mDXRStateObject; //!< レイトレーシングパイプラインステート
     std::unique_ptr<Framework::DX::DescriptorTable> mDescriptorTable;
     Framework::DX::Buffer mResourcesIndexBuffer; //!< リソースのインデックスバッファ

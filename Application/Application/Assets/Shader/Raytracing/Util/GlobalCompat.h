@@ -1,5 +1,10 @@
-#ifndef SHADER_RAYTRACING_COMPAT_H
-#define SHADER_RAYTRACING_COMPAT_H
+/**
+* @file GlobalCompat.h
+* @brief シェーダーファイルとcpp内で共通して使用する互換性を持った構造体、定義
+*/
+
+#ifndef SHADER_RAYTRACING_GLOBALCOMPAT_H
+#define SHADER_RAYTRACING_GLOBALCOMPAT_H
 
 #ifdef HLSL
 #include "Typedef.hlsli"
@@ -31,8 +36,4 @@ struct RayPayload {
     Color color;
 };
 
-struct MissConstant {
-    Color back;
-};
-
-#endif // !SHADER_RAYTRACING_COMPAT_H
+#endif // !SHADER_RAYTRACING_GLOBALCOMPAT_H

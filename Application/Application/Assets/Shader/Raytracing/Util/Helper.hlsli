@@ -1,5 +1,12 @@
+/**
+* @file Helper.hlsli
+* @brief ヘルパー関数、構造体定義
+*/
+
 #ifndef SHADER_RAYTRACING_UTIL_HELPER_HLSLI
 #define SHADER_RAYTRACING_UTIL_HELPER_HLSLI
+
+
 
 #define HLSL
 struct Ray {
@@ -57,7 +64,7 @@ inline float3 hitWorldPosition() {
 /**
 * @brief 衝突点の法線を取得する
 */
-inline float3 getNormal(float3 normals[3], in MyAttr attr) {
+inline static float3 getNormal(float3 normals[3], in MyAttr attr) {
     return normals[0] +
         attr.barycentrics.x * (normals[1] - normals[0]) +
         attr.barycentrics.y * (normals[2] - normals[0]);
@@ -66,7 +73,7 @@ inline float3 getNormal(float3 normals[3], in MyAttr attr) {
 /**
 * @brief 衝突点のUVを取得する
 */
-inline float2 getUV(float2 uvs[3], in MyAttr attr) {
+inline static float2 getUV(float2 uvs[3], in MyAttr attr) {
     return uvs[0] +
         attr.barycentrics.x * (uvs[1] - uvs[0]) +
         attr.barycentrics.y * (uvs[2] - uvs[0]);
