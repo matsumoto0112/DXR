@@ -36,6 +36,7 @@
 #include "Framework/Math/Vector3.h"
 #include "Framework/Math/Vector4.h"
 #include "Framework/Math/VectorUtil.h"
+#include "Framework/Utility/Color4.h"
 
 #include "Framework/ImGui/Item/ImGUI.h"
 

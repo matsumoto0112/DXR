@@ -5,3 +5,4 @@ using Vec3 = Framework::Math::Vector3;
 using Mat4 = Framework::Math::Matrix4x4;
 using Deg = Framework::Math::Degrees;
 using Rad = Framework::Math::Radians;
+using Color = Framework::Utility::Color4;

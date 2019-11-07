@@ -60,7 +60,7 @@ namespace {
         for (size_t i = 0; i < positions.size(); i++) {
             for (size_t j = 0; j < positions[i].size(); j++) {
                 Vertex v;
-                v.position = { positions[i][j].x,positions[i][j].y,positions[i][j].z };
+                v.position = positions[i][j];
                 res.emplace_back(v);
             }
         }
@@ -77,9 +77,9 @@ Scene::Scene(Framework::DX::DeviceResource* device, UINT width, UINT height)
     mFPSText = std::make_shared<Framework::ImGUI::Text>("FPS:");
     mDebugWindow->addItem(mFPSText);
     mDescriptorTable = std::make_unique<DescriptorTable>();
-    mCameraPosition = { 0,0,-10,1 };
+    mCameraPosition = Vec3(0, 0, -10);
 
-#define CAMERA_PARAMS(name,type,min,max) {\
+#define CAMERA_POSITION_PARAMS(name,type,min,max) {\
         std::shared_ptr<Framework::ImGUI::FloatField> field = \
             std::make_shared<Framework::ImGUI::FloatField>(name,type); \
         field ->setCallBack([&](float val){type = val; }); \
@@ -87,12 +87,20 @@ Scene::Scene(Framework::DX::DeviceResource* device, UINT width, UINT height)
         field->setMaxValue(max); \
         mDebugWindow->addItem(field); \
     }
-    CAMERA_PARAMS("X", mCameraPosition.x, -100.0f, 100.0f);
-    CAMERA_PARAMS("Y", mCameraPosition.y, -100.0f, 100.0f);
-    CAMERA_PARAMS("Z", mCameraPosition.z, -100.0f, 100.0f);
-    CAMERA_PARAMS("RX", mCameraRotation.x, -Framework::Math::PI2, Framework::Math::PI2);
-    CAMERA_PARAMS("RY", mCameraRotation.y, -Framework::Math::PI2, Framework::Math::PI2);
-    CAMERA_PARAMS("RZ", mCameraRotation.z, -Framework::Math::PI2, Framework::Math::PI2);
+#define CAMERA_ROTATION_PARAMS(name,type,min,max) {\
+        std::shared_ptr<Framework::ImGUI::FloatField> field = \
+            std::make_shared<Framework::ImGUI::FloatField>(name,type); \
+        field ->setCallBack([&](float val){type = (float)Rad(Deg(val)); }); \
+        field ->setMinValue(min); \
+        field->setMaxValue(max); \
+        mDebugWindow->addItem(field); \
+    }
+    CAMERA_POSITION_PARAMS("X", mCameraPosition.x, -100.0f, 100.0f);
+    CAMERA_POSITION_PARAMS("Y", mCameraPosition.y, -100.0f, 100.0f);
+    CAMERA_POSITION_PARAMS("Z", mCameraPosition.z, -100.0f, 100.0f);
+    CAMERA_ROTATION_PARAMS("RX", mCameraRotation.x, 0.0f, 360.0f);
+    CAMERA_ROTATION_PARAMS("RY", mCameraRotation.y, 0.0f, 360.0f);
+    CAMERA_ROTATION_PARAMS("RZ", mCameraRotation.z, 0.0f, 360.0f);
 }
 
 Scene::~Scene() { }
@@ -232,10 +240,10 @@ void Scene::create() {
                 createBuffer(mDeviceResource->getDevice(), &mIndexBuffer[BottomLevelASType::Quad].resource, indices.data(), indices.size() * sizeof(indices[0]), L"IndexBuffer");
                 std::vector<Vertex> vertices =
                 {
-                    { XMFLOAT3(-1,1,0) },
-                    { XMFLOAT3(1,1,0) },
-                    { XMFLOAT3(1,-1,0) },
-                    { XMFLOAT3(-1,-1,0) },
+                    { Vec3(-1,1,0) },
+                    { Vec3(1,1,0) },
+                    { Vec3(1,-1,0) },
+                    { Vec3(-1,-1,0) },
                 };
                 createBuffer(mDeviceResource->getDevice(), &mVertexBuffer[BottomLevelASType::Quad].resource, vertices.data(), vertices.size() * sizeof(vertices[0]), L"VertexBuffer");
             }
@@ -385,7 +393,7 @@ void Scene::create() {
             struct RootArgument {
                 MissConstant cb;
             } rootArgument;
-            rootArgument.cb.back = { 0,1,1,1 };
+            rootArgument.cb.back = Color(1, 1, 1, 1);
             UINT num = 1;
             UINT recordSize = shaderIDSize + sizeof(RootArgument);
             ShaderTable table(device, num, recordSize, L"MissShaderTable");
@@ -443,12 +451,12 @@ void Scene::update() {
     mTime.update();
     mFPSText->setText(format("FPS:%0.3f", mTime.getFPS()));
 
-    mSceneCB->cameraPosition = mCameraPosition;
+    mSceneCB->cameraPosition = { mCameraPosition.x,mCameraPosition.y,mCameraPosition.z,1.0f };
     const float aspect = static_cast<float>(mWidth) / static_cast<float>(mHeight);
 
     Mat4 view =
-        Mat4::createRotation(Vec3((float)Deg(mCameraRotation.x), (float)Deg(mCameraRotation.y), (float)Deg(mCameraRotation.z))) *
-        Mat4::createTranslate(Vec3(mCameraPosition.x, mCameraPosition.y, mCameraPosition.z));
+        Mat4::createRotation(mCameraRotation) *
+        Mat4::createTranslate(mCameraPosition);
     view = view.inverse();
     Mat4 proj =
         Mat4::createProjection(Deg(45.0f), aspect, 0.1f, 100.0f);

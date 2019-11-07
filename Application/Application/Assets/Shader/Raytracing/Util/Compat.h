@@ -19,15 +19,15 @@ struct SceneConstantBuffer {
 };
 
 struct Vertex {
-    XMFLOAT3 position;
+    Vec3 position;
 };
 
 struct RayPayload {
-    XMFLOAT4 color;
+    Color color;
 };
 
 struct MissConstant {
-    XMFLOAT4 back;
+    Color back;
 };
 
 #endif // !SHADER_RAYTRACING_COMPAT_H
