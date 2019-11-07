@@ -79,6 +79,7 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Assets\Shader\Raytracing\Util\HitGroupCompat.h" />
     <ClInclude Include="Assets\Shader\Raytracing\Util\GlobalCompat.h" />
     <ClInclude Include="Assets\Shader\Raytracing\Util\MissCompat.h" />
     <ClInclude Include="Source\Define.h" />

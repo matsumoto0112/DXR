@@ -13,6 +13,7 @@
     <ClInclude Include="Source\Typedef.h" />
     <ClInclude Include="Assets\Shader\Raytracing\Util\GlobalCompat.h" />
     <ClInclude Include="Assets\Shader\Raytracing\Util\MissCompat.h" />
+    <ClInclude Include="Assets\Shader\Raytracing\Util\HitGroupCompat.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />

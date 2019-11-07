@@ -4,6 +4,7 @@
 #define HLSL
 #include "../../Util/Global.hlsli"
 #include "../../Util/Helper.hlsli"
+#include "../Local.hlsli"
 
 static inline uint3 getIndices() {
     uint indexSizeInBytes = 2;
@@ -43,8 +44,10 @@ void Normal(inout RayPayload payload, in MyAttr attr) {
     //N = N * 0.5 + 0.5;
     //payload.color = float4(N, 1.0);
 
-    float2 uv = getUV(getIndices(), attr);
-    payload.color = float4(uv, 0, 1);
+    //float2 uv = getUV(getIndices(), attr);
+    //payload.color = float4(uv, 0, 1);
+
+    payload.color = l_sceneCB.color;
 }
 
 #endif //! SHADER_RAYTRACING_HITGROUP_CLOSESTHIT_NORMAL_HLSL

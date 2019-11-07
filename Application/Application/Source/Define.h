@@ -26,8 +26,7 @@ namespace LocalRootSignature {
     //使用するテクスチャなどの種類ごとに作成する必要がある
     namespace HitGroup {
         enum MyEnum {
-            WaterTower,
-            Quad,
+            Normal,
 
             Count
         };

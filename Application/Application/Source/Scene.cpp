@@ -10,6 +10,7 @@
 #include "CompiledShaders/RayGenShader.hlsl.h"
 
 #include "Application/Assets/Shader/Raytracing/Util/MissCompat.h"
+#include "Application/Assets/Shader/Raytracing/Util/HitGroupCompat.h"
 
 using namespace Framework::DX;
 using namespace Framework::Utility;
@@ -171,11 +172,13 @@ void Scene::create() {
             }
             //HitGroupシェーダー用ローカルルートシグネチャ
             {
-                //WaterTower
                 CD3DX12_ROOT_PARAMETER params[LocalRootSignature::HitGroup::Count];
-                //params[0].InitAsConstants(align())
-                {
-                }
+                params[0].InitAsConstants(align(sizeof(HitGroupConstant), 32), 1);
+
+                CD3DX12_ROOT_SIGNATURE_DESC local(_countof(params), params);
+                local.Flags = D3D12_ROOT_SIGNATURE_FLAGS::D3D12_ROOT_SIGNATURE_FLAG_LOCAL_ROOT_SIGNATURE;
+                serializeAndCreateRootSignature(mDeviceResource->getDevice(),
+                    local, &mHitGroupLocalRootSignature[LocalRootSignature::HitGroup::Normal]);
             }
         }
     }
@@ -224,6 +227,15 @@ void Scene::create() {
                 CD3DX12_SUBOBJECT_TO_EXPORTS_ASSOCIATION_SUBOBJECT* asso = pipeline.CreateSubobject<CD3DX12_SUBOBJECT_TO_EXPORTS_ASSOCIATION_SUBOBJECT>();
                 asso->SetSubobjectToAssociate(*local);
                 asso->AddExport(MISS_SHADER_NAME.c_str());
+            }
+            //HitGroupシェーダー
+            {
+                CD3DX12_LOCAL_ROOT_SIGNATURE_SUBOBJECT* local = pipeline.CreateSubobject<CD3DX12_LOCAL_ROOT_SIGNATURE_SUBOBJECT>();
+                local->SetRootSignature(mHitGroupLocalRootSignature[LocalRootSignature::HitGroup::Normal].Get());
+
+                CD3DX12_SUBOBJECT_TO_EXPORTS_ASSOCIATION_SUBOBJECT* asso = pipeline.CreateSubobject<CD3DX12_SUBOBJECT_TO_EXPORTS_ASSOCIATION_SUBOBJECT>();
+                asso->SetSubobjectToAssociate(*local);
+                asso->AddExport(HIT_GROUP_NAME.c_str());
             }
         }
         //グローバルルートシグネチャの設定
@@ -472,10 +484,14 @@ void Scene::create() {
         }
         //HitGroup
         {
+            struct RootArgument {
+                HitGroupConstant cb;
+            } rootArguments;
+            rootArguments.cb.color = Color4(1, 1, 0, 1);
             UINT num = 1;
-            UINT recordSize = shaderIDSize;
+            UINT recordSize = shaderIDSize + sizeof(RootArgument);
             ShaderTable table(device, num, recordSize, L"HitGroupShaderTable");
-            table.push_back(ShaderRecord(hitGroupShaderID, shaderIDSize));
+            table.push_back(ShaderRecord(hitGroupShaderID, shaderIDSize, &rootArguments, sizeof(rootArguments)));
             mHitGroupTable = table.getResource();
         }
     }
