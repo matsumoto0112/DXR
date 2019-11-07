@@ -22,7 +22,7 @@ namespace {
 
     static const std::unordered_map<BottomLevelASType::MyEnum, std::string> MODEL_NAMES =
     {
-        {BottomLevelASType::WaterTower , "igloo.glb" },
+        {BottomLevelASType::WaterTower , "sphere.glb" },
     };
 
     static constexpr UINT TRIANGLE_COUNT = 1;

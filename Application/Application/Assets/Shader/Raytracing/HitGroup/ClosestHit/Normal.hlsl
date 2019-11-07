@@ -26,12 +26,25 @@ static inline float3 getNormal(in uint3 indices, in MyAttr attr) {
     return getNormal(normals, attr);
 }
 
+static inline float2 getUV(in uint3 indices, in MyAttr attr) {
+    float2 uvs[3]=
+    {
+        Vertices[indices[0]].uv,
+        Vertices[indices[1]].uv,
+        Vertices[indices[2]].uv,
+    };
+    return getUV(uvs, attr);
+}
+
 [shader("closesthit")]
 void Normal(inout RayPayload payload, in MyAttr attr) {
-    float3 N = getNormal(getIndices(), attr);
-    N = mul((float3x3)ObjectToWorld3x4(), N);
-    N = N * 0.5 + 0.5;
-    payload.color = float4(N, 1.0);
+    //float3 N = getNormal(getIndices(), attr);
+    //N = mul((float3x3)ObjectToWorld3x4(), N);
+    //N = N * 0.5 + 0.5;
+    //payload.color = float4(N, 1.0);
+
+    float2 uv = getUV(getIndices(), attr);
+    payload.color = float4(uv, 0, 1);
 }
 
 #endif //! SHADER_RAYTRACING_HITGROUP_CLOSESTHIT_NORMAL_HLSL
