@@ -19,15 +19,16 @@ namespace {
     static const std::wstring MISS_SHADER_NAME = L"Miss";
     static const std::wstring CLOSEST_HIT_NAME = L"Normal";
     static const std::wstring RAY_GEN_NAME = L"RayGenShader";
-    static const std::wstring HIT_GROUP_NAME = L"HitGroup";
+    static const std::wstring HIT_GROUP_SPHERE_NAME = L"HitGroup_Sphere";
+    static const std::wstring HIT_GROUP_QUAD_NAME = L"HitGroup_Quad";
 
     static const std::unordered_map<BottomLevelASType::MyEnum, std::string> MODEL_NAMES =
     {
         {BottomLevelASType::WaterTower , "sphere.glb" },
     };
 
-    static constexpr UINT TRIANGLE_COUNT = 1;
-    static constexpr UINT QUAD_COUNT = 1;
+    static constexpr UINT TRIANGLE_COUNT = 5;
+    static constexpr UINT QUAD_COUNT = 5;
     static constexpr UINT TLAS_NUM = TRIANGLE_COUNT + QUAD_COUNT;
 
     auto createBuffer = [](ID3D12Device* device, ID3D12Resource** resource, void* data, UINT64 size, LPCWSTR name = nullptr) {
@@ -205,10 +206,20 @@ void Scene::create() {
         }
         //HitGroupをまとめる
         {
-            CD3DX12_HIT_GROUP_SUBOBJECT* hitGroup = pipeline.CreateSubobject<CD3DX12_HIT_GROUP_SUBOBJECT>();
-            hitGroup->SetClosestHitShaderImport(CLOSEST_HIT_NAME.c_str());
-            hitGroup->SetHitGroupExport(HIT_GROUP_NAME.c_str());
-            hitGroup->SetHitGroupType(D3D12_HIT_GROUP_TYPE::D3D12_HIT_GROUP_TYPE_TRIANGLES);
+            //Sphere
+            {
+                CD3DX12_HIT_GROUP_SUBOBJECT* hitGroup = pipeline.CreateSubobject<CD3DX12_HIT_GROUP_SUBOBJECT>();
+                hitGroup->SetClosestHitShaderImport(CLOSEST_HIT_NAME.c_str());
+                hitGroup->SetHitGroupExport(HIT_GROUP_SPHERE_NAME.c_str());
+                hitGroup->SetHitGroupType(D3D12_HIT_GROUP_TYPE::D3D12_HIT_GROUP_TYPE_TRIANGLES);
+            }
+            //Quad
+            {
+                CD3DX12_HIT_GROUP_SUBOBJECT* hitGroup = pipeline.CreateSubobject<CD3DX12_HIT_GROUP_SUBOBJECT>();
+                hitGroup->SetClosestHitShaderImport(CLOSEST_HIT_NAME.c_str());
+                hitGroup->SetHitGroupExport(HIT_GROUP_QUAD_NAME.c_str());
+                hitGroup->SetHitGroupType(D3D12_HIT_GROUP_TYPE::D3D12_HIT_GROUP_TYPE_TRIANGLES);
+            }
         }
         //シェーダーコンフィグ
         {
@@ -230,12 +241,24 @@ void Scene::create() {
             }
             //HitGroupシェーダー
             {
-                CD3DX12_LOCAL_ROOT_SIGNATURE_SUBOBJECT* local = pipeline.CreateSubobject<CD3DX12_LOCAL_ROOT_SIGNATURE_SUBOBJECT>();
-                local->SetRootSignature(mHitGroupLocalRootSignature[LocalRootSignature::HitGroup::Normal].Get());
+                //Sphere
+                {
+                    CD3DX12_LOCAL_ROOT_SIGNATURE_SUBOBJECT* local = pipeline.CreateSubobject<CD3DX12_LOCAL_ROOT_SIGNATURE_SUBOBJECT>();
+                    local->SetRootSignature(mHitGroupLocalRootSignature[LocalRootSignature::HitGroup::Normal].Get());
 
-                CD3DX12_SUBOBJECT_TO_EXPORTS_ASSOCIATION_SUBOBJECT* asso = pipeline.CreateSubobject<CD3DX12_SUBOBJECT_TO_EXPORTS_ASSOCIATION_SUBOBJECT>();
-                asso->SetSubobjectToAssociate(*local);
-                asso->AddExport(HIT_GROUP_NAME.c_str());
+                    CD3DX12_SUBOBJECT_TO_EXPORTS_ASSOCIATION_SUBOBJECT* asso = pipeline.CreateSubobject<CD3DX12_SUBOBJECT_TO_EXPORTS_ASSOCIATION_SUBOBJECT>();
+                    asso->SetSubobjectToAssociate(*local);
+                    asso->AddExport(HIT_GROUP_SPHERE_NAME.c_str());
+                }
+                //Quad
+                {
+                    CD3DX12_LOCAL_ROOT_SIGNATURE_SUBOBJECT* local = pipeline.CreateSubobject<CD3DX12_LOCAL_ROOT_SIGNATURE_SUBOBJECT>();
+                    local->SetRootSignature(mHitGroupLocalRootSignature[LocalRootSignature::HitGroup::Normal].Get());
+
+                    CD3DX12_SUBOBJECT_TO_EXPORTS_ASSOCIATION_SUBOBJECT* asso = pipeline.CreateSubobject<CD3DX12_SUBOBJECT_TO_EXPORTS_ASSOCIATION_SUBOBJECT>();
+                    asso->SetSubobjectToAssociate(*local);
+                    asso->AddExport(HIT_GROUP_QUAD_NAME.c_str());
+                }
             }
         }
         //グローバルルートシグネチャの設定
@@ -394,7 +417,7 @@ void Scene::create() {
                     instanceDesc[n + offset].InstanceID = 0;
                     instanceDesc[n + offset].InstanceMask = 0xff;
                     instanceDesc[n + offset].Flags = D3D12_RAYTRACING_INSTANCE_FLAGS::D3D12_RAYTRACING_INSTANCE_FLAG_NONE;
-                    instanceDesc[n + offset].InstanceContributionToHitGroupIndex = 0;
+                    instanceDesc[n + offset].InstanceContributionToHitGroupIndex = LocalRootSignature::HitGroupIndex::Sphere;
                     instanceDesc[n + offset].AccelerationStructure = mBLASBuffers[BottomLevelASType::WaterTower].buffer->GetGPUVirtualAddress();
                     XMStoreFloat3x4(reinterpret_cast<XMFLOAT3X4*>(instanceDesc[n + offset].Transform), transform);
                 }
@@ -404,12 +427,12 @@ void Scene::create() {
                     instanceDesc[n + offset].InstanceID = 0;
                     instanceDesc[n + offset].InstanceMask = 0xff;
                     instanceDesc[n + offset].Flags = D3D12_RAYTRACING_INSTANCE_FLAGS::D3D12_RAYTRACING_INSTANCE_FLAG_NONE;
-                    instanceDesc[n + offset].InstanceContributionToHitGroupIndex = 0;
+                    instanceDesc[n + offset].InstanceContributionToHitGroupIndex = LocalRootSignature::HitGroupIndex::Quad;
                     instanceDesc[n + offset].AccelerationStructure = mBLASBuffers[BottomLevelASType::Quad].buffer->GetGPUVirtualAddress();
                     XMStoreFloat3x4(reinterpret_cast<XMFLOAT3X4*>(instanceDesc[n + offset].Transform), transform);
                 }
 
-                createBuffer(device, &instanceDescs, &instanceDesc[0], instanceDesc.size() * sizeof(D3D12_RAYTRACING_INSTANCE_DESC), L"InstanceDescs");
+                createBuffer(device, &instanceDescs, instanceDesc.data(), instanceDesc.size() * sizeof(D3D12_RAYTRACING_INSTANCE_DESC), L"InstanceDescs");
                 topLevelBuildDesc.DestAccelerationStructureData = mTLASBuffer.buffer->GetGPUVirtualAddress();
                 topLevelBuildDesc.ScratchAccelerationStructureData = mTLASBuffer.scratch->GetGPUVirtualAddress();
                 topLevelInputs.InstanceDescs = instanceDescs->GetGPUVirtualAddress();
@@ -460,7 +483,8 @@ void Scene::create() {
         MY_THROW_IF_FAILED(mDXRStateObject.As(&stateObjectProp));
         void* rayGenShaderID = stateObjectProp->GetShaderIdentifier(RAY_GEN_NAME.c_str());
         void* missShaderID = stateObjectProp->GetShaderIdentifier(MISS_SHADER_NAME.c_str());
-        void* hitGroupShaderID = stateObjectProp->GetShaderIdentifier(HIT_GROUP_NAME.c_str());
+        void* hitGroup_SphereShaderID = stateObjectProp->GetShaderIdentifier(HIT_GROUP_SPHERE_NAME.c_str());
+        void* hitGroup_QuadShaderID = stateObjectProp->GetShaderIdentifier(HIT_GROUP_QUAD_NAME.c_str());
         UINT shaderIDSize = D3D12_SHADER_IDENTIFIER_SIZE_IN_BYTES;
         //RayGenShader
         {
@@ -487,11 +511,20 @@ void Scene::create() {
             struct RootArgument {
                 HitGroupConstant cb;
             } rootArguments;
-            rootArguments.cb.color = Color4(1, 1, 0, 1);
-            UINT num = 1;
-            UINT recordSize = shaderIDSize + sizeof(RootArgument);
+            UINT num = 2;
+            UINT recordSize = shaderIDSize + LocalRootSignature::rootArgumentSize();
             ShaderTable table(device, num, recordSize, L"HitGroupShaderTable");
-            table.push_back(ShaderRecord(hitGroupShaderID, shaderIDSize, &rootArguments, sizeof(rootArguments)));
+            //Sphere
+            {
+                rootArguments.cb.color = Color4(1, 1, 0, 1);
+                table.push_back(ShaderRecord(hitGroup_SphereShaderID, shaderIDSize, &rootArguments, sizeof(rootArguments)));
+            }
+            //Quad
+            {
+                rootArguments.cb.color = Color4(1, 0, 0, 1);
+                table.push_back(ShaderRecord(hitGroup_QuadShaderID, shaderIDSize, &rootArguments, sizeof(rootArguments)));
+            }
+            mHitGroupStride = table.getShaderRecordSize();
             mHitGroupTable = table.getResource();
         }
     }
@@ -577,7 +610,7 @@ void Scene::render() {
 
     dispatchDesc.HitGroupTable.StartAddress = mHitGroupTable->GetGPUVirtualAddress();
     dispatchDesc.HitGroupTable.SizeInBytes = mHitGroupTable->GetDesc().Width;
-    dispatchDesc.HitGroupTable.StrideInBytes = dispatchDesc.HitGroupTable.SizeInBytes;
+    dispatchDesc.HitGroupTable.StrideInBytes = mHitGroupStride;
 
     dispatchDesc.Width = mWidth;
     dispatchDesc.Height = mHeight;

@@ -86,23 +86,23 @@ namespace Framework::Math {
         * @brief 最大値の取得
         */
         template <class T>
-        static inline T mymax(const std::initializer_list<T>& param);
+        static inline constexpr T mymax(const std::initializer_list<T>& param);
         /**
         * @brief 最大値の取得
         */
         template <class T>
-        static inline T mymax(const T& t1, const T& t2);
+        static inline constexpr T mymax(const T& t1, const T& t2);
 
         /**
         * @brief 最小値の取得
         */
         template <class T>
-        static inline T mymin(const std::initializer_list<T>& param);
+        static inline constexpr T mymin(const std::initializer_list<T>& param);
         /**
         * @brief 最小値の取得
         */
         template <class T>
-        static inline T mymin(const T& t1, const T& t2);
+        static inline constexpr T mymin(const T& t1, const T& t2);
     };
 
     //クランプ処理
@@ -124,24 +124,24 @@ namespace Framework::Math {
 
     //最大値の取得
     template<class T>
-    inline T MathUtil::mymax(const std::initializer_list<T>& param) {
+    inline constexpr T MathUtil::mymax(const std::initializer_list<T>& param) {
         return std::max(param);
     }
 
     //最大値の取得
     template<class T>
-    inline T MathUtil::mymax(const T& t1, const T& t2) {
+    inline constexpr T MathUtil::mymax(const T& t1, const T& t2) {
         return std::max(t1, t2);
     }
 
     //最小値の取得
     template<class T>
-    inline T MathUtil::mymin(const std::initializer_list<T>& param) {
+    inline constexpr T MathUtil::mymin(const std::initializer_list<T>& param) {
         return std::min(param);
     }
     //最小値の取得
     template<class T>
-    inline T MathUtil::mymin(const T& t1, const T& t2) {
+    inline constexpr T MathUtil::mymin(const T& t1, const T& t2) {
         return std::min(t1, t2);
     }
 } //Framework::Math

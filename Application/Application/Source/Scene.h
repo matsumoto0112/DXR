@@ -51,6 +51,7 @@ private:
     AccelerationBuffer mTLASBuffer;
     ComPtr<ID3D12Resource> mRayGenTable;
     ComPtr<ID3D12Resource> mMissTable;
+    UINT mHitGroupStride;
     ComPtr<ID3D12Resource> mHitGroupTable;
     Framework::DX::ConstantBuffer<SceneConstantBuffer> mSceneCB;
 private:

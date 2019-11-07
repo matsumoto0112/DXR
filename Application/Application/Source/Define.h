@@ -23,7 +23,8 @@ namespace LocalRootSignature {
         };
     } //Miss
     //マテリアルとして使用する
-    //使用するテクスチャなどの種類ごとに作成する必要がある
+    //使用するルートシグネチャごとに分ける
+    //ルートシグネチャの分け方はコンスタントバッファの構造体の種類
     namespace HitGroup {
         enum MyEnum {
             Normal,
@@ -31,12 +32,21 @@ namespace LocalRootSignature {
             Count
         };
     } //HitGroup
-    struct WaterTowerRootArgument {
+    struct NormalRootArgument {
         Color color;
     };
-    struct QuadRootArgument {
-        Color color;
-    };
+    namespace HitGroupIndex {
+        enum MyEnum {
+            Sphere,
+            Quad,
+
+            Count
+        };
+    } //HitGroupIndex
+
+    inline constexpr UINT rootArgumentSize() {
+        return Framework::Math::MathUtil::mymax({ (UINT)sizeof(NormalRootArgument) });
+    }
 } //LocalRootSignature
 
 namespace RayType {
