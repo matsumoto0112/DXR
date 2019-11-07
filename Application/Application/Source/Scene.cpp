@@ -25,8 +25,8 @@ namespace {
         {BottomLevelASType::WaterTower , "igloo.glb" },
     };
 
-    static constexpr UINT TRIANGLE_COUNT = 1;
-    static constexpr UINT QUAD_COUNT = 0;
+    static constexpr UINT TRIANGLE_COUNT = 0;
+    static constexpr UINT QUAD_COUNT = 1;
     static constexpr UINT TLAS_NUM = TRIANGLE_COUNT + QUAD_COUNT;
 
     auto createBuffer = [](ID3D12Device* device, ID3D12Resource** resource, void* data, UINT64 size, LPCWSTR name = nullptr) {
@@ -142,7 +142,6 @@ void Scene::create() {
                 serializeAndCreateRootSignature(mDeviceResource->getDevice(),
                     local, &mMissLocalRootSignature);
             }
-
         }
     }
     //パイプライン作成
@@ -384,9 +383,9 @@ void Scene::create() {
         //MissShader
         {
             struct RootArgument {
-                XMFLOAT4 color;
+                MissConstant cb;
             } rootArgument;
-            rootArgument.color = { 0,1,0,1 };
+            rootArgument.cb.back = { 0,1,1,1 };
             UINT num = 1;
             UINT recordSize = shaderIDSize + sizeof(RootArgument);
             ShaderTable table(device, num, recordSize, L"MissShaderTable");
@@ -445,7 +444,6 @@ void Scene::update() {
     mFPSText->setText(format("FPS:%0.3f", mTime.getFPS()));
 
     mSceneCB->cameraPosition = mCameraPosition;
-    //XMMATRIX view = XMMatrixLookAtLH(XMLoadFloat4(&mCameraPosition), { 0,0,0 }, { 0,1,0 });
     XMMATRIX view = XMMatrixRotationRollPitchYaw(mCameraRotation.x, mCameraRotation.y, mCameraRotation.z) * XMMatrixTranslation(mCameraPosition.x, mCameraPosition.y, mCameraPosition.z);
     view = XMMatrixInverse(nullptr, view);
     const float aspect = static_cast<float>(mWidth) / static_cast<float>(mHeight);

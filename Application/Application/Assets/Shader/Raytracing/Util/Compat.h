@@ -25,4 +25,8 @@ struct RayPayload {
     XMFLOAT4 color;
 };
 
+struct MissConstant {
+    XMFLOAT4 back;
+};
+
 #endif // !SHADER_RAYTRACING_COMPAT_H
