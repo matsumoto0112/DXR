@@ -64,6 +64,8 @@ private:
     UINT mHeight;
     Framework::Utility::Time mTime;
     Framework::Utility::GPUTimer mGpuTimer;
+    XMFLOAT4 mCameraPosition;
+    XMFLOAT4 mCameraRotation;
 private:
     std::unique_ptr<Framework::ImGUI::Window> mDebugWindow;
     std::shared_ptr<Framework::ImGUI::Text> mFPSText;

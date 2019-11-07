@@ -1,8 +1,9 @@
 #include "Scene.h"
-#include "Utility/StringUtil.h"
-#include "Utility/Debug.h"
 #include "DX/Raytracing/Helper.h"
-
+#include "Utility/Debug.h"
+#include "Utility/IO/GLBLoader.h"
+#include "Utility/Path.h"
+#include "Utility/StringUtil.h"
 
 #include "CompiledShaders/Miss.hlsl.h"
 #include "CompiledShaders/Normal.hlsl.h"
@@ -19,8 +20,13 @@ namespace {
     static const std::wstring RAY_GEN_NAME = L"RayGenShader";
     static const std::wstring HIT_GROUP_NAME = L"HitGroup";
 
-    static constexpr UINT TRIANGLE_COUNT = 3;
-    static constexpr UINT QUAD_COUNT = 5;
+    static const std::unordered_map<BottomLevelASType::MyEnum, std::string> MODEL_NAMES =
+    {
+        {BottomLevelASType::WaterTower , "igloo.glb" },
+    };
+
+    static constexpr UINT TRIANGLE_COUNT = 1;
+    static constexpr UINT QUAD_COUNT = 0;
     static constexpr UINT TLAS_NUM = TRIANGLE_COUNT + QUAD_COUNT;
 
     auto createBuffer = [](ID3D12Device* device, ID3D12Resource** resource, void* data, UINT64 size, LPCWSTR name = nullptr) {
@@ -39,6 +45,27 @@ namespace {
         memcpy(mapped, data, size);
         (*resource)->Unmap(0, nullptr);
     };
+
+    template <class T>
+    inline std::vector<T> toLinearList(const std::vector<std::vector<T>>& list) {
+        std::vector<T> res;
+        for (size_t i = 0; i < list.size(); i++) {
+            res.insert(res.end(), list[i].begin(), list[i].end());
+        }
+        return res;
+    }
+
+    inline std::vector<Vertex> toLinearVertices(const std::vector<std::vector<Framework::Math::Vector3>>& positions) {
+        std::vector<Vertex> res;
+        for (size_t i = 0; i < positions.size(); i++) {
+            for (size_t j = 0; j < positions[i].size(); j++) {
+                Vertex v;
+                v.position = { positions[i][j].x,positions[i][j].y,positions[i][j].z };
+                res.emplace_back(v);
+            }
+        }
+        return res;
+    }
 }
 
 Scene::Scene(Framework::DX::DeviceResource* device, UINT width, UINT height)
@@ -50,6 +77,22 @@ Scene::Scene(Framework::DX::DeviceResource* device, UINT width, UINT height)
     mFPSText = std::make_shared<Framework::ImGUI::Text>("FPS:");
     mDebugWindow->addItem(mFPSText);
     mDescriptorTable = std::make_unique<DescriptorTable>();
+    mCameraPosition = { 0,0,-10,1 };
+
+#define CAMERA_PARAMS(name,type,min,max) {\
+        std::shared_ptr<Framework::ImGUI::FloatField> field = \
+            std::make_shared<Framework::ImGUI::FloatField>(name,type); \
+        field ->setCallBack([&](float val){type = val; }); \
+        field ->setMinValue(min); \
+        field->setMaxValue(max); \
+        mDebugWindow->addItem(field); \
+    }
+    CAMERA_PARAMS("X", mCameraPosition.x, -100.0f, 100.0f);
+    CAMERA_PARAMS("Y", mCameraPosition.y, -100.0f, 100.0f);
+    CAMERA_PARAMS("Z", mCameraPosition.z, -100.0f, 100.0f);
+    CAMERA_PARAMS("RX", mCameraRotation.x, -Framework::Math::PI2, Framework::Math::PI2);
+    CAMERA_PARAMS("RY", mCameraRotation.y, -Framework::Math::PI2, Framework::Math::PI2);
+    CAMERA_PARAMS("RZ", mCameraRotation.z, -Framework::Math::PI2, Framework::Math::PI2);
 }
 
 Scene::~Scene() { }
@@ -173,17 +216,16 @@ void Scene::create() {
         std::array<Buffer, BottomLevelASType::Count> mIndexBuffer;
         std::array<Buffer, BottomLevelASType::Count> mVertexBuffer;
         {
-            //三角形のバッファ作成
+            auto path = Framework::Utility::ExePath::getInstance()->exe();
+            path = path.remove_filename();
+            auto resourcePath = Framework::Utility::toString(path.append("Resources\\Model\\").c_str());
+           //三角形のバッファ作成
             {
-                std::vector<Index> indices = { 0,1,2 };
-                createBuffer(mDeviceResource->getDevice(), &mIndexBuffer[BottomLevelASType::Triangle].resource, indices.data(), indices.size() * sizeof(indices[0]), L"IndexBuffer");
-                std::vector<Vertex> vertices =
-                {
-                    { XMFLOAT3(0,0,0) },
-                    { XMFLOAT3(1,-1,0) },
-                    { XMFLOAT3(-1,-1,0) },
-                };
-                createBuffer(mDeviceResource->getDevice(), &mVertexBuffer[BottomLevelASType::Triangle].resource, vertices.data(), vertices.size() * sizeof(vertices[0]), L"VertexBuffer");
+                Framework::Utility::GLBLoader loader(resourcePath + MODEL_NAMES.at(BottomLevelASType::WaterTower));
+                auto indices = toLinearList(loader.getIndicesPerSubMeshes());
+                auto vertices = toLinearVertices(loader.getPositionsPerSubMeshes());
+                createBuffer(mDeviceResource->getDevice(), &mIndexBuffer[BottomLevelASType::WaterTower].resource, indices.data(), indices.size() * sizeof(indices[0]), L"IndexBuffer");
+                createBuffer(mDeviceResource->getDevice(), &mVertexBuffer[BottomLevelASType::WaterTower].resource, vertices.data(), vertices.size() * sizeof(vertices[0]), L"VertexBuffer");
             }
             //四角形のバッファ作成
             {
@@ -296,7 +338,7 @@ void Scene::create() {
                     instanceDesc[n + offset].InstanceMask = 0xff;
                     instanceDesc[n + offset].Flags = D3D12_RAYTRACING_INSTANCE_FLAGS::D3D12_RAYTRACING_INSTANCE_FLAG_NONE;
                     instanceDesc[n + offset].InstanceContributionToHitGroupIndex = 0;
-                    instanceDesc[n + offset].AccelerationStructure = mBLASBuffers[BottomLevelASType::Triangle].buffer->GetGPUVirtualAddress();
+                    instanceDesc[n + offset].AccelerationStructure = mBLASBuffers[BottomLevelASType::WaterTower].buffer->GetGPUVirtualAddress();
                     XMStoreFloat3x4(reinterpret_cast<XMFLOAT3X4*>(instanceDesc[n + offset].Transform), transform);
                 }
                 offset = TRIANGLE_COUNT;
@@ -402,8 +444,10 @@ void Scene::update() {
     mTime.update();
     mFPSText->setText(format("FPS:%0.3f", mTime.getFPS()));
 
-    mSceneCB->cameraPosition = { 0,0,-10,1 };
-    XMMATRIX view = XMMatrixLookAtLH({ 0,0,-10 }, { 0,0,0 }, { 0,1,0 });
+    mSceneCB->cameraPosition = mCameraPosition;
+    //XMMATRIX view = XMMatrixLookAtLH(XMLoadFloat4(&mCameraPosition), { 0,0,0 }, { 0,1,0 });
+    XMMATRIX view = XMMatrixRotationRollPitchYaw(mCameraRotation.x, mCameraRotation.y, mCameraRotation.z) * XMMatrixTranslation(mCameraPosition.x, mCameraPosition.y, mCameraPosition.z);
+    view = XMMatrixInverse(nullptr, view);
     const float aspect = static_cast<float>(mWidth) / static_cast<float>(mHeight);
     XMMATRIX proj = XMMatrixPerspectiveFovLH(XMConvertToDegrees(45.0f), aspect, 0.1f, 100.0f);
     XMMATRIX vp = view * proj;
