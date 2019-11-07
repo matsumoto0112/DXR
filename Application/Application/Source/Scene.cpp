@@ -1,7 +1,9 @@
 #include "Scene.h"
+#include <numeric>
 #include "DX/Raytracing/Helper.h"
 #include "Utility/Debug.h"
 #include "Utility/IO/GLBLoader.h"
+#include "Utility/IO/TextureLoader.h"
 #include "Utility/Path.h"
 #include "Utility/StringUtil.h"
 
@@ -31,7 +33,7 @@ namespace {
     static constexpr UINT QUAD_COUNT = 5;
     static constexpr UINT TLAS_NUM = TRIANGLE_COUNT + QUAD_COUNT;
 
-    auto createBuffer = [](ID3D12Device* device, ID3D12Resource** resource, void* data, UINT64 size, LPCWSTR name = nullptr) {
+    inline void createBuffer(ID3D12Device* device, ID3D12Resource** resource, void* data, UINT64 size, LPCWSTR name = nullptr) {
         CD3DX12_HEAP_PROPERTIES heapProps(D3D12_HEAP_TYPE::D3D12_HEAP_TYPE_UPLOAD);
         CD3DX12_RESOURCE_DESC bufferDesc = CD3DX12_RESOURCE_DESC::Buffer(size);
         MY_THROW_IF_FAILED(device->CreateCommittedResource(
@@ -118,6 +120,8 @@ Scene::Scene(Framework::DX::DeviceResource* device, UINT width, UINT height)
     CAMERA_POSITION_PARAMS("LX", mLightPosition.x, -100.0f, 100.0f);
     CAMERA_POSITION_PARAMS("LY", mLightPosition.y, -100.0f, 100.0f);
     CAMERA_POSITION_PARAMS("LZ", mLightPosition.z, -100.0f, 100.0f);
+
+    mTextures.resize(1);
 }
 
 Scene::~Scene() { }
@@ -143,10 +147,11 @@ void Scene::create() {
         };
         //グローバルルートシグネチャをまずは作る
         {
-            CD3DX12_DESCRIPTOR_RANGE ranges[3];
+            CD3DX12_DESCRIPTOR_RANGE ranges[4];
             ranges[0].Init(D3D12_DESCRIPTOR_RANGE_TYPE::D3D12_DESCRIPTOR_RANGE_TYPE_UAV, 1, 0); //レンダーターゲット
             ranges[1].Init(D3D12_DESCRIPTOR_RANGE_TYPE::D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 1); //インデックスバッファ
             ranges[2].Init(D3D12_DESCRIPTOR_RANGE_TYPE::D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 2); //頂点バッファ
+            ranges[3].Init(D3D12_DESCRIPTOR_RANGE_TYPE::D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 10);
 
             CD3DX12_ROOT_PARAMETER rootParams[GlobalRootSignature::Slot::Count];
             rootParams[GlobalRootSignature::Slot::RenderTarget].InitAsDescriptorTable(1, &ranges[0]);
@@ -154,8 +159,12 @@ void Scene::create() {
             rootParams[GlobalRootSignature::Slot::SceneConstant].InitAsConstantBufferView(0);
             rootParams[GlobalRootSignature::Slot::IndexBuffer].InitAsDescriptorTable(1, &ranges[1]);
             rootParams[GlobalRootSignature::Slot::VertexBuffer].InitAsDescriptorTable(1, &ranges[2]);
+            rootParams[GlobalRootSignature::Slot::GlobalTexture].InitAsDescriptorTable(1, &ranges[3]);
 
-            CD3DX12_ROOT_SIGNATURE_DESC global(_countof(rootParams), rootParams);
+            CD3DX12_STATIC_SAMPLER_DESC sampler[1];
+            sampler[0] = CD3DX12_STATIC_SAMPLER_DESC(0, D3D12_FILTER::D3D12_FILTER_COMPARISON_MIN_MAG_MIP_LINEAR);
+
+            CD3DX12_ROOT_SIGNATURE_DESC global(_countof(rootParams), rootParams, _countof(sampler), sampler);
             serializeAndCreateRootSignature(mDeviceResource->getDevice(),
                 global, &mGlobalRootSignature);
         }
@@ -164,7 +173,7 @@ void Scene::create() {
             //Missシェーダー用ローカルルートシグネチャ
             {
                 CD3DX12_ROOT_PARAMETER rootParams[LocalRootSignature::Miss::Count];
-                rootParams[0].InitAsConstants(align(sizeof(MissConstant), 32), 1);
+                rootParams[0].InitAsConstants(align(sizeof(MissConstant), sizeof(UINT32)), 1);
 
                 CD3DX12_ROOT_SIGNATURE_DESC local(_countof(rootParams), rootParams);
                 local.Flags = D3D12_ROOT_SIGNATURE_FLAGS::D3D12_ROOT_SIGNATURE_FLAG_LOCAL_ROOT_SIGNATURE;
@@ -173,8 +182,11 @@ void Scene::create() {
             }
             //HitGroupシェーダー用ローカルルートシグネチャ
             {
-                CD3DX12_ROOT_PARAMETER params[LocalRootSignature::HitGroup::Count];
-                params[0].InitAsConstants(align(sizeof(HitGroupConstant), 32), 1);
+                CD3DX12_DESCRIPTOR_RANGE range[1];
+                range[0].Init(D3D12_DESCRIPTOR_RANGE_TYPE::D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 3);
+                CD3DX12_ROOT_PARAMETER params[LocalRootSignature::HitGroup::Constants::Count];
+                params[LocalRootSignature::HitGroup::Constants::SceneConstants].InitAsConstants(align(sizeof(HitGroupConstant), sizeof(UINT32)), 1);
+                params[LocalRootSignature::HitGroup::Constants::Texture0].InitAsDescriptorTable(1, &range[0]);
 
                 CD3DX12_ROOT_SIGNATURE_DESC local(_countof(params), params);
                 local.Flags = D3D12_ROOT_SIGNATURE_FLAGS::D3D12_ROOT_SIGNATURE_FLAG_LOCAL_ROOT_SIGNATURE;
@@ -279,6 +291,14 @@ void Scene::create() {
     {
         mDescriptorTable->create(mDeviceResource->getDevice(), HeapType::CBV_SRV_UAV, HeapFlag::ShaderVisible, 10000, L"DescriptorTable");
     }
+
+    std::array<UINT, LocalRootSignature::HitGroupIndex::Count > mIndexOffsets;
+    std::array<UINT, LocalRootSignature::HitGroupIndex::Count > mVertexOffsets;
+    auto getOffset = [&mIndexOffsets, &mVertexOffsets](LocalRootSignature::HitGroupIndex::MyEnum e) {
+        if (e == 0)return std::make_tuple<UINT, UINT>(0, 0);
+        else return std::make_tuple(std::accumulate(mIndexOffsets.begin(), mIndexOffsets.begin() + e, 0u), std::accumulate(mVertexOffsets.begin(), mVertexOffsets.begin() + e, 0u));
+    };
+
     //ジオメトリを生成する
     {
         //BLAS構築用のバッファ
@@ -290,10 +310,12 @@ void Scene::create() {
         {
             auto path = Framework::Utility::ExePath::getInstance()->exe();
             path = path.remove_filename();
-            auto resourcePath = Framework::Utility::toString(path.append("Resources\\Model\\").c_str());
+            auto resourcePath = Framework::Utility::toString(path.append("Resources\\").c_str());
+            auto modelPath = resourcePath + "Model\\";
+            auto texPath = resourcePath + "Texture\\";
            //三角形のバッファ作成
             {
-                Framework::Utility::GLBLoader loader(resourcePath + MODEL_NAMES.at(BottomLevelASType::WaterTower));
+                Framework::Utility::GLBLoader loader(modelPath + MODEL_NAMES.at(BottomLevelASType::WaterTower));
                 auto indices = toLinearList(loader.getIndicesPerSubMeshes());
                 auto vertices = toLinearVertices(loader.getPositionsPerSubMeshes(), loader.getNormalsPerSubMeshes(), loader.getUVsPerSubMeshes());
                 createBuffer(mDeviceResource->getDevice(), &mIndexBuffer[BottomLevelASType::WaterTower].resource, indices.data(), indices.size() * sizeof(indices[0]), L"IndexBuffer");
@@ -301,6 +323,55 @@ void Scene::create() {
 
                 resourceIndices.insert(resourceIndices.end(), indices.begin(), indices.end());
                 resourceVertices.insert(resourceVertices.end(), vertices.begin(), vertices.end());
+                mIndexOffsets[LocalRootSignature::HitGroupIndex::Sphere] = (UINT)indices.size();
+                mVertexOffsets[LocalRootSignature::HitGroupIndex::Sphere] = (UINT)vertices.size();
+
+                Framework::Utility::TextureLoader texLoader;
+                UINT w, h;
+                std::vector<uint8_t> texData = texLoader.load(toWString(texPath + "back2.png"), &w, &h);
+
+                //テクスチャリソースを作成する
+                CD3DX12_RESOURCE_DESC texDesc = CD3DX12_RESOURCE_DESC::Tex2D(
+                    DXGI_FORMAT::DXGI_FORMAT_R8G8B8A8_UNORM, w, h, 1);
+
+                D3D12_HEAP_PROPERTIES heapProp = {};
+                heapProp.Type = D3D12_HEAP_TYPE::D3D12_HEAP_TYPE_CUSTOM;
+                heapProp.CPUPageProperty = D3D12_CPU_PAGE_PROPERTY::D3D12_CPU_PAGE_PROPERTY_WRITE_BACK;
+                heapProp.MemoryPoolPreference = D3D12_MEMORY_POOL::D3D12_MEMORY_POOL_L0;
+                heapProp.VisibleNodeMask = 1;
+                heapProp.CreationNodeMask = 1;
+
+                ID3D12Device* device = mDeviceResource->getDevice();
+                MY_THROW_IF_FAILED(device->CreateCommittedResource(
+                    &heapProp,
+                    D3D12_HEAP_FLAGS::D3D12_HEAP_FLAG_NONE,
+                    &texDesc,
+                    D3D12_RESOURCE_STATES::D3D12_RESOURCE_STATE_GENERIC_READ,
+                    nullptr,
+                    IID_PPV_ARGS(&mTextures[0].resource)));
+
+                //テクスチャデータを書き込む
+                D3D12_BOX box = { 0,0,0,w ,h,1 };
+                UINT row = w * 4;
+                UINT slice = row * h;
+                MY_THROW_IF_FAILED(mTextures[0].resource->WriteToSubresource(
+                    0,
+                    &box,
+                    texData.data(), row, slice));
+
+                //シェーダーリソースビューを作成する
+                D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
+                srvDesc.ViewDimension = D3D12_SRV_DIMENSION::D3D12_SRV_DIMENSION_TEXTURE2D;
+                srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
+                srvDesc.Format = texDesc.Format;
+                srvDesc.Texture2D.MipLevels = 1;
+                srvDesc.Texture2D.MostDetailedMip = 0;
+                srvDesc.Texture2D.PlaneSlice = 0;
+                srvDesc.Texture2D.ResourceMinLODClamp = 0.0f;
+
+                mTextures[0].gpuHandle = mDescriptorTable->getGPUHandle(DescriptorIndex::TextureStart);
+                mTextures[0].cpuHandle = mDescriptorTable->getCPUHandle(DescriptorIndex::TextureStart);
+                device->CreateShaderResourceView(mTextures[0].resource.Get(), &srvDesc, mTextures[0].cpuHandle);
             }
             //四角形のバッファ作成
             {
@@ -308,15 +379,65 @@ void Scene::create() {
                 createBuffer(mDeviceResource->getDevice(), &mIndexBuffer[BottomLevelASType::Quad].resource, indices.data(), indices.size() * sizeof(indices[0]), L"IndexBuffer");
                 std::vector<Vertex> vertices =
                 {
-                    { Vec3(-1,1,0) },
-                    { Vec3(1,1,0) },
-                    { Vec3(1,-1,0) },
-                    { Vec3(-1,-1,0) },
+                    { Vec3(-1,1,0),Vec3(0,0,-1),Vec2(0,0) },
+                    { Vec3(1,1,0),Vec3(0,0,-1),Vec2(1,0)  },
+                    { Vec3(1,-1,0) ,Vec3(0,0,-1),Vec2(1,1) },
+                    { Vec3(-1,-1,0),Vec3(0,0,-1),Vec2(0,1)  },
                 };
                 createBuffer(mDeviceResource->getDevice(), &mVertexBuffer[BottomLevelASType::Quad].resource, vertices.data(), vertices.size() * sizeof(vertices[0]), L"VertexBuffer");
 
                 resourceIndices.insert(resourceIndices.end(), indices.begin(), indices.end());
                 resourceVertices.insert(resourceVertices.end(), vertices.begin(), vertices.end());
+                mIndexOffsets[LocalRootSignature::HitGroupIndex::Quad] = (UINT)indices.size();
+                mVertexOffsets[LocalRootSignature::HitGroupIndex::Quad] = (UINT)vertices.size();
+
+                //Framework::Utility::TextureLoader texLoader;
+                //UINT w, h;
+                //std::vector<uint8_t> texData = texLoader.load(toWString(texPath + "back2.png"), &w, &h);
+
+                ////テクスチャリソースを作成する
+                //CD3DX12_RESOURCE_DESC texDesc = CD3DX12_RESOURCE_DESC::Tex2D(
+                //    DXGI_FORMAT::DXGI_FORMAT_R8G8B8A8_UNORM, w, h, 1);
+
+                //D3D12_HEAP_PROPERTIES heapProp = {};
+                //heapProp.Type = D3D12_HEAP_TYPE::D3D12_HEAP_TYPE_CUSTOM;
+                //heapProp.CPUPageProperty = D3D12_CPU_PAGE_PROPERTY::D3D12_CPU_PAGE_PROPERTY_WRITE_BACK;
+                //heapProp.MemoryPoolPreference = D3D12_MEMORY_POOL::D3D12_MEMORY_POOL_L0;
+                //heapProp.VisibleNodeMask = 1;
+                //heapProp.CreationNodeMask = 1;
+
+                //ID3D12Device* device = mDeviceResource->getDevice();
+                //MY_THROW_IF_FAILED(device->CreateCommittedResource(
+                //    &heapProp,
+                //    D3D12_HEAP_FLAGS::D3D12_HEAP_FLAG_NONE,
+                //    &texDesc,
+                //    D3D12_RESOURCE_STATES::D3D12_RESOURCE_STATE_GENERIC_READ,
+                //    nullptr,
+                //    IID_PPV_ARGS(&mTextures[1].resource)));
+
+                ////テクスチャデータを書き込む
+                //D3D12_BOX box = { 0,0,0,w ,h,1 };
+                //UINT row = w * 4;
+                //UINT slice = row * h;
+                //MY_THROW_IF_FAILED(mTextures[1].resource->WriteToSubresource(
+                //    0,
+                //    &box,
+                //    texData.data(), row, slice));
+
+                ////シェーダーリソースビューを作成する
+                //D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
+                //srvDesc.ViewDimension = D3D12_SRV_DIMENSION::D3D12_SRV_DIMENSION_TEXTURE2D;
+                //srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
+                //srvDesc.Format = texDesc.Format;
+                //srvDesc.Texture2D.MipLevels = 1;
+                //srvDesc.Texture2D.MostDetailedMip = 0;
+                //srvDesc.Texture2D.PlaneSlice = 0;
+                //srvDesc.Texture2D.ResourceMinLODClamp = 0.0f;
+
+                //mTextures[1].gpuHandle = mDescriptorTable->getGPUHandle(DescriptorIndex::TextureStart + 1);
+                //mTextures[1].cpuHandle = mDescriptorTable->getCPUHandle(DescriptorIndex::TextureStart + 1);
+                //device->CreateShaderResourceView(mTextures[1].resource.Get(), &srvDesc, mTextures[1].cpuHandle);
+
             }
         }
         //BLAS・TLASの構築
@@ -517,11 +638,17 @@ void Scene::create() {
             //Sphere
             {
                 rootArguments.cb.color = Color4(1, 1, 0, 1);
+                rootArguments.cb.indexOffset = std::get<0>(getOffset(LocalRootSignature::HitGroupIndex::Sphere));
+                rootArguments.cb.vertexOffset = std::get<1>(getOffset(LocalRootSignature::HitGroupIndex::Sphere));
+                rootArguments.cb.tex0 = mTextures[0].gpuHandle;
                 table.push_back(ShaderRecord(hitGroup_SphereShaderID, shaderIDSize, &rootArguments, sizeof(rootArguments)));
             }
             //Quad
             {
                 rootArguments.cb.color = Color4(1, 0, 0, 1);
+                rootArguments.cb.indexOffset = std::get<0>(getOffset(LocalRootSignature::HitGroupIndex::Quad));
+                rootArguments.cb.vertexOffset = std::get<1>(getOffset(LocalRootSignature::HitGroupIndex::Quad));
+                //rootArguments.cb.tex0 = mTextures[0].gpuHandle;
                 table.push_back(ShaderRecord(hitGroup_QuadShaderID, shaderIDSize, &rootArguments, sizeof(rootArguments)));
             }
             mHitGroupStride = table.getShaderRecordSize();
@@ -599,6 +726,7 @@ void Scene::render() {
     commandList->SetComputeRootConstantBufferView(GlobalRootSignature::Slot::SceneConstant, mSceneCB.gpuVirtualAddress());
     commandList->SetComputeRootDescriptorTable(GlobalRootSignature::Slot::IndexBuffer, mResourcesIndexBuffer.gpuHandle);
     commandList->SetComputeRootDescriptorTable(GlobalRootSignature::Slot::VertexBuffer, mResourcesVertexBuffer.gpuHandle);
+    commandList->SetComputeRootDescriptorTable(GlobalRootSignature::Slot::GlobalTexture, mTextures[0].gpuHandle);
 
     D3D12_DISPATCH_RAYS_DESC dispatchDesc = {};
     dispatchDesc.RayGenerationShaderRecord.StartAddress = mRayGenTable->GetGPUVirtualAddress();

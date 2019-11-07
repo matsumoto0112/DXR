@@ -22,7 +22,7 @@ namespace Framework::Utility {
         //パスからデコーダーを作成
         HRESULT hr = mFactory->CreateDecoderFromFilename(
             filepath.c_str(), nullptr, GENERIC_READ, WICDecodeMetadataCacheOnDemand, &mDecoder);
-        MY_THROW_IF_FAILED_LOG(hr, "テクスチャの読み込みに失敗しました。\n%lsが存在しません。\n", filepath);
+        MY_THROW_IF_FAILED_LOG(hr, "テクスチャの読み込みに失敗しました。");
 
         //フレームの取得
         hr = mDecoder->GetFrame(0, &mFrame);

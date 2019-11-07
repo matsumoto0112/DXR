@@ -14,6 +14,10 @@ struct HitGroupConstant {
     Color color;
     UINT vertexOffset;
     UINT indexOffset;
+
+#ifndef HLSL
+    D3D12_GPU_DESCRIPTOR_HANDLE tex0;
+#endif
 };
 
 #endif // !SHADER_RAYTRACING_HITGROUP_HITGROUPCOMPAT_H

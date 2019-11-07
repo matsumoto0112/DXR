@@ -8,13 +8,16 @@
 #include "Define.h"
 #include "Application/Assets/Shader/Raytracing/Util/GlobalCompat.h"
 
+static constexpr UINT TEXTURE_NUM = 1000;
 namespace DescriptorIndex {
     enum MyEnum {
         RaytracingOutput,
         IndexBuffer,
         VertexBuffer,
+        TextureStart,
+        TextureEnd = TextureStart + TEXTURE_NUM,
 
-        Count
+        Count = TextureEnd + 1
     };
 } //DescriptorIndex
 
@@ -63,6 +66,7 @@ private:
     Framework::DX::Buffer mResourcesIndexBuffer; //!< リソースのインデックスバッファ
     Framework::DX::Buffer mResourcesVertexBuffer; //!< リソースの頂点バッファ
     Framework::DX::Buffer mRaytracingOutput;
+    std::vector<Framework::DX::Buffer> mTextures;
 private:
     UINT mWidth;
     UINT mHeight;

@@ -10,9 +10,9 @@ static inline uint3 getIndices() {
     uint indexSizeInBytes = 2;
     uint indicesPerTriangle = 3;
     uint triangleIndexStride = indicesPerTriangle * indexSizeInBytes;
-    uint baseIndex = PrimitiveIndex() * triangleIndexStride /*+ l_material.indexOffset*/;
+    uint baseIndex = PrimitiveIndex() * triangleIndexStride + l_sceneCB.indexOffset * indexSizeInBytes;
 
-    return loadIndices(baseIndex, Indices)/* + l_material.vertexOffset*/;
+    return loadIndices(baseIndex, Indices) + l_sceneCB.vertexOffset;
 }
 
 static inline float3 getNormal(in uint3 indices, in MyAttr attr) {
@@ -47,7 +47,14 @@ void Normal(inout RayPayload payload, in MyAttr attr) {
     //float2 uv = getUV(getIndices(), attr);
     //payload.color = float4(uv, 0, 1);
 
-    payload.color = l_sceneCB.color;
+    //payload.color = l_sceneCB.color;
+
+    float2 uv = getUV(getIndices(), attr);
+    float4 color = texGlobal.SampleLevel(samLinear, uv, 0.0);
+
+    payload.color = color;
+
+    
 }
 
 #endif //! SHADER_RAYTRACING_HITGROUP_CLOSESTHIT_NORMAL_HLSL

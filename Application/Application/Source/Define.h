@@ -8,6 +8,7 @@ namespace GlobalRootSignature {
             SceneConstant,
             IndexBuffer,
             VertexBuffer,
+            GlobalTexture,
 
             Count
         };
@@ -26,6 +27,14 @@ namespace LocalRootSignature {
     //使用するルートシグネチャごとに分ける
     //ルートシグネチャの分け方はコンスタントバッファの構造体の種類
     namespace HitGroup {
+        namespace Constants {
+            enum MyEnum {
+                SceneConstants,
+                Texture0,
+
+                Count
+            };
+        } //Constants
         enum MyEnum {
             Normal,
 

@@ -23,4 +23,9 @@ StructuredBuffer<Vertex> Vertices : register(t2, space0);
 //三角形の衝突情報
 typedef BuiltInTriangleIntersectionAttributes MyAttr;
 
+//線形サンプラー
+SamplerState samLinear : register(s0);
+
+Texture2D texGlobal : register(t10);
+
 #endif //! SHADER_RAYTRACING_GLOBAL_HLSLI
