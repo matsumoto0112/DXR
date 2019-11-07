@@ -10,15 +10,15 @@
 using namespace DirectX;
 #endif
 
-//struct HitGroupConstant {
-//    //UINT i;
-//    //Color color;
-//    UINT vertexOffset;
-//    UINT indexOffset;
-//
-////#ifndef HLSL
-////    D3D12_GPU_DESCRIPTOR_HANDLE tex0;
-////#endif
-//};
+struct HitGroupConstant {
+    float i;
+    //Color color;
+    //UINT vertexOffset;
+    //UINT indexOffset;
+
+//#ifndef HLSL
+//    D3D12_GPU_DESCRIPTOR_HANDLE tex0;
+//#endif
+};
 
 #endif // !SHADER_RAYTRACING_HITGROUP_HITGROUPCOMPAT_H

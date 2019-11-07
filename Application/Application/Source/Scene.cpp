@@ -184,9 +184,9 @@ void Scene::create() {
                 range[0].Init(D3D12_DESCRIPTOR_RANGE_TYPE::D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 3);
 
                 CD3DX12_ROOT_PARAMETER params[LocalRootSignature::HitGroup::Constants::Count];
-                //UINT contSize = align(sizeof(HitGroupConstant), sizeof(UINT32));
+                UINT contSize = align(sizeof(HitGroupConstant), sizeof(UINT32));
                 params[LocalRootSignature::HitGroup::Constants::Texture0].InitAsDescriptorTable(1, &range[0]);
-                //params[LocalRootSignature::HitGroup::Constants::SceneConstants].InitAsConstants(contSize, 1);
+                params[LocalRootSignature::HitGroup::Constants::SceneConstants].InitAsConstants(contSize, 1);
 
                 CD3DX12_ROOT_SIGNATURE_DESC local(_countof(params), params);
                 local.Flags = D3D12_ROOT_SIGNATURE_FLAGS::D3D12_ROOT_SIGNATURE_FLAG_LOCAL_ROOT_SIGNATURE;
@@ -630,8 +630,8 @@ void Scene::create() {
         //HitGroup
         {
             struct RootArgument {
-                //HitGroupConstant cb;
                 D3D12_GPU_DESCRIPTOR_HANDLE tex0;
+                HitGroupConstant cb;
             } rootArguments;
             UINT num = 2;
             UINT recordSize = shaderIDSize + sizeof(RootArgument);
@@ -642,6 +642,7 @@ void Scene::create() {
                 //rootArguments.cb.indexOffset = std::get<0>(getOffset(LocalRootSignature::HitGroupIndex::Sphere));
                 //rootArguments.cb.vertexOffset = std::get<1>(getOffset(LocalRootSignature::HitGroupIndex::Sphere));
                 rootArguments.tex0 = mTextures[1].gpuHandle;
+                rootArguments.cb.i = 0.0f;
                 table.push_back(ShaderRecord(hitGroup_SphereShaderID, shaderIDSize, &rootArguments, sizeof(RootArgument)));
             }
             //Quad
@@ -650,6 +651,7 @@ void Scene::create() {
                 //rootArguments.cb.indexOffset = std::get<0>(getOffset(LocalRootSignature::HitGroupIndex::Quad));
                 //rootArguments.cb.vertexOffset = std::get<1>(getOffset(LocalRootSignature::HitGroupIndex::Quad));
                 rootArguments.tex0 = mTextures[0].gpuHandle;
+                rootArguments.cb.i = 0.8f;
                 table.push_back(ShaderRecord(hitGroup_QuadShaderID, shaderIDSize, &rootArguments, sizeof(RootArgument)));
             }
             mHitGroupStride = table.getShaderRecordSize();
