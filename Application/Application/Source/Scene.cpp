@@ -27,7 +27,7 @@ namespace {
     };
 
     static constexpr UINT TRIANGLE_COUNT = 1;
-    static constexpr UINT QUAD_COUNT = 0;
+    static constexpr UINT QUAD_COUNT = 1;
     static constexpr UINT TLAS_NUM = TRIANGLE_COUNT + QUAD_COUNT;
 
     auto createBuffer = [](ID3D12Device* device, ID3D12Resource** resource, void* data, UINT64 size, LPCWSTR name = nullptr) {
@@ -400,7 +400,7 @@ void Scene::create() {
                 }
                 offset = TRIANGLE_COUNT;
                 for (UINT n = 0; n < QUAD_COUNT; n++) {
-                    XMMATRIX transform = XMMatrixScaling(1, 1, 1) * XMMatrixTranslation((float)n * 5, 0, 0);
+                    XMMATRIX transform = XMMatrixScaling(1, 1, 1) * XMMatrixTranslation((float)n * 5, 3, 0);
                     instanceDesc[n + offset].InstanceID = 0;
                     instanceDesc[n + offset].InstanceMask = 0xff;
                     instanceDesc[n + offset].Flags = D3D12_RAYTRACING_INSTANCE_FLAGS::D3D12_RAYTRACING_INSTANCE_FLAG_NONE;
