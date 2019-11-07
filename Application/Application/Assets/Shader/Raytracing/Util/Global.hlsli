@@ -10,6 +10,10 @@ RaytracingAccelerationStructure g_scene : register(t0, space0);
 RWTexture2D<float4> g_renderTarget : register(u0);
 //シーン情報
 ConstantBuffer<SceneConstantBuffer> g_sceneCB : register(b0);
+//インデックス配列
+ByteAddressBuffer Indices : register(t1, space0);
+//頂点配列
+StructuredBuffer<Vertex> Vertices : register(t2, space0);
 
 typedef BuiltInTriangleIntersectionAttributes MyAttr;
 

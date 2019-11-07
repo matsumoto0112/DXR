@@ -6,6 +6,8 @@ namespace GlobalRootSignature {
             RenderTarget,
             AccelerationStructure,
             SceneConstant,
+            IndexBuffer,
+            VertexBuffer,
 
             Count
         };

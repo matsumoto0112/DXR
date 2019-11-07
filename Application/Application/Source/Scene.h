@@ -10,9 +10,9 @@
 
 namespace DescriptorIndex {
     enum MyEnum {
+        RaytracingOutput,
         IndexBuffer,
         VertexBuffer,
-        RaytracingOutput,
 
         Count
     };
@@ -58,6 +58,8 @@ private:
     ComPtr<ID3D12RootSignature> mMissLocalRootSignature; //!< Missシェーダー用ローカルルートシグネチャ
     ComPtr<ID3D12StateObject> mDXRStateObject; //!< レイトレーシングパイプラインステート
     std::unique_ptr<Framework::DX::DescriptorTable> mDescriptorTable;
+    Framework::DX::Buffer mResourcesIndexBuffer; //!< リソースのインデックスバッファ
+    Framework::DX::Buffer mResourcesVertexBuffer; //!< リソースの頂点バッファ
     Framework::DX::Buffer mRaytracingOutput;
 private:
     UINT mWidth;

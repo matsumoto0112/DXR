@@ -22,7 +22,7 @@ namespace {
 
     static const std::unordered_map<BottomLevelASType::MyEnum, std::string> MODEL_NAMES =
     {
-        {BottomLevelASType::WaterTower , "igloo.glb" },
+        {BottomLevelASType::WaterTower , "sphere.glb" },
     };
 
     static constexpr UINT TRIANGLE_COUNT = 1;
@@ -141,13 +141,17 @@ void Scene::create() {
         };
         //グローバルルートシグネチャをまずは作る
         {
-            CD3DX12_DESCRIPTOR_RANGE ranges[1];
+            CD3DX12_DESCRIPTOR_RANGE ranges[3];
             ranges[0].Init(D3D12_DESCRIPTOR_RANGE_TYPE::D3D12_DESCRIPTOR_RANGE_TYPE_UAV, 1, 0); //レンダーターゲット
+            ranges[1].Init(D3D12_DESCRIPTOR_RANGE_TYPE::D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 1); //インデックスバッファ
+            ranges[2].Init(D3D12_DESCRIPTOR_RANGE_TYPE::D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 2); //頂点バッファ
 
             CD3DX12_ROOT_PARAMETER rootParams[GlobalRootSignature::Slot::Count];
             rootParams[GlobalRootSignature::Slot::RenderTarget].InitAsDescriptorTable(1, &ranges[0]);
             rootParams[GlobalRootSignature::Slot::AccelerationStructure].InitAsShaderResourceView(0);
             rootParams[GlobalRootSignature::Slot::SceneConstant].InitAsConstantBufferView(0);
+            rootParams[GlobalRootSignature::Slot::IndexBuffer].InitAsDescriptorTable(1, &ranges[1]);
+            rootParams[GlobalRootSignature::Slot::VertexBuffer].InitAsDescriptorTable(1, &ranges[2]);
 
             CD3DX12_ROOT_SIGNATURE_DESC global(_countof(rootParams), rootParams);
             serializeAndCreateRootSignature(mDeviceResource->getDevice(),
@@ -237,6 +241,9 @@ void Scene::create() {
         //BLAS構築用のバッファ
         std::array<Buffer, BottomLevelASType::Count> mIndexBuffer;
         std::array<Buffer, BottomLevelASType::Count> mVertexBuffer;
+
+        std::vector<Vertex> resourceVertices;
+        std::vector<Index> resourceIndices;
         {
             auto path = Framework::Utility::ExePath::getInstance()->exe();
             path = path.remove_filename();
@@ -248,6 +255,9 @@ void Scene::create() {
                 auto vertices = toLinearVertices(loader.getPositionsPerSubMeshes(), loader.getNormalsPerSubMeshes(), loader.getUVsPerSubMeshes());
                 createBuffer(mDeviceResource->getDevice(), &mIndexBuffer[BottomLevelASType::WaterTower].resource, indices.data(), indices.size() * sizeof(indices[0]), L"IndexBuffer");
                 createBuffer(mDeviceResource->getDevice(), &mVertexBuffer[BottomLevelASType::WaterTower].resource, vertices.data(), vertices.size() * sizeof(vertices[0]), L"VertexBuffer");
+
+                resourceIndices.insert(resourceIndices.end(), indices.begin(), indices.end());
+                resourceVertices.insert(resourceVertices.end(), vertices.begin(), vertices.end());
             }
             //四角形のバッファ作成
             {
@@ -261,6 +271,9 @@ void Scene::create() {
                     { Vec3(-1,-1,0) },
                 };
                 createBuffer(mDeviceResource->getDevice(), &mVertexBuffer[BottomLevelASType::Quad].resource, vertices.data(), vertices.size() * sizeof(vertices[0]), L"VertexBuffer");
+
+                resourceIndices.insert(resourceIndices.end(), indices.begin(), indices.end());
+                resourceVertices.insert(resourceVertices.end(), vertices.begin(), vertices.end());
             }
         }
         //BLAS・TLASの構築
@@ -355,7 +368,9 @@ void Scene::create() {
                 std::vector<D3D12_RAYTRACING_INSTANCE_DESC> instanceDesc(TLAS_NUM);
                 UINT offset = 0;
                 for (UINT n = 0; n < TRIANGLE_COUNT; n++) {
-                    XMMATRIX transform = XMMatrixScaling(3, 3, 1) * XMMatrixTranslation((float)n * 5, 0, 0);
+                    XMMATRIX transform = XMMatrixScaling(1, 1, 1) *
+                        XMMatrixRotationRollPitchYaw(XMConvertToRadians(102), XMConvertToRadians(0), XMConvertToRadians(86)) *
+                        XMMatrixTranslation((float)n * 5, 0, 0);
                     instanceDesc[n + offset].InstanceID = 0;
                     instanceDesc[n + offset].InstanceMask = 0xff;
                     instanceDesc[n + offset].Flags = D3D12_RAYTRACING_INSTANCE_FLAGS::D3D12_RAYTRACING_INSTANCE_FLAG_NONE;
@@ -365,7 +380,7 @@ void Scene::create() {
                 }
                 offset = TRIANGLE_COUNT;
                 for (UINT n = 0; n < QUAD_COUNT; n++) {
-                    XMMATRIX transform = XMMatrixScaling(1, 1, 1) * XMMatrixTranslation((float)n * 5, 5, 0);
+                    XMMATRIX transform = XMMatrixScaling(1, 1, 1) * XMMatrixTranslation((float)n * 5, 0, 0);
                     instanceDesc[n + offset].InstanceID = 0;
                     instanceDesc[n + offset].InstanceMask = 0xff;
                     instanceDesc[n + offset].Flags = D3D12_RAYTRACING_INSTANCE_FLAGS::D3D12_RAYTRACING_INSTANCE_FLAG_NONE;
@@ -384,6 +399,38 @@ void Scene::create() {
                 mDeviceResource->waitForGPU();
             }
 
+            //バッファのシェーダーリソースビュー作成
+            createBuffer(device, &mResourcesIndexBuffer.resource, resourceIndices.data(), resourceIndices.size() * sizeof(resourceIndices[0]), L"ResourceIndex");
+            createBuffer(device, &mResourcesVertexBuffer.resource, resourceVertices.data(), resourceVertices.size() * sizeof(resourceVertices[0]), L"ResourceVertex");
+
+            //インデックスバッファのリソースビュー作成
+            {
+                UINT indexBufferSize = (UINT)resourceIndices.size() * sizeof(resourceIndices[0]) / sizeof(float);
+                D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
+                srvDesc.ViewDimension = D3D12_SRV_DIMENSION::D3D12_SRV_DIMENSION_BUFFER;
+                srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
+                srvDesc.Buffer.NumElements = indexBufferSize;
+                srvDesc.Format = DXGI_FORMAT::DXGI_FORMAT_R32_TYPELESS;
+                srvDesc.Buffer.Flags = D3D12_BUFFER_SRV_FLAGS::D3D12_BUFFER_SRV_FLAG_RAW;
+                srvDesc.Buffer.StructureByteStride = 0;
+                mResourcesIndexBuffer.cpuHandle = mDescriptorTable->getCPUHandle(DescriptorIndex::IndexBuffer);
+                mResourcesIndexBuffer.gpuHandle = mDescriptorTable->getGPUHandle(DescriptorIndex::IndexBuffer);
+                device->CreateShaderResourceView(mResourcesIndexBuffer.resource.Get(), &srvDesc, mResourcesIndexBuffer.cpuHandle);
+            }
+            //頂点バッファのリソースビュー作成
+            {
+                UINT vertexBufferSize = (UINT)resourceVertices.size();
+                D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
+                srvDesc.ViewDimension = D3D12_SRV_DIMENSION::D3D12_SRV_DIMENSION_BUFFER;
+                srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
+                srvDesc.Buffer.NumElements = vertexBufferSize;
+                srvDesc.Format = DXGI_FORMAT::DXGI_FORMAT_UNKNOWN;
+                srvDesc.Buffer.Flags = D3D12_BUFFER_SRV_FLAGS::D3D12_BUFFER_SRV_FLAG_NONE;
+                srvDesc.Buffer.StructureByteStride = sizeof(resourceVertices[0]);
+                mResourcesVertexBuffer.cpuHandle = mDescriptorTable->getCPUHandle(DescriptorIndex::VertexBuffer);
+                mResourcesVertexBuffer.gpuHandle = mDescriptorTable->getGPUHandle(DescriptorIndex::VertexBuffer);
+                device->CreateShaderResourceView(mResourcesVertexBuffer.resource.Get(), &srvDesc, mResourcesVertexBuffer.cpuHandle);
+            }
         }
     }
     //シェーダーテーブルを構築する
@@ -491,8 +538,10 @@ void Scene::render() {
     ID3D12DescriptorHeap* heaps[] = { mDescriptorTable->getHeap() };
     commandList->SetDescriptorHeaps(1, heaps);
     commandList->SetComputeRootDescriptorTable(GlobalRootSignature::Slot::RenderTarget, mRaytracingOutput.gpuHandle);
-    commandList->SetComputeRootConstantBufferView(GlobalRootSignature::Slot::SceneConstant, mSceneCB.gpuVirtualAddress());
     commandList->SetComputeRootShaderResourceView(GlobalRootSignature::Slot::AccelerationStructure, mTLASBuffer.buffer->GetGPUVirtualAddress());
+    commandList->SetComputeRootConstantBufferView(GlobalRootSignature::Slot::SceneConstant, mSceneCB.gpuVirtualAddress());
+    commandList->SetComputeRootDescriptorTable(GlobalRootSignature::Slot::IndexBuffer, mResourcesIndexBuffer.gpuHandle);
+    commandList->SetComputeRootDescriptorTable(GlobalRootSignature::Slot::VertexBuffer, mResourcesVertexBuffer.gpuHandle);
 
     D3D12_DISPATCH_RAYS_DESC dispatchDesc = {};
     dispatchDesc.RayGenerationShaderRecord.StartAddress = mRayGenTable->GetGPUVirtualAddress();
