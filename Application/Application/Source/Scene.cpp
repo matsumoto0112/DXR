@@ -282,18 +282,63 @@ void Scene::create() {
 
     //ジオメトリを生成する
     {
-        //BLAS構築用のバッファ
+        ID3D12Device* device = mDeviceResource->getDevice();
+    //BLAS構築用のバッファ
         std::array<Buffer, BottomLevelASType::Count> mIndexBuffer;
         std::array<Buffer, BottomLevelASType::Count> mVertexBuffer;
 
         std::vector<Vertex> resourceVertices;
         std::vector<Index> resourceIndices;
         {
+
             auto path = Framework::Utility::ExePath::getInstance()->exe();
             path = path.remove_filename();
             auto resourcePath = Framework::Utility::toString(path.append("Resources\\").c_str());
             auto modelPath = resourcePath + "Model\\";
             auto texPath = resourcePath + "Texture\\";
+
+            auto createTextureResource = [&](const TextureData& texture, Buffer* texBuffer, UINT heapIndex) {
+                //テクスチャリソースを作成する
+                CD3DX12_RESOURCE_DESC texDesc = CD3DX12_RESOURCE_DESC::Tex2D(
+                    DXGI_FORMAT::DXGI_FORMAT_R8G8B8A8_UNORM, texture.width, texture.height, 1);
+                D3D12_HEAP_PROPERTIES heapProp = {};
+                heapProp.Type = D3D12_HEAP_TYPE::D3D12_HEAP_TYPE_CUSTOM;
+                heapProp.CPUPageProperty = D3D12_CPU_PAGE_PROPERTY::D3D12_CPU_PAGE_PROPERTY_WRITE_BACK;
+                heapProp.MemoryPoolPreference = D3D12_MEMORY_POOL::D3D12_MEMORY_POOL_L0;
+                heapProp.VisibleNodeMask = 1;
+                heapProp.CreationNodeMask = 1;
+
+                MY_THROW_IF_FAILED(device->CreateCommittedResource(
+                    &heapProp,
+                    D3D12_HEAP_FLAGS::D3D12_HEAP_FLAG_NONE,
+                    &texDesc,
+                    D3D12_RESOURCE_STATES::D3D12_RESOURCE_STATE_GENERIC_READ,
+                    nullptr,
+                    IID_PPV_ARGS(&texBuffer->resource)));
+
+                //テクスチャデータを書き込む
+                D3D12_BOX box = { 0,0,0,texture.width ,texture.height,1 };
+                UINT row = texture.width * 4;
+                UINT slice = row * texture.height;
+                MY_THROW_IF_FAILED(texBuffer->resource->WriteToSubresource(
+                    0,
+                    &box,
+                    texture.data.data(), row, slice));
+
+                //シェーダーリソースビューを作成する
+                D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
+                srvDesc.ViewDimension = D3D12_SRV_DIMENSION::D3D12_SRV_DIMENSION_TEXTURE2D;
+                srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
+                srvDesc.Format = texDesc.Format;
+                srvDesc.Texture2D.MipLevels = 1;
+                srvDesc.Texture2D.MostDetailedMip = 0;
+                srvDesc.Texture2D.PlaneSlice = 0;
+                srvDesc.Texture2D.ResourceMinLODClamp = 0.0f;
+
+                texBuffer->gpuHandle = mDescriptorTable->getGPUHandle(heapIndex);
+                texBuffer->cpuHandle = mDescriptorTable->getCPUHandle(heapIndex);
+                device->CreateShaderResourceView(texBuffer->resource.Get(), &srvDesc, texBuffer->cpuHandle);
+            };
 
             UINT texOffset = 0;
            //三角形のバッファ作成
@@ -310,53 +355,11 @@ void Scene::create() {
                 mVertexOffsets[LocalRootSignature::HitGroupIndex::Sphere] = (UINT)vertices.size();
 
                 Framework::Utility::TextureLoader texLoader;
-                UINT w, h;
-                std::vector<uint8_t> texData = texLoader.load(toWString(texPath + "back.png"), &w, &h);
-
-                //テクスチャリソースを作成する
-                CD3DX12_RESOURCE_DESC texDesc = CD3DX12_RESOURCE_DESC::Tex2D(
-                    DXGI_FORMAT::DXGI_FORMAT_R8G8B8A8_UNORM, w, h, 1);
-
-                D3D12_HEAP_PROPERTIES heapProp = {};
-                heapProp.Type = D3D12_HEAP_TYPE::D3D12_HEAP_TYPE_CUSTOM;
-                heapProp.CPUPageProperty = D3D12_CPU_PAGE_PROPERTY::D3D12_CPU_PAGE_PROPERTY_WRITE_BACK;
-                heapProp.MemoryPoolPreference = D3D12_MEMORY_POOL::D3D12_MEMORY_POOL_L0;
-                heapProp.VisibleNodeMask = 1;
-                heapProp.CreationNodeMask = 1;
-
-                ID3D12Device* device = mDeviceResource->getDevice();
-                MY_THROW_IF_FAILED(device->CreateCommittedResource(
-                    &heapProp,
-                    D3D12_HEAP_FLAGS::D3D12_HEAP_FLAG_NONE,
-                    &texDesc,
-                    D3D12_RESOURCE_STATES::D3D12_RESOURCE_STATE_GENERIC_READ,
-                    nullptr,
-                    IID_PPV_ARGS(&mTextures[texOffset].resource)));
-
-                //テクスチャデータを書き込む
-                D3D12_BOX box = { 0,0,0,w ,h,1 };
-                UINT row = w * 4;
-                UINT slice = row * h;
-                MY_THROW_IF_FAILED(mTextures[texOffset].resource->WriteToSubresource(
-                    0,
-                    &box,
-                    texData.data(), row, slice));
-
-                //シェーダーリソースビューを作成する
-                D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
-                srvDesc.ViewDimension = D3D12_SRV_DIMENSION::D3D12_SRV_DIMENSION_TEXTURE2D;
-                srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
-                srvDesc.Format = texDesc.Format;
-                srvDesc.Texture2D.MipLevels = 1;
-                srvDesc.Texture2D.MostDetailedMip = 0;
-                srvDesc.Texture2D.PlaneSlice = 0;
-                srvDesc.Texture2D.ResourceMinLODClamp = 0.0f;
-
-                mTextures[texOffset].gpuHandle = mDescriptorTable->getGPUHandle(DescriptorIndex::TextureStart + texOffset);
-                mTextures[texOffset].cpuHandle = mDescriptorTable->getCPUHandle(DescriptorIndex::TextureStart + texOffset);
-                device->CreateShaderResourceView(mTextures[texOffset].resource.Get(), &srvDesc, mTextures[texOffset].cpuHandle);
+                TextureData texture;
+                texture.data = texLoader.load(toWString(texPath + "back.png"), &texture.width, &texture.height);
+                createTextureResource(texture, &mTextures[texOffset], DescriptorIndex::TextureStart + texOffset);
+                texOffset++;
             }
-            texOffset++;
             //四角形のバッファ作成
             {
                 std::vector<Index> indices = { 0,1,2,0,2,3 };
@@ -376,53 +379,11 @@ void Scene::create() {
                 mVertexOffsets[LocalRootSignature::HitGroupIndex::Quad] = (UINT)vertices.size();
 
                 Framework::Utility::TextureLoader texLoader;
-                UINT w, h;
-                std::vector<uint8_t> texData = texLoader.load(toWString(texPath + "back2.png"), &w, &h);
-
-                //テクスチャリソースを作成する
-                CD3DX12_RESOURCE_DESC texDesc = CD3DX12_RESOURCE_DESC::Tex2D(
-                    DXGI_FORMAT::DXGI_FORMAT_R8G8B8A8_UNORM, w, h, 1);
-
-                D3D12_HEAP_PROPERTIES heapProp = {};
-                heapProp.Type = D3D12_HEAP_TYPE::D3D12_HEAP_TYPE_CUSTOM;
-                heapProp.CPUPageProperty = D3D12_CPU_PAGE_PROPERTY::D3D12_CPU_PAGE_PROPERTY_WRITE_BACK;
-                heapProp.MemoryPoolPreference = D3D12_MEMORY_POOL::D3D12_MEMORY_POOL_L0;
-                heapProp.VisibleNodeMask = 1;
-                heapProp.CreationNodeMask = 1;
-
-                ID3D12Device* device = mDeviceResource->getDevice();
-                MY_THROW_IF_FAILED(device->CreateCommittedResource(
-                    &heapProp,
-                    D3D12_HEAP_FLAGS::D3D12_HEAP_FLAG_NONE,
-                    &texDesc,
-                    D3D12_RESOURCE_STATES::D3D12_RESOURCE_STATE_GENERIC_READ,
-                    nullptr,
-                    IID_PPV_ARGS(&mTextures[texOffset].resource)));
-
-                //テクスチャデータを書き込む
-                D3D12_BOX box = { 0,0,0,w ,h,1 };
-                UINT row = w * 4;
-                UINT slice = row * h;
-                MY_THROW_IF_FAILED(mTextures[texOffset].resource->WriteToSubresource(
-                    0,
-                    &box,
-                    texData.data(), row, slice));
-
-                //シェーダーリソースビューを作成する
-                D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
-                srvDesc.ViewDimension = D3D12_SRV_DIMENSION::D3D12_SRV_DIMENSION_TEXTURE2D;
-                srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
-                srvDesc.Format = texDesc.Format;
-                srvDesc.Texture2D.MipLevels = 1;
-                srvDesc.Texture2D.MostDetailedMip = 0;
-                srvDesc.Texture2D.PlaneSlice = 0;
-                srvDesc.Texture2D.ResourceMinLODClamp = 0.0f;
-
-                mTextures[texOffset].gpuHandle = mDescriptorTable->getGPUHandle(DescriptorIndex::TextureStart + texOffset);
-                mTextures[texOffset].cpuHandle = mDescriptorTable->getCPUHandle(DescriptorIndex::TextureStart + texOffset);
-                device->CreateShaderResourceView(mTextures[texOffset].resource.Get(), &srvDesc, mTextures[texOffset].cpuHandle);
+                TextureData texture;
+                texture.data = texLoader.load(toWString(texPath + "back2.png"), &texture.width, &texture.height);
+                createTextureResource(texture, &mTextures[texOffset], DescriptorIndex::TextureStart + texOffset);
+                texOffset++;
             }
-            texOffset++;
 
             //床のバッファ作成
             {
@@ -437,53 +398,9 @@ void Scene::create() {
                 mIndexOffsets[LocalRootSignature::HitGroupIndex::Floor] = (UINT)indices.size();
                 mVertexOffsets[LocalRootSignature::HitGroupIndex::Floor] = (UINT)vertices.size();
 
-                auto tex = loader.getImageDatas()[0];
-                UINT w = tex.width, h = tex.height;
-                std::vector<uint8_t> texData = tex.data;
-
-                //テクスチャリソースを作成する
-                CD3DX12_RESOURCE_DESC texDesc = CD3DX12_RESOURCE_DESC::Tex2D(
-                    DXGI_FORMAT::DXGI_FORMAT_R8G8B8A8_UNORM, w, h, 1);
-
-                D3D12_HEAP_PROPERTIES heapProp = {};
-                heapProp.Type = D3D12_HEAP_TYPE::D3D12_HEAP_TYPE_CUSTOM;
-                heapProp.CPUPageProperty = D3D12_CPU_PAGE_PROPERTY::D3D12_CPU_PAGE_PROPERTY_WRITE_BACK;
-                heapProp.MemoryPoolPreference = D3D12_MEMORY_POOL::D3D12_MEMORY_POOL_L0;
-                heapProp.VisibleNodeMask = 1;
-                heapProp.CreationNodeMask = 1;
-
-                ID3D12Device* device = mDeviceResource->getDevice();
-                MY_THROW_IF_FAILED(device->CreateCommittedResource(
-                    &heapProp,
-                    D3D12_HEAP_FLAGS::D3D12_HEAP_FLAG_NONE,
-                    &texDesc,
-                    D3D12_RESOURCE_STATES::D3D12_RESOURCE_STATE_GENERIC_READ,
-                    nullptr,
-                    IID_PPV_ARGS(&mTextures[texOffset].resource)));
-
-                //テクスチャデータを書き込む
-                D3D12_BOX box = { 0,0,0,w ,h,1 };
-                UINT row = w * 4;
-                UINT slice = row * h;
-                MY_THROW_IF_FAILED(mTextures[texOffset].resource->WriteToSubresource(
-                    0,
-                    &box,
-                    texData.data(), row, slice));
-
-                //シェーダーリソースビューを作成する
-                D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
-                srvDesc.ViewDimension = D3D12_SRV_DIMENSION::D3D12_SRV_DIMENSION_TEXTURE2D;
-                srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
-                srvDesc.Format = texDesc.Format;
-                srvDesc.Texture2D.MipLevels = 1;
-                srvDesc.Texture2D.MostDetailedMip = 0;
-                srvDesc.Texture2D.PlaneSlice = 0;
-                srvDesc.Texture2D.ResourceMinLODClamp = 0.0f;
-
-                mTextures[texOffset].gpuHandle = mDescriptorTable->getGPUHandle(DescriptorIndex::TextureStart + texOffset);
-                mTextures[texOffset].cpuHandle = mDescriptorTable->getCPUHandle(DescriptorIndex::TextureStart + texOffset);
-                device->CreateShaderResourceView(mTextures[texOffset].resource.Get(), &srvDesc, mTextures[texOffset].cpuHandle);
-
+                TextureData texture = loader.getImageDatas()[0];
+                createTextureResource(texture, &mTextures[texOffset], DescriptorIndex::TextureStart + texOffset);
+                texOffset++;
             }
         }
         //BLAS・TLASの構築
