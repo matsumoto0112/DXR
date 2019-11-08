@@ -216,27 +216,18 @@ void Scene::create() {
         }
         //HitGroupをまとめる
         {
-            //Sphere
-            {
-                CD3DX12_HIT_GROUP_SUBOBJECT* hitGroup = pipeline.CreateSubobject<CD3DX12_HIT_GROUP_SUBOBJECT>();
-                hitGroup->SetClosestHitShaderImport(CLOSEST_HIT_NAME.c_str());
-                hitGroup->SetHitGroupExport(HIT_GROUP_SPHERE_NAME.c_str());
-                hitGroup->SetHitGroupType(D3D12_HIT_GROUP_TYPE::D3D12_HIT_GROUP_TYPE_TRIANGLES);
-            }
-            //Quad
-            {
-                CD3DX12_HIT_GROUP_SUBOBJECT* hitGroup = pipeline.CreateSubobject<CD3DX12_HIT_GROUP_SUBOBJECT>();
-                hitGroup->SetClosestHitShaderImport(CLOSEST_HIT_NAME.c_str());
-                hitGroup->SetHitGroupExport(HIT_GROUP_QUAD_NAME.c_str());
-                hitGroup->SetHitGroupType(D3D12_HIT_GROUP_TYPE::D3D12_HIT_GROUP_TYPE_TRIANGLES);
-            }
-            //Floor
-            {
-                CD3DX12_HIT_GROUP_SUBOBJECT* hitGroup = pipeline.CreateSubobject<CD3DX12_HIT_GROUP_SUBOBJECT>();
-                hitGroup->SetClosestHitShaderImport(CLOSEST_HIT_NAME.c_str());
-                hitGroup->SetHitGroupExport(HIT_GROUP_FLOOR_NAME.c_str());
-                hitGroup->SetHitGroupType(D3D12_HIT_GROUP_TYPE::D3D12_HIT_GROUP_TYPE_TRIANGLES);
-            }
+            auto bindHitGroup = [&pipeline](const std::wstring& hitGroupName, D3D12_HIT_GROUP_TYPE type, const std::wstring& closestHit = L"",
+                const std::wstring& anyHit = L"", const std::wstring& intersection = L"") {
+                    CD3DX12_HIT_GROUP_SUBOBJECT* hitGroup = pipeline.CreateSubobject<CD3DX12_HIT_GROUP_SUBOBJECT>();
+                    if (!closestHit.empty()) hitGroup->SetClosestHitShaderImport(closestHit.c_str());
+                    if (!anyHit.empty()) hitGroup->SetAnyHitShaderImport(anyHit.c_str());
+                    if (!intersection.empty()) hitGroup->SetIntersectionShaderImport(intersection.c_str());
+                    hitGroup->SetHitGroupExport(hitGroupName.c_str());
+                    hitGroup->SetHitGroupType(type);
+            };
+            bindHitGroup(HIT_GROUP_SPHERE_NAME, D3D12_HIT_GROUP_TYPE::D3D12_HIT_GROUP_TYPE_TRIANGLES, CLOSEST_HIT_NAME);
+            bindHitGroup(HIT_GROUP_QUAD_NAME, D3D12_HIT_GROUP_TYPE::D3D12_HIT_GROUP_TYPE_TRIANGLES, CLOSEST_HIT_NAME);
+            bindHitGroup(HIT_GROUP_FLOOR_NAME, D3D12_HIT_GROUP_TYPE::D3D12_HIT_GROUP_TYPE_TRIANGLES, CLOSEST_HIT_NAME);
         }
         //シェーダーコンフィグ
         {
