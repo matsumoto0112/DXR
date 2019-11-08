@@ -6,7 +6,7 @@
 #ifndef SHADER_RAYTRACING_UTIL_HELPER_HLSLI
 #define SHADER_RAYTRACING_UTIL_HELPER_HLSLI
 
-
+static const float PI = 3.141592654f;
 
 #define HLSL
 struct Ray {

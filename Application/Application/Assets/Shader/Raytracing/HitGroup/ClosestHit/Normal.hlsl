@@ -58,10 +58,18 @@ void Normal(inout RayPayload payload, in MyAttr attr) {
         shadow);
 
     float2 uv = getUV(getIndices(), attr);
-    float4 color = tex0.SampleLevel(samLinear, uv, 0.0);
-    float factor = shadow.hit ? 0.1 : 1.0;
+    float3 diffuse = tex0.SampleLevel(samLinear, uv, 0.0).rgb;
 
-    payload.color = color * l_sceneCB.color * factor;
+    float3 N = getNormal(getIndices(), attr);
+    float dotNL = saturate(dot(N, L));
+    float3 color = (diffuse * g_sceneCB.lightDiffuse.rgb) * dotNL / PI;
+    float factor = shadow.hit ? 0.1 : 1.0;
+    color *= factor;
+    //color += g_sceneCB.lightAmbient.rgb;
+
+    color = saturate(color);
+    payload.color.rgb = color;
+    payload.color.a = 1.0;
 }
 
 #endif //! SHADER_RAYTRACING_HITGROUP_CLOSESTHIT_NORMAL_HLSL
