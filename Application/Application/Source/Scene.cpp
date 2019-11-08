@@ -203,21 +203,16 @@ void Scene::create() {
         CD3DX12_STATE_OBJECT_DESC pipeline{ D3D12_STATE_OBJECT_TYPE::D3D12_STATE_OBJECT_TYPE_RAYTRACING_PIPELINE };
         //すべてのシェーダーを読み込んであげる
         {
-            {
+            auto exportShader = [&pipeline](void* shaderFile, SIZE_T shaderSize, const auto&... names) {
                 CD3DX12_DXIL_LIBRARY_SUBOBJECT* lib = pipeline.CreateSubobject<CD3DX12_DXIL_LIBRARY_SUBOBJECT>();
-                lib->SetDXILLibrary(&CD3DX12_SHADER_BYTECODE((void*)g_pMiss, _countof(g_pMiss)));
-                lib->DefineExport(MISS_SHADER_NAME.c_str());
-            }
-            {
-                CD3DX12_DXIL_LIBRARY_SUBOBJECT* lib = pipeline.CreateSubobject<CD3DX12_DXIL_LIBRARY_SUBOBJECT>();
-                lib->SetDXILLibrary(&CD3DX12_SHADER_BYTECODE((void*)g_pNormal, _countof(g_pNormal)));
-                lib->DefineExport(CLOSEST_HIT_NAME.c_str());
-            }
-            {
-                CD3DX12_DXIL_LIBRARY_SUBOBJECT* lib = pipeline.CreateSubobject<CD3DX12_DXIL_LIBRARY_SUBOBJECT>();
-                lib->SetDXILLibrary(&CD3DX12_SHADER_BYTECODE((void*)g_pRayGenShader, _countof(g_pRayGenShader)));
-                lib->DefineExport(RAY_GEN_NAME.c_str());
-            }
+                lib->SetDXILLibrary(&CD3DX12_SHADER_BYTECODE(shaderFile, shaderSize));
+                for (auto&& name : std::initializer_list<std::wstring>{ names... }) {
+                    lib->DefineExport(name.c_str());
+                }
+            };
+            exportShader((void*)g_pMiss, _countof(g_pMiss), MISS_SHADER_NAME);
+            exportShader((void*)g_pNormal, _countof(g_pNormal), CLOSEST_HIT_NAME);
+            exportShader((void*)g_pRayGenShader, _countof(g_pRayGenShader), RAY_GEN_NAME);
         }
         //HitGroupをまとめる
         {
