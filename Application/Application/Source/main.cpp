@@ -28,10 +28,10 @@ public:
         mScene->update();
     }
     void onRender() override {
-        Game::renderStart();
+        //Game::renderStart();
 
         mScene->render();
-        Game::renderEnd();
+        //Game::renderEnd();
     }
     void onDestroy()override {
         Game::onDestroy();

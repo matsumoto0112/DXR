@@ -7,6 +7,8 @@
 #include "Utility/Path.h"
 #include "Utility/StringUtil.h"
 
+#include "ImGui/ImGuiManager.h"
+
 #include "CompiledShaders/Miss.hlsl.h"
 #include "CompiledShaders/Normal.hlsl.h"
 #include "CompiledShaders/RayGenShader.hlsl.h"
@@ -78,6 +80,21 @@ namespace {
         }
         return res;
     }
+
+    inline void allocateUAVBuffer(ID3D12Device* device, UINT64 bufferSize, ID3D12Resource** resource, D3D12_RESOURCE_STATES initResourceState, LPCWSTR name = nullptr) {
+        auto heapProp = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE::D3D12_HEAP_TYPE_DEFAULT);
+        auto bufferDesc = CD3DX12_RESOURCE_DESC::Buffer(bufferSize, D3D12_RESOURCE_FLAGS::D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS);
+        MY_THROW_IF_FAILED(device->CreateCommittedResource(
+            &heapProp,
+            D3D12_HEAP_FLAGS::D3D12_HEAP_FLAG_NONE,
+            &bufferDesc,
+            initResourceState,
+            nullptr,
+            IID_PPV_ARGS(resource)));
+        (*resource)->SetName(name);
+    };
+
+    Deg mQuadRotate = Deg(0.0f);
 }
 
 Scene::Scene(Framework::DX::DeviceResource* device, UINT width, UINT height)
@@ -405,18 +422,7 @@ void Scene::create() {
         }
         //BLAS・TLASの構築
         {
-            auto allocateUAVBuffer = [](ID3D12Device* device, UINT64 bufferSize, ID3D12Resource** resource, D3D12_RESOURCE_STATES initResourceState, LPCWSTR name = nullptr) {
-                auto heapProp = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE::D3D12_HEAP_TYPE_DEFAULT);
-                auto bufferDesc = CD3DX12_RESOURCE_DESC::Buffer(bufferSize, D3D12_RESOURCE_FLAGS::D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS);
-                MY_THROW_IF_FAILED(device->CreateCommittedResource(
-                    &heapProp,
-                    D3D12_HEAP_FLAGS::D3D12_HEAP_FLAG_NONE,
-                    &bufferDesc,
-                    initResourceState,
-                    nullptr,
-                    IID_PPV_ARGS(resource)));
-                (*resource)->SetName(name);
-            };
+
 
             ID3D12Device* device = mDeviceResource->getDevice();
             ID3D12GraphicsCommandList* commandList = mDeviceResource->getCommandList();
@@ -470,71 +476,74 @@ void Scene::create() {
                     commandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::UAV(mBLASBuffers[i].buffer.Get()));
                 }
             }
-            //TLAS
-            {
-                D3D12_RAYTRACING_ACCELERATION_STRUCTURE_BUILD_FLAGS buildFlags = D3D12_RAYTRACING_ACCELERATION_STRUCTURE_BUILD_FLAGS::D3D12_RAYTRACING_ACCELERATION_STRUCTURE_BUILD_FLAG_PREFER_FAST_TRACE;
+            ////TLAS
+            //{
+            //    D3D12_RAYTRACING_ACCELERATION_STRUCTURE_BUILD_FLAGS buildFlags = D3D12_RAYTRACING_ACCELERATION_STRUCTURE_BUILD_FLAGS::D3D12_RAYTRACING_ACCELERATION_STRUCTURE_BUILD_FLAG_PREFER_FAST_TRACE;
 
-                D3D12_BUILD_RAYTRACING_ACCELERATION_STRUCTURE_DESC topLevelBuildDesc = {};
-                auto& topLevelInputs = topLevelBuildDesc.Inputs;
-                topLevelInputs.DescsLayout = D3D12_ELEMENTS_LAYOUT::D3D12_ELEMENTS_LAYOUT_ARRAY;
-                topLevelInputs.Flags = buildFlags;
-                topLevelInputs.NumDescs = TLAS_NUM;
-                topLevelInputs.pGeometryDescs = nullptr;
-                topLevelInputs.Type = D3D12_RAYTRACING_ACCELERATION_STRUCTURE_TYPE::D3D12_RAYTRACING_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL;
+            //    D3D12_BUILD_RAYTRACING_ACCELERATION_STRUCTURE_DESC topLevelBuildDesc = {};
+            //    auto& topLevelInputs = topLevelBuildDesc.Inputs;
+            //    topLevelInputs.DescsLayout = D3D12_ELEMENTS_LAYOUT::D3D12_ELEMENTS_LAYOUT_ARRAY;
+            //    topLevelInputs.Flags = buildFlags;
+            //    topLevelInputs.NumDescs = TLAS_NUM;
+            //    topLevelInputs.pGeometryDescs = nullptr;
+            //    topLevelInputs.Type = D3D12_RAYTRACING_ACCELERATION_STRUCTURE_TYPE::D3D12_RAYTRACING_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL;
 
-                D3D12_RAYTRACING_ACCELERATION_STRUCTURE_PREBUILD_INFO topLevelPreInfo = {};
-                mDXRDevice->getDXRDevice()->GetRaytracingAccelerationStructurePrebuildInfo(&topLevelInputs, &topLevelPreInfo);
-                MY_THROW_IF_FALSE(topLevelPreInfo.ResultDataMaxSizeInBytes > 0);
+            //    D3D12_RAYTRACING_ACCELERATION_STRUCTURE_PREBUILD_INFO topLevelPreInfo = {};
+            //    mDXRDevice->getDXRDevice()->GetRaytracingAccelerationStructurePrebuildInfo(&topLevelInputs, &topLevelPreInfo);
+            //    MY_THROW_IF_FALSE(topLevelPreInfo.ResultDataMaxSizeInBytes > 0);
 
-                allocateUAVBuffer(device, topLevelPreInfo.ScratchDataSizeInBytes,
-                    &mTLASBuffer.scratch, D3D12_RESOURCE_STATES::D3D12_RESOURCE_STATE_UNORDERED_ACCESS, L"ScratchResource");
+            //    allocateUAVBuffer(device, topLevelPreInfo.ScratchDataSizeInBytes,
+            //        &mTLASBuffer.scratch, D3D12_RESOURCE_STATES::D3D12_RESOURCE_STATE_UNORDERED_ACCESS, L"ScratchResource");
 
-                D3D12_RESOURCE_STATES initResourceState = D3D12_RESOURCE_STATES::D3D12_RESOURCE_STATE_RAYTRACING_ACCELERATION_STRUCTURE;
-                allocateUAVBuffer(device, topLevelPreInfo.ResultDataMaxSizeInBytes, &mTLASBuffer.buffer, initResourceState, L"TopLevelAS");
-                ComPtr<ID3D12Resource> instanceDescs;
-                std::vector<D3D12_RAYTRACING_INSTANCE_DESC> instanceDesc(TLAS_NUM);
-                UINT offset = 0;
-                for (UINT n = 0; n < TRIANGLE_COUNT; n++) {
-                    XMMATRIX transform = XMMatrixScaling(1, 1, 1) *
-                        XMMatrixRotationRollPitchYaw(0, 0, 0) *
-                        XMMatrixTranslation((float)n * 5, 0, 0);
-                    instanceDesc[n + offset].InstanceID = 0;
-                    instanceDesc[n + offset].InstanceMask = 0xff;
-                    instanceDesc[n + offset].Flags = D3D12_RAYTRACING_INSTANCE_FLAGS::D3D12_RAYTRACING_INSTANCE_FLAG_NONE;
-                    instanceDesc[n + offset].InstanceContributionToHitGroupIndex = LocalRootSignature::HitGroupIndex::Sphere;
-                    instanceDesc[n + offset].AccelerationStructure = mBLASBuffers[BottomLevelASType::WaterTower].buffer->GetGPUVirtualAddress();
-                    XMStoreFloat3x4(reinterpret_cast<XMFLOAT3X4*>(instanceDesc[n + offset].Transform), transform);
-                }
-                offset += TRIANGLE_COUNT;
-                for (UINT n = 0; n < QUAD_COUNT; n++) {
-                    XMMATRIX transform = XMMatrixScaling(1, 1, 1) * XMMatrixTranslation((float)n * 5, 3, 0);
-                    instanceDesc[n + offset].InstanceID = 0;
-                    instanceDesc[n + offset].InstanceMask = 0xff;
-                    instanceDesc[n + offset].Flags = D3D12_RAYTRACING_INSTANCE_FLAGS::D3D12_RAYTRACING_INSTANCE_FLAG_NONE;
-                    instanceDesc[n + offset].InstanceContributionToHitGroupIndex = LocalRootSignature::HitGroupIndex::Quad;
-                    instanceDesc[n + offset].AccelerationStructure = mBLASBuffers[BottomLevelASType::Quad].buffer->GetGPUVirtualAddress();
-                    XMStoreFloat3x4(reinterpret_cast<XMFLOAT3X4*>(instanceDesc[n + offset].Transform), transform);
-                }
-                offset += QUAD_COUNT;
-                for (UINT n = 0; n < FLOOR_COUNT; n++) {
-                    XMMATRIX transform = XMMatrixScaling(100, 1, 100) * XMMatrixTranslation(0, -5, 0);
-                    instanceDesc[n + offset].InstanceID = 0;
-                    instanceDesc[n + offset].InstanceMask = 0xff;
-                    instanceDesc[n + offset].Flags = D3D12_RAYTRACING_INSTANCE_FLAGS::D3D12_RAYTRACING_INSTANCE_FLAG_NONE;
-                    instanceDesc[n + offset].InstanceContributionToHitGroupIndex = LocalRootSignature::HitGroupIndex::Floor;
-                    instanceDesc[n + offset].AccelerationStructure = mBLASBuffers[BottomLevelASType::Floor].buffer->GetGPUVirtualAddress();
-                    XMStoreFloat3x4(reinterpret_cast<XMFLOAT3X4*>(instanceDesc[n + offset].Transform), transform);
-                }
+            //    D3D12_RESOURCE_STATES initResourceState = D3D12_RESOURCE_STATES::D3D12_RESOURCE_STATE_RAYTRACING_ACCELERATION_STRUCTURE;
+            //    allocateUAVBuffer(device, topLevelPreInfo.ResultDataMaxSizeInBytes, &mTLASBuffer.buffer, initResourceState, L"TopLevelAS");
+            //    ComPtr<ID3D12Resource> instanceDescs;
+            //    std::vector<D3D12_RAYTRACING_INSTANCE_DESC> instanceDesc(TLAS_NUM);
+            //    UINT offset = 0;
+            //    for (UINT n = 0; n < TRIANGLE_COUNT; n++) {
+            //        XMMATRIX transform = XMMatrixScaling(1, 1, 1) *
+            //            XMMatrixRotationRollPitchYaw(0, 0, 0) *
+            //            XMMatrixTranslation((float)n * 5, 0, 0);
+            //        instanceDesc[n + offset].InstanceID = 0;
+            //        instanceDesc[n + offset].InstanceMask = 0xff;
+            //        instanceDesc[n + offset].Flags = D3D12_RAYTRACING_INSTANCE_FLAGS::D3D12_RAYTRACING_INSTANCE_FLAG_NONE;
+            //        instanceDesc[n + offset].InstanceContributionToHitGroupIndex = LocalRootSignature::HitGroupIndex::Sphere;
+            //        instanceDesc[n + offset].AccelerationStructure = mBLASBuffers[BottomLevelASType::WaterTower].buffer->GetGPUVirtualAddress();
+            //        XMStoreFloat3x4(reinterpret_cast<XMFLOAT3X4*>(instanceDesc[n + offset].Transform), transform);
+            //    }
+            //    offset += TRIANGLE_COUNT;
+            //    for (UINT n = 0; n < QUAD_COUNT; n++) {
+            //        XMMATRIX transform = XMMatrixScaling(1, 1, 1) * XMMatrixTranslation((float)n * 5, 3, 0);
+            //        instanceDesc[n + offset].InstanceID = 0;
+            //        instanceDesc[n + offset].InstanceMask = 0xff;
+            //        instanceDesc[n + offset].Flags = D3D12_RAYTRACING_INSTANCE_FLAGS::D3D12_RAYTRACING_INSTANCE_FLAG_NONE;
+            //        instanceDesc[n + offset].InstanceContributionToHitGroupIndex = LocalRootSignature::HitGroupIndex::Quad;
+            //        instanceDesc[n + offset].AccelerationStructure = mBLASBuffers[BottomLevelASType::Quad].buffer->GetGPUVirtualAddress();
+            //        XMStoreFloat3x4(reinterpret_cast<XMFLOAT3X4*>(instanceDesc[n + offset].Transform), transform);
+            //    }
+            //    offset += QUAD_COUNT;
+            //    for (UINT n = 0; n < FLOOR_COUNT; n++) {
+            //        XMMATRIX transform = XMMatrixScaling(100, 1, 100) * XMMatrixTranslation(0, -5, 0);
+            //        instanceDesc[n + offset].InstanceID = 0;
+            //        instanceDesc[n + offset].InstanceMask = 0xff;
+            //        instanceDesc[n + offset].Flags = D3D12_RAYTRACING_INSTANCE_FLAGS::D3D12_RAYTRACING_INSTANCE_FLAG_NONE;
+            //        instanceDesc[n + offset].InstanceContributionToHitGroupIndex = LocalRootSignature::HitGroupIndex::Floor;
+            //        instanceDesc[n + offset].AccelerationStructure = mBLASBuffers[BottomLevelASType::Floor].buffer->GetGPUVirtualAddress();
+            //        XMStoreFloat3x4(reinterpret_cast<XMFLOAT3X4*>(instanceDesc[n + offset].Transform), transform);
+            //    }
 
-                createBuffer(device, &instanceDescs, instanceDesc.data(), instanceDesc.size() * sizeof(D3D12_RAYTRACING_INSTANCE_DESC), L"InstanceDescs");
-                topLevelBuildDesc.DestAccelerationStructureData = mTLASBuffer.buffer->GetGPUVirtualAddress();
-                topLevelBuildDesc.ScratchAccelerationStructureData = mTLASBuffer.scratch->GetGPUVirtualAddress();
-                topLevelInputs.InstanceDescs = instanceDescs->GetGPUVirtualAddress();
+            //    createBuffer(device, &instanceDescs, instanceDesc.data(), instanceDesc.size() * sizeof(D3D12_RAYTRACING_INSTANCE_DESC), L"InstanceDescs");
+            //    topLevelBuildDesc.DestAccelerationStructureData = mTLASBuffer.buffer->GetGPUVirtualAddress();
+            //    topLevelBuildDesc.ScratchAccelerationStructureData = mTLASBuffer.scratch->GetGPUVirtualAddress();
+            //    topLevelInputs.InstanceDescs = instanceDescs->GetGPUVirtualAddress();
 
-                dxrCommandList->BuildRaytracingAccelerationStructure(&topLevelBuildDesc, 0, nullptr);
-                mDeviceResource->executeCommandList();
-                mDeviceResource->waitForGPU();
-            }
+            //    dxrCommandList->BuildRaytracingAccelerationStructure(&topLevelBuildDesc, 0, nullptr);
+            //    mDeviceResource->executeCommandList();
+            //    mDeviceResource->waitForGPU();
+            //}
+
+            mDeviceResource->executeCommandList();
+            mDeviceResource->waitForGPU();
 
             //バッファのシェーダーリソースビュー作成
             createBuffer(device, &mResourcesIndexBuffer.resource, resourceIndices.data(), resourceIndices.size() * sizeof(resourceIndices[0]), L"ResourceIndex");
@@ -694,9 +703,87 @@ void Scene::update() {
     mSceneCB->lightPosition = Vec4(mLightPosition, 1.0f);
     mSceneCB->lightDiffuse = mLightDiffuse;
     mSceneCB->lightAmbient = mLightAmbient;
+
+    mQuadRotate += 1.0f;
 }
 
 void Scene::render() {
+    mDeviceResource->prepare();
+    Framework::ImGuiManager::getInstance()->beginFrame();
+
+    //レンダーターゲットのクリア
+    ID3D12GraphicsCommandList* list = mDeviceResource->getCommandList();
+    D3D12_CPU_DESCRIPTOR_HANDLE rtv[] = { mDeviceResource->getRenderTargetView() };
+
+    list->OMSetRenderTargets(1, rtv, FALSE, &mDeviceResource->getDepthStencilView());
+    static float color[4] = { 0,0,0,0 };
+    list->ClearRenderTargetView(mDeviceResource->getRenderTargetView(), color, 0, nullptr);
+
+    ID3D12Device* device = mDeviceResource->getDevice();
+    ID3D12GraphicsCommandList5* dxrCommandList = mDXRDevice->getDXRCommandList();
+
+    D3D12_RAYTRACING_ACCELERATION_STRUCTURE_BUILD_FLAGS buildFlags = D3D12_RAYTRACING_ACCELERATION_STRUCTURE_BUILD_FLAGS::D3D12_RAYTRACING_ACCELERATION_STRUCTURE_BUILD_FLAG_PREFER_FAST_TRACE;
+
+    D3D12_BUILD_RAYTRACING_ACCELERATION_STRUCTURE_DESC topLevelBuildDesc = {};
+    auto& topLevelInputs = topLevelBuildDesc.Inputs;
+    topLevelInputs.DescsLayout = D3D12_ELEMENTS_LAYOUT::D3D12_ELEMENTS_LAYOUT_ARRAY;
+    topLevelInputs.Flags = buildFlags;
+    topLevelInputs.NumDescs = TLAS_NUM;
+    topLevelInputs.pGeometryDescs = nullptr;
+    topLevelInputs.Type = D3D12_RAYTRACING_ACCELERATION_STRUCTURE_TYPE::D3D12_RAYTRACING_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL;
+
+    D3D12_RAYTRACING_ACCELERATION_STRUCTURE_PREBUILD_INFO topLevelPreInfo = {};
+    mDXRDevice->getDXRDevice()->GetRaytracingAccelerationStructurePrebuildInfo(&topLevelInputs, &topLevelPreInfo);
+    MY_THROW_IF_FALSE(topLevelPreInfo.ResultDataMaxSizeInBytes > 0);
+
+    allocateUAVBuffer(device, topLevelPreInfo.ScratchDataSizeInBytes,
+        &mTLASBuffer.scratch, D3D12_RESOURCE_STATES::D3D12_RESOURCE_STATE_UNORDERED_ACCESS, L"ScratchResource");
+
+    D3D12_RESOURCE_STATES initResourceState = D3D12_RESOURCE_STATES::D3D12_RESOURCE_STATE_RAYTRACING_ACCELERATION_STRUCTURE;
+    allocateUAVBuffer(device, topLevelPreInfo.ResultDataMaxSizeInBytes, &mTLASBuffer.buffer, initResourceState, L"TopLevelAS");
+    std::vector<D3D12_RAYTRACING_INSTANCE_DESC> instanceDesc(TLAS_NUM);
+    UINT offset = 0;
+    for (UINT n = 0; n < TRIANGLE_COUNT; n++) {
+        XMMATRIX transform = XMMatrixScaling(1, 1, 1) *
+            XMMatrixRotationRollPitchYaw(0, 0, 0) *
+            XMMatrixTranslation((float)n * 5, 0, 0);
+        instanceDesc[n + offset].InstanceID = 0;
+        instanceDesc[n + offset].InstanceMask = 0xff;
+        instanceDesc[n + offset].Flags = D3D12_RAYTRACING_INSTANCE_FLAGS::D3D12_RAYTRACING_INSTANCE_FLAG_NONE;
+        instanceDesc[n + offset].InstanceContributionToHitGroupIndex = LocalRootSignature::HitGroupIndex::Sphere;
+        instanceDesc[n + offset].AccelerationStructure = mBLASBuffers[BottomLevelASType::WaterTower].buffer->GetGPUVirtualAddress();
+        XMStoreFloat3x4(reinterpret_cast<XMFLOAT3X4*>(instanceDesc[n + offset].Transform), transform);
+    }
+    offset += TRIANGLE_COUNT;
+    for (UINT n = 0; n < QUAD_COUNT; n++) {
+        XMMATRIX transform = XMMatrixScaling(1, 1, 1) * XMMatrixRotationRollPitchYaw(0, mQuadRotate.toRadians().getRad(), 0) * XMMatrixTranslation((float)n * 5, 3, 0);
+        instanceDesc[n + offset].InstanceID = 0;
+        instanceDesc[n + offset].InstanceMask = 0xff;
+        instanceDesc[n + offset].Flags = D3D12_RAYTRACING_INSTANCE_FLAGS::D3D12_RAYTRACING_INSTANCE_FLAG_NONE;
+        instanceDesc[n + offset].InstanceContributionToHitGroupIndex = LocalRootSignature::HitGroupIndex::Quad;
+        instanceDesc[n + offset].AccelerationStructure = mBLASBuffers[BottomLevelASType::Quad].buffer->GetGPUVirtualAddress();
+        XMStoreFloat3x4(reinterpret_cast<XMFLOAT3X4*>(instanceDesc[n + offset].Transform), transform);
+    }
+    offset += QUAD_COUNT;
+    for (UINT n = 0; n < FLOOR_COUNT; n++) {
+        XMMATRIX transform = XMMatrixScaling(100, 1, 100) * XMMatrixTranslation(0, -5, 0);
+        instanceDesc[n + offset].InstanceID = 0;
+        instanceDesc[n + offset].InstanceMask = 0xff;
+        instanceDesc[n + offset].Flags = D3D12_RAYTRACING_INSTANCE_FLAGS::D3D12_RAYTRACING_INSTANCE_FLAG_NONE;
+        instanceDesc[n + offset].InstanceContributionToHitGroupIndex = LocalRootSignature::HitGroupIndex::Floor;
+        instanceDesc[n + offset].AccelerationStructure = mBLASBuffers[BottomLevelASType::Floor].buffer->GetGPUVirtualAddress();
+        XMStoreFloat3x4(reinterpret_cast<XMFLOAT3X4*>(instanceDesc[n + offset].Transform), transform);
+    }
+    ComPtr<ID3D12Resource> instanceDescs;
+
+    createBuffer(device, instanceDescs.GetAddressOf(), instanceDesc.data(), instanceDesc.size() * sizeof(D3D12_RAYTRACING_INSTANCE_DESC), L"InstanceDescs");
+    topLevelBuildDesc.DestAccelerationStructureData = mTLASBuffer.buffer->GetGPUVirtualAddress();
+    topLevelBuildDesc.ScratchAccelerationStructureData = mTLASBuffer.scratch->GetGPUVirtualAddress();
+    topLevelInputs.InstanceDescs = instanceDescs->GetGPUVirtualAddress();
+
+    dxrCommandList->BuildRaytracingAccelerationStructure(&topLevelBuildDesc, 0, nullptr);
+    mDeviceResource->getCommandList()->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::UAV(mTLASBuffer.buffer.Get()));
+
     ID3D12GraphicsCommandList* commandList = mDeviceResource->getCommandList();
     UINT frameIndex = mDeviceResource->getCurrentFrameIndex();
     commandList->SetComputeRootSignature(mGlobalRootSignature.Get());
@@ -748,4 +835,8 @@ void Scene::render() {
     commandList->ResourceBarrier(_countof(postCopyBarriers), postCopyBarriers);
 
     mDebugWindow->draw();
+
+    Framework::ImGuiManager::getInstance()->endFrame(mDeviceResource->getCommandList());
+
+    mDeviceResource->present();
 }

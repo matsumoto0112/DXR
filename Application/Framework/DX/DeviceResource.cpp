@@ -453,6 +453,7 @@ namespace Framework::DX {
     }
     //ŽŸ‚ÌƒtƒŒ[ƒ€‚Ì€”õ
     void DeviceResource::moveToNextFrame() {
+        waitForGPU();
         const UINT64 currentFenceValue = mFenceValues[mBackBufferIndex];
         MY_THROW_IF_FAILED(mCommandQueue->Signal(mFence.Get(), currentFenceValue));
         mBackBufferIndex = mSwapChain->GetCurrentBackBufferIndex();
