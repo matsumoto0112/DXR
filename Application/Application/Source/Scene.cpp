@@ -12,6 +12,7 @@
 #include "CompiledShaders/Miss.hlsl.h"
 #include "CompiledShaders/Normal.hlsl.h"
 #include "CompiledShaders/RayGenShader.hlsl.h"
+#include "CompiledShaders/Shadow.hlsl.h"
 
 #include "Application/Assets/Shader/Raytracing/Util/MissCompat.h"
 #include "Application/Assets/Shader/Raytracing/Util/HitGroupCompat.h"
@@ -21,6 +22,7 @@ using namespace Framework::Utility;
 
 namespace {
     static const std::wstring MISS_SHADER_NAME = L"Miss";
+    static const std::wstring MISS_SHADOW_SHADER_NAME = L"Shadow";
     static const std::wstring CLOSEST_HIT_NAME = L"Normal";
     static const std::wstring RAY_GEN_NAME = L"RayGenShader";
     static const std::wstring HIT_GROUP_SPHERE_NAME = L"HitGroup_Sphere";
@@ -33,7 +35,7 @@ namespace {
         {BottomLevelASType::Floor , "floor.glb" },
     };
 
-    static constexpr UINT TRIANGLE_COUNT = 1;
+    static constexpr UINT TRIANGLE_COUNT = 0;
     static constexpr UINT QUAD_COUNT = 1;
     static constexpr UINT FLOOR_COUNT = 1;
     static constexpr UINT TLAS_NUM = TRIANGLE_COUNT + QUAD_COUNT + FLOOR_COUNT;
@@ -234,6 +236,7 @@ void Scene::create() {
             exportShader((void*)g_pMiss, _countof(g_pMiss), MISS_SHADER_NAME);
             exportShader((void*)g_pNormal, _countof(g_pNormal), CLOSEST_HIT_NAME);
             exportShader((void*)g_pRayGenShader, _countof(g_pRayGenShader), RAY_GEN_NAME);
+            exportShader((void*)g_pShadow, _countof(g_pShadow), MISS_SHADOW_SHADER_NAME);
         }
         //HitGroupをまとめる
         {
@@ -254,7 +257,7 @@ void Scene::create() {
         //シェーダーコンフィグ
         {
             CD3DX12_RAYTRACING_SHADER_CONFIG_SUBOBJECT* config = pipeline.CreateSubobject<CD3DX12_RAYTRACING_SHADER_CONFIG_SUBOBJECT>();
-            UINT payloadSize = Framework::Math::MathUtil::mymax({ UINT(sizeof(RayPayload)) });
+            UINT payloadSize = Framework::Math::MathUtil::mymax<UINT>({ sizeof(RayPayload) ,sizeof(ShadowPayload) });
             UINT attrSize = sizeof(float) * 2;
             config->Config(payloadSize, attrSize);
         }
@@ -543,6 +546,7 @@ void Scene::create() {
         MY_THROW_IF_FAILED(mDXRStateObject.As(&stateObjectProp));
         void* rayGenShaderID = stateObjectProp->GetShaderIdentifier(RAY_GEN_NAME.c_str());
         void* missShaderID = stateObjectProp->GetShaderIdentifier(MISS_SHADER_NAME.c_str());
+        void* missShadowShaderID = stateObjectProp->GetShaderIdentifier(MISS_SHADOW_SHADER_NAME.c_str());
         void* hitGroup_SphereShaderID = stateObjectProp->GetShaderIdentifier(HIT_GROUP_SPHERE_NAME.c_str());
         void* hitGroup_QuadShaderID = stateObjectProp->GetShaderIdentifier(HIT_GROUP_QUAD_NAME.c_str());
         void* hitGroup_FloorShaderID = stateObjectProp->GetShaderIdentifier(HIT_GROUP_FLOOR_NAME.c_str());
@@ -561,11 +565,13 @@ void Scene::create() {
                 MissConstant cb;
             } rootArgument;
             rootArgument.cb.back = Color(0.1f, 0.2f, 0.3f, 1);
-            UINT num = 1;
+            UINT num = 2;
             UINT recordSize = shaderIDSize + sizeof(RootArgument);
             ShaderTable table(device, num, recordSize, L"MissShaderTable");
             table.push_back(ShaderRecord(missShaderID, shaderIDSize, &rootArgument, sizeof(RootArgument)));
+            table.push_back(ShaderRecord(missShadowShaderID, shaderIDSize));
             mMissTable = table.getResource();
+            mMissStride = table.getShaderRecordSize();
         }
         //HitGroup
         {
@@ -578,7 +584,7 @@ void Scene::create() {
             ShaderTable table(device, num, recordSize, L"HitGroupShaderTable");
             //Sphere
             {
-                rootArguments.cb.color = Color4(1, 0, 1, 1);
+                rootArguments.cb.color = Color4(1, 1, 1, 1);
                 rootArguments.cb.indexOffset = std::get<0>(getOffset(LocalRootSignature::HitGroupIndex::Sphere));
                 rootArguments.cb.vertexOffset = std::get<1>(getOffset(LocalRootSignature::HitGroupIndex::Sphere));
                 rootArguments.tex0 = mTextures[0].gpuHandle;
@@ -586,7 +592,7 @@ void Scene::create() {
             }
             //Quad
             {
-                rootArguments.cb.color = Color4(0, 1, 0, 1);
+                rootArguments.cb.color = Color4(1, 1, 1, 1);
                 rootArguments.cb.indexOffset = std::get<0>(getOffset(LocalRootSignature::HitGroupIndex::Quad));
                 rootArguments.cb.vertexOffset = std::get<1>(getOffset(LocalRootSignature::HitGroupIndex::Quad));
                 rootArguments.tex0 = mTextures[1].gpuHandle;
@@ -679,6 +685,7 @@ void Scene::render() {
     ID3D12Device* device = mDeviceResource->getDevice();
     ID3D12GraphicsCommandList5* dxrCommandList = mDXRDevice->getDXRCommandList();
 
+    //TLASのデータ更新
     std::vector<D3D12_RAYTRACING_INSTANCE_DESC> instanceDesc(TLAS_NUM);
     UINT offset = 0;
     for (UINT n = 0; n < TRIANGLE_COUNT; n++) {
@@ -717,9 +724,11 @@ void Scene::render() {
     createBuffer(device, instanceDescs.GetAddressOf(), instanceDesc.data(), instanceDesc.size() * sizeof(D3D12_RAYTRACING_INSTANCE_DESC), L"InstanceDescs");
     topLevelBuildDesc.Inputs.InstanceDescs = instanceDescs->GetGPUVirtualAddress();
 
+    //TLASの構築終了まで待機する用のバリア
     dxrCommandList->BuildRaytracingAccelerationStructure(&topLevelBuildDesc, 0, nullptr);
     mDeviceResource->getCommandList()->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::UAV(mTLASBuffer.buffer.Get()));
 
+    //描画開始
     ID3D12GraphicsCommandList* commandList = mDeviceResource->getCommandList();
     UINT frameIndex = mDeviceResource->getCurrentFrameIndex();
     commandList->SetComputeRootSignature(mGlobalRootSignature.Get());
@@ -739,7 +748,7 @@ void Scene::render() {
 
     dispatchDesc.MissShaderTable.StartAddress = mMissTable->GetGPUVirtualAddress();
     dispatchDesc.MissShaderTable.SizeInBytes = mMissTable->GetDesc().Width;
-    dispatchDesc.MissShaderTable.StrideInBytes = dispatchDesc.MissShaderTable.SizeInBytes;
+    dispatchDesc.MissShaderTable.StrideInBytes = mMissStride;
 
     dispatchDesc.HitGroupTable.StartAddress = mHitGroupTable->GetGPUVirtualAddress();
     dispatchDesc.HitGroupTable.SizeInBytes = mHitGroupTable->GetDesc().Width;

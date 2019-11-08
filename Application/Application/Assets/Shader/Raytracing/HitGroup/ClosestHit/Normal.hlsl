@@ -39,20 +39,38 @@ static inline float2 getUV(in uint3 indices, in MyAttr attr) {
 
 [shader("closesthit")]
 void Normal(inout RayPayload payload, in MyAttr attr) {
-    //float3 N = getNormal(getIndices(), attr);
-    //N = mul((float3x3)ObjectToWorld3x4(), N);
-    //N = N * 0.5 + 0.5;
-    //payload.color = float4(N, 1.0);
+    ShadowPayload shadow = { true };
+    float3 hitPosition = hitWorldPosition();
+    float3 L = normalize(g_sceneCB.lightPosition.xyz - hitPosition);
+    RayDesc ray;
+    ray.Origin = hitPosition;
+    ray.Direction = L;
+    ray.TMin = 0.01;
+    ray.TMax = 10000.0;
+    TraceRay(
+        g_scene,
+        RAY_FLAG_SKIP_CLOSEST_HIT_SHADER,
+        ~0,
+        0,
+        0,
+        1,
+        ray,
+        shadow);
+        //float3 N = getNormal(getIndices(), attr);
+        //N = mul((float3x3)ObjectToWorld3x4(), N);
+        //N = N * 0.5 + 0.5;
+        //payload.color = float4(N, 1.0);
 
-    //float2 uv = getUV(getIndices(), attr);
-    //payload.color = float4(uv, 0, 1);
+        //float2 uv = getUV(getIndices(), attr);
+        //payload.color = float4(uv, 0, 1);
 
-    //payload.color = l_sceneCB.color;
+        //payload.color = l_sceneCB.color;
 
     float2 uv = getUV(getIndices(), attr);
     float4 color = tex0.SampleLevel(samLinear, uv, 0.0);
+    float factor = shadow.hit ? 0.1 : 1.0;
 
-    payload.color = color * l_sceneCB.color;
+    payload.color = color * l_sceneCB.color * factor;
 
 
 }

@@ -53,6 +53,7 @@ private:
     std::array<AccelerationBuffer, BottomLevelASType::Count> mBLASBuffers;
     AccelerationBuffer mTLASBuffer;
     ComPtr<ID3D12Resource> mRayGenTable;
+    UINT mMissStride;
     ComPtr<ID3D12Resource> mMissTable;
     UINT mHitGroupStride;
     ComPtr<ID3D12Resource> mHitGroupTable;

@@ -36,4 +36,8 @@ struct RayPayload {
     Color color;
 };
 
+struct ShadowPayload {
+    bool hit;
+};
+
 #endif // !SHADER_RAYTRACING_GLOBALCOMPAT_H
