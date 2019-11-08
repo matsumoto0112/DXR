@@ -210,6 +210,7 @@ void Scene::create() {
                     lib->DefineExport(name.c_str());
                 }
             };
+
             exportShader((void*)g_pMiss, _countof(g_pMiss), MISS_SHADER_NAME);
             exportShader((void*)g_pNormal, _countof(g_pNormal), CLOSEST_HIT_NAME);
             exportShader((void*)g_pRayGenShader, _countof(g_pRayGenShader), RAY_GEN_NAME);
@@ -225,6 +226,7 @@ void Scene::create() {
                     hitGroup->SetHitGroupExport(hitGroupName.c_str());
                     hitGroup->SetHitGroupType(type);
             };
+
             bindHitGroup(HIT_GROUP_SPHERE_NAME, D3D12_HIT_GROUP_TYPE::D3D12_HIT_GROUP_TYPE_TRIANGLES, CLOSEST_HIT_NAME);
             bindHitGroup(HIT_GROUP_QUAD_NAME, D3D12_HIT_GROUP_TYPE::D3D12_HIT_GROUP_TYPE_TRIANGLES, CLOSEST_HIT_NAME);
             bindHitGroup(HIT_GROUP_FLOOR_NAME, D3D12_HIT_GROUP_TYPE::D3D12_HIT_GROUP_TYPE_TRIANGLES, CLOSEST_HIT_NAME);
@@ -238,45 +240,19 @@ void Scene::create() {
         }
         //ローカルルートシグネチャの設定
         {
-            //Missシェーダー
-            {
+            auto bindLocalRootSignature = [&pipeline](ID3D12RootSignature* rootSig, const std::wstring& exportShader) {
                 CD3DX12_LOCAL_ROOT_SIGNATURE_SUBOBJECT* local = pipeline.CreateSubobject<CD3DX12_LOCAL_ROOT_SIGNATURE_SUBOBJECT>();
-                local->SetRootSignature(mMissLocalRootSignature.Get());
+                local->SetRootSignature(rootSig);
 
                 CD3DX12_SUBOBJECT_TO_EXPORTS_ASSOCIATION_SUBOBJECT* asso = pipeline.CreateSubobject<CD3DX12_SUBOBJECT_TO_EXPORTS_ASSOCIATION_SUBOBJECT>();
                 asso->SetSubobjectToAssociate(*local);
-                asso->AddExport(MISS_SHADER_NAME.c_str());
-            }
-            //HitGroupシェーダー
-            {
-                //Sphere
-                {
-                    CD3DX12_LOCAL_ROOT_SIGNATURE_SUBOBJECT* local = pipeline.CreateSubobject<CD3DX12_LOCAL_ROOT_SIGNATURE_SUBOBJECT>();
-                    local->SetRootSignature(mHitGroupLocalRootSignature[LocalRootSignature::HitGroup::Normal].Get());
+                asso->AddExport(exportShader.c_str());
+            };
 
-                    CD3DX12_SUBOBJECT_TO_EXPORTS_ASSOCIATION_SUBOBJECT* asso = pipeline.CreateSubobject<CD3DX12_SUBOBJECT_TO_EXPORTS_ASSOCIATION_SUBOBJECT>();
-                    asso->SetSubobjectToAssociate(*local);
-                    asso->AddExport(HIT_GROUP_SPHERE_NAME.c_str());
-                }
-                //Quad
-                {
-                    CD3DX12_LOCAL_ROOT_SIGNATURE_SUBOBJECT* local = pipeline.CreateSubobject<CD3DX12_LOCAL_ROOT_SIGNATURE_SUBOBJECT>();
-                    local->SetRootSignature(mHitGroupLocalRootSignature[LocalRootSignature::HitGroup::Normal].Get());
-
-                    CD3DX12_SUBOBJECT_TO_EXPORTS_ASSOCIATION_SUBOBJECT* asso = pipeline.CreateSubobject<CD3DX12_SUBOBJECT_TO_EXPORTS_ASSOCIATION_SUBOBJECT>();
-                    asso->SetSubobjectToAssociate(*local);
-                    asso->AddExport(HIT_GROUP_QUAD_NAME.c_str());
-                }
-                //Floor
-                {
-                    CD3DX12_LOCAL_ROOT_SIGNATURE_SUBOBJECT* local = pipeline.CreateSubobject<CD3DX12_LOCAL_ROOT_SIGNATURE_SUBOBJECT>();
-                    local->SetRootSignature(mHitGroupLocalRootSignature[LocalRootSignature::HitGroup::Normal].Get());
-
-                    CD3DX12_SUBOBJECT_TO_EXPORTS_ASSOCIATION_SUBOBJECT* asso = pipeline.CreateSubobject<CD3DX12_SUBOBJECT_TO_EXPORTS_ASSOCIATION_SUBOBJECT>();
-                    asso->SetSubobjectToAssociate(*local);
-                    asso->AddExport(HIT_GROUP_FLOOR_NAME.c_str());
-                }
-            }
+            bindLocalRootSignature(mMissLocalRootSignature.Get(), MISS_SHADER_NAME);
+            bindLocalRootSignature(mHitGroupLocalRootSignature[LocalRootSignature::HitGroup::Normal].Get(), HIT_GROUP_SPHERE_NAME);
+            bindLocalRootSignature(mHitGroupLocalRootSignature[LocalRootSignature::HitGroup::Normal].Get(), HIT_GROUP_QUAD_NAME);
+            bindLocalRootSignature(mHitGroupLocalRootSignature[LocalRootSignature::HitGroup::Normal].Get(), HIT_GROUP_FLOOR_NAME);
         }
         //グローバルルートシグネチャの設定
         {
