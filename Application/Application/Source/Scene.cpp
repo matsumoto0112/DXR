@@ -31,12 +31,12 @@ namespace {
 
     static const std::unordered_map<BottomLevelASType::MyEnum, std::string> MODEL_NAMES =
     {
-        {BottomLevelASType::WaterTower , "sphere.glb" },
+        {BottomLevelASType::WaterTower , "dinasour.glb" },
         {BottomLevelASType::Floor , "floor.glb" },
     };
 
-    static constexpr UINT TRIANGLE_COUNT = 0;
-    static constexpr UINT QUAD_COUNT = 1;
+    static constexpr UINT TRIANGLE_COUNT = 1;
+    static constexpr UINT QUAD_COUNT = 0;
     static constexpr UINT FLOOR_COUNT = 1;
     static constexpr UINT TLAS_NUM = TRIANGLE_COUNT + QUAD_COUNT + FLOOR_COUNT;
 
@@ -377,9 +377,7 @@ void Scene::create() {
                 mIndexOffsets[LocalRootSignature::HitGroupIndex::Sphere] = (UINT)indices.size();
                 mVertexOffsets[LocalRootSignature::HitGroupIndex::Sphere] = (UINT)vertices.size();
 
-                Framework::Utility::TextureLoader texLoader;
-                TextureData texture;
-                texture.data = texLoader.load(toWString(texPath + "back.png"), &texture.width, &texture.height);
+                TextureData texture = loader.getImageDatas()[0];
                 createTextureResource(texture, &mTextures[texOffset], DescriptorIndex::TextureStart + texOffset);
                 texOffset++;
             }
@@ -689,7 +687,7 @@ void Scene::render() {
     std::vector<D3D12_RAYTRACING_INSTANCE_DESC> instanceDesc(TLAS_NUM);
     UINT offset = 0;
     for (UINT n = 0; n < TRIANGLE_COUNT; n++) {
-        XMMATRIX transform = XMMatrixScaling(1, 1, 1) *
+        XMMATRIX transform = XMMatrixScaling(0.01f, 0.01f, 0.01f) *
             XMMatrixRotationRollPitchYaw(0, 0, 0) *
             XMMatrixTranslation((float)n * 5, 0, 0);
         instanceDesc[n + offset].InstanceID = 0;
