@@ -23,15 +23,18 @@ namespace {
     static const std::wstring RAY_GEN_NAME = L"RayGenShader";
     static const std::wstring HIT_GROUP_SPHERE_NAME = L"HitGroup_Sphere";
     static const std::wstring HIT_GROUP_QUAD_NAME = L"HitGroup_Quad";
+    static const std::wstring HIT_GROUP_FLOOR_NAME = L"HitGroup_Floor";
 
     static const std::unordered_map<BottomLevelASType::MyEnum, std::string> MODEL_NAMES =
     {
         {BottomLevelASType::WaterTower , "sphere.glb" },
+        {BottomLevelASType::Floor , "floor.glb" },
     };
 
     static constexpr UINT TRIANGLE_COUNT = 1;
     static constexpr UINT QUAD_COUNT = 1;
-    static constexpr UINT TLAS_NUM = TRIANGLE_COUNT + QUAD_COUNT;
+    static constexpr UINT FLOOR_COUNT = 1;
+    static constexpr UINT TLAS_NUM = TRIANGLE_COUNT + QUAD_COUNT + FLOOR_COUNT;
 
     inline void createBuffer(ID3D12Device* device, ID3D12Resource** resource, void* data, UINT64 size, LPCWSTR name = nullptr) {
         CD3DX12_HEAP_PROPERTIES heapProps(D3D12_HEAP_TYPE::D3D12_HEAP_TYPE_UPLOAD);
@@ -121,7 +124,7 @@ Scene::Scene(Framework::DX::DeviceResource* device, UINT width, UINT height)
     CAMERA_POSITION_PARAMS("LY", mLightPosition.y, -100.0f, 100.0f);
     CAMERA_POSITION_PARAMS("LZ", mLightPosition.z, -100.0f, 100.0f);
 
-    mTextures.resize(2);
+    mTextures.resize(3);
 }
 
 Scene::~Scene() { }
@@ -232,6 +235,13 @@ void Scene::create() {
                 hitGroup->SetHitGroupExport(HIT_GROUP_QUAD_NAME.c_str());
                 hitGroup->SetHitGroupType(D3D12_HIT_GROUP_TYPE::D3D12_HIT_GROUP_TYPE_TRIANGLES);
             }
+            //Floor
+            {
+                CD3DX12_HIT_GROUP_SUBOBJECT* hitGroup = pipeline.CreateSubobject<CD3DX12_HIT_GROUP_SUBOBJECT>();
+                hitGroup->SetClosestHitShaderImport(CLOSEST_HIT_NAME.c_str());
+                hitGroup->SetHitGroupExport(HIT_GROUP_FLOOR_NAME.c_str());
+                hitGroup->SetHitGroupType(D3D12_HIT_GROUP_TYPE::D3D12_HIT_GROUP_TYPE_TRIANGLES);
+            }
         }
         //シェーダーコンフィグ
         {
@@ -270,6 +280,15 @@ void Scene::create() {
                     CD3DX12_SUBOBJECT_TO_EXPORTS_ASSOCIATION_SUBOBJECT* asso = pipeline.CreateSubobject<CD3DX12_SUBOBJECT_TO_EXPORTS_ASSOCIATION_SUBOBJECT>();
                     asso->SetSubobjectToAssociate(*local);
                     asso->AddExport(HIT_GROUP_QUAD_NAME.c_str());
+                }
+                //Floor
+                {
+                    CD3DX12_LOCAL_ROOT_SIGNATURE_SUBOBJECT* local = pipeline.CreateSubobject<CD3DX12_LOCAL_ROOT_SIGNATURE_SUBOBJECT>();
+                    local->SetRootSignature(mHitGroupLocalRootSignature[LocalRootSignature::HitGroup::Normal].Get());
+
+                    CD3DX12_SUBOBJECT_TO_EXPORTS_ASSOCIATION_SUBOBJECT* asso = pipeline.CreateSubobject<CD3DX12_SUBOBJECT_TO_EXPORTS_ASSOCIATION_SUBOBJECT>();
+                    asso->SetSubobjectToAssociate(*local);
+                    asso->AddExport(HIT_GROUP_FLOOR_NAME.c_str());
                 }
             }
         }
@@ -313,6 +332,8 @@ void Scene::create() {
             auto resourcePath = Framework::Utility::toString(path.append("Resources\\").c_str());
             auto modelPath = resourcePath + "Model\\";
             auto texPath = resourcePath + "Texture\\";
+
+            UINT texOffset = 0;
            //三角形のバッファ作成
             {
                 Framework::Utility::GLBLoader loader(modelPath + MODEL_NAMES.at(BottomLevelASType::WaterTower));
@@ -348,13 +369,13 @@ void Scene::create() {
                     &texDesc,
                     D3D12_RESOURCE_STATES::D3D12_RESOURCE_STATE_GENERIC_READ,
                     nullptr,
-                    IID_PPV_ARGS(&mTextures[0].resource)));
+                    IID_PPV_ARGS(&mTextures[texOffset].resource)));
 
                 //テクスチャデータを書き込む
                 D3D12_BOX box = { 0,0,0,w ,h,1 };
                 UINT row = w * 4;
                 UINT slice = row * h;
-                MY_THROW_IF_FAILED(mTextures[0].resource->WriteToSubresource(
+                MY_THROW_IF_FAILED(mTextures[texOffset].resource->WriteToSubresource(
                     0,
                     &box,
                     texData.data(), row, slice));
@@ -369,10 +390,11 @@ void Scene::create() {
                 srvDesc.Texture2D.PlaneSlice = 0;
                 srvDesc.Texture2D.ResourceMinLODClamp = 0.0f;
 
-                mTextures[0].gpuHandle = mDescriptorTable->getGPUHandle(DescriptorIndex::TextureStart);
-                mTextures[0].cpuHandle = mDescriptorTable->getCPUHandle(DescriptorIndex::TextureStart);
-                device->CreateShaderResourceView(mTextures[0].resource.Get(), &srvDesc, mTextures[0].cpuHandle);
+                mTextures[texOffset].gpuHandle = mDescriptorTable->getGPUHandle(DescriptorIndex::TextureStart + texOffset);
+                mTextures[texOffset].cpuHandle = mDescriptorTable->getCPUHandle(DescriptorIndex::TextureStart + texOffset);
+                device->CreateShaderResourceView(mTextures[texOffset].resource.Get(), &srvDesc, mTextures[texOffset].cpuHandle);
             }
+            texOffset++;
             //四角形のバッファ作成
             {
                 std::vector<Index> indices = { 0,1,2,0,2,3 };
@@ -413,13 +435,13 @@ void Scene::create() {
                     &texDesc,
                     D3D12_RESOURCE_STATES::D3D12_RESOURCE_STATE_GENERIC_READ,
                     nullptr,
-                    IID_PPV_ARGS(&mTextures[1].resource)));
+                    IID_PPV_ARGS(&mTextures[texOffset].resource)));
 
                 //テクスチャデータを書き込む
                 D3D12_BOX box = { 0,0,0,w ,h,1 };
                 UINT row = w * 4;
                 UINT slice = row * h;
-                MY_THROW_IF_FAILED(mTextures[1].resource->WriteToSubresource(
+                MY_THROW_IF_FAILED(mTextures[texOffset].resource->WriteToSubresource(
                     0,
                     &box,
                     texData.data(), row, slice));
@@ -434,9 +456,71 @@ void Scene::create() {
                 srvDesc.Texture2D.PlaneSlice = 0;
                 srvDesc.Texture2D.ResourceMinLODClamp = 0.0f;
 
-                mTextures[1].gpuHandle = mDescriptorTable->getGPUHandle(DescriptorIndex::TextureStart + 1);
-                mTextures[1].cpuHandle = mDescriptorTable->getCPUHandle(DescriptorIndex::TextureStart + 1);
-                device->CreateShaderResourceView(mTextures[1].resource.Get(), &srvDesc, mTextures[1].cpuHandle);
+                mTextures[texOffset].gpuHandle = mDescriptorTable->getGPUHandle(DescriptorIndex::TextureStart + texOffset);
+                mTextures[texOffset].cpuHandle = mDescriptorTable->getCPUHandle(DescriptorIndex::TextureStart + texOffset);
+                device->CreateShaderResourceView(mTextures[texOffset].resource.Get(), &srvDesc, mTextures[texOffset].cpuHandle);
+            }
+            texOffset++;
+
+            //床のバッファ作成
+            {
+                Framework::Utility::GLBLoader loader(modelPath + MODEL_NAMES.at(BottomLevelASType::Floor));
+                auto indices = toLinearList(loader.getIndicesPerSubMeshes());
+                auto vertices = toLinearVertices(loader.getPositionsPerSubMeshes(), loader.getNormalsPerSubMeshes(), loader.getUVsPerSubMeshes());
+                createBuffer(mDeviceResource->getDevice(), &mIndexBuffer[BottomLevelASType::Floor].resource, indices.data(), indices.size() * sizeof(indices[0]), L"IndexBuffer");
+                createBuffer(mDeviceResource->getDevice(), &mVertexBuffer[BottomLevelASType::Floor].resource, vertices.data(), vertices.size() * sizeof(vertices[0]), L"VertexBuffer");
+
+                resourceIndices.insert(resourceIndices.end(), indices.begin(), indices.end());
+                resourceVertices.insert(resourceVertices.end(), vertices.begin(), vertices.end());
+                mIndexOffsets[LocalRootSignature::HitGroupIndex::Floor] = (UINT)indices.size();
+                mVertexOffsets[LocalRootSignature::HitGroupIndex::Floor] = (UINT)vertices.size();
+
+                auto tex = loader.getImageDatas()[0];
+                UINT w = tex.width, h = tex.height;
+                std::vector<uint8_t> texData = tex.data;
+
+                //テクスチャリソースを作成する
+                CD3DX12_RESOURCE_DESC texDesc = CD3DX12_RESOURCE_DESC::Tex2D(
+                    DXGI_FORMAT::DXGI_FORMAT_R8G8B8A8_UNORM, w, h, 1);
+
+                D3D12_HEAP_PROPERTIES heapProp = {};
+                heapProp.Type = D3D12_HEAP_TYPE::D3D12_HEAP_TYPE_CUSTOM;
+                heapProp.CPUPageProperty = D3D12_CPU_PAGE_PROPERTY::D3D12_CPU_PAGE_PROPERTY_WRITE_BACK;
+                heapProp.MemoryPoolPreference = D3D12_MEMORY_POOL::D3D12_MEMORY_POOL_L0;
+                heapProp.VisibleNodeMask = 1;
+                heapProp.CreationNodeMask = 1;
+
+                ID3D12Device* device = mDeviceResource->getDevice();
+                MY_THROW_IF_FAILED(device->CreateCommittedResource(
+                    &heapProp,
+                    D3D12_HEAP_FLAGS::D3D12_HEAP_FLAG_NONE,
+                    &texDesc,
+                    D3D12_RESOURCE_STATES::D3D12_RESOURCE_STATE_GENERIC_READ,
+                    nullptr,
+                    IID_PPV_ARGS(&mTextures[texOffset].resource)));
+
+                //テクスチャデータを書き込む
+                D3D12_BOX box = { 0,0,0,w ,h,1 };
+                UINT row = w * 4;
+                UINT slice = row * h;
+                MY_THROW_IF_FAILED(mTextures[texOffset].resource->WriteToSubresource(
+                    0,
+                    &box,
+                    texData.data(), row, slice));
+
+                //シェーダーリソースビューを作成する
+                D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
+                srvDesc.ViewDimension = D3D12_SRV_DIMENSION::D3D12_SRV_DIMENSION_TEXTURE2D;
+                srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
+                srvDesc.Format = texDesc.Format;
+                srvDesc.Texture2D.MipLevels = 1;
+                srvDesc.Texture2D.MostDetailedMip = 0;
+                srvDesc.Texture2D.PlaneSlice = 0;
+                srvDesc.Texture2D.ResourceMinLODClamp = 0.0f;
+
+                mTextures[texOffset].gpuHandle = mDescriptorTable->getGPUHandle(DescriptorIndex::TextureStart + texOffset);
+                mTextures[texOffset].cpuHandle = mDescriptorTable->getCPUHandle(DescriptorIndex::TextureStart + texOffset);
+                device->CreateShaderResourceView(mTextures[texOffset].resource.Get(), &srvDesc, mTextures[texOffset].cpuHandle);
 
             }
         }
@@ -542,7 +626,7 @@ void Scene::create() {
                     instanceDesc[n + offset].AccelerationStructure = mBLASBuffers[BottomLevelASType::WaterTower].buffer->GetGPUVirtualAddress();
                     XMStoreFloat3x4(reinterpret_cast<XMFLOAT3X4*>(instanceDesc[n + offset].Transform), transform);
                 }
-                offset = TRIANGLE_COUNT;
+                offset += TRIANGLE_COUNT;
                 for (UINT n = 0; n < QUAD_COUNT; n++) {
                     XMMATRIX transform = XMMatrixScaling(1, 1, 1) * XMMatrixTranslation((float)n * 5, 3, 0);
                     instanceDesc[n + offset].InstanceID = 0;
@@ -550,6 +634,16 @@ void Scene::create() {
                     instanceDesc[n + offset].Flags = D3D12_RAYTRACING_INSTANCE_FLAGS::D3D12_RAYTRACING_INSTANCE_FLAG_NONE;
                     instanceDesc[n + offset].InstanceContributionToHitGroupIndex = LocalRootSignature::HitGroupIndex::Quad;
                     instanceDesc[n + offset].AccelerationStructure = mBLASBuffers[BottomLevelASType::Quad].buffer->GetGPUVirtualAddress();
+                    XMStoreFloat3x4(reinterpret_cast<XMFLOAT3X4*>(instanceDesc[n + offset].Transform), transform);
+                }
+                offset += QUAD_COUNT;
+                for (UINT n = 0; n < FLOOR_COUNT; n++) {
+                    XMMATRIX transform = XMMatrixScaling(100, 1, 100) * XMMatrixTranslation(0, -5, 0);
+                    instanceDesc[n + offset].InstanceID = 0;
+                    instanceDesc[n + offset].InstanceMask = 0xff;
+                    instanceDesc[n + offset].Flags = D3D12_RAYTRACING_INSTANCE_FLAGS::D3D12_RAYTRACING_INSTANCE_FLAG_NONE;
+                    instanceDesc[n + offset].InstanceContributionToHitGroupIndex = LocalRootSignature::HitGroupIndex::Floor;
+                    instanceDesc[n + offset].AccelerationStructure = mBLASBuffers[BottomLevelASType::Floor].buffer->GetGPUVirtualAddress();
                     XMStoreFloat3x4(reinterpret_cast<XMFLOAT3X4*>(instanceDesc[n + offset].Transform), transform);
                 }
 
@@ -606,6 +700,7 @@ void Scene::create() {
         void* missShaderID = stateObjectProp->GetShaderIdentifier(MISS_SHADER_NAME.c_str());
         void* hitGroup_SphereShaderID = stateObjectProp->GetShaderIdentifier(HIT_GROUP_SPHERE_NAME.c_str());
         void* hitGroup_QuadShaderID = stateObjectProp->GetShaderIdentifier(HIT_GROUP_QUAD_NAME.c_str());
+        void* hitGroup_FloorShaderID = stateObjectProp->GetShaderIdentifier(HIT_GROUP_FLOOR_NAME.c_str());
         UINT shaderIDSize = D3D12_SHADER_IDENTIFIER_SIZE_IN_BYTES;
         //RayGenShader
         {
@@ -633,12 +728,12 @@ void Scene::create() {
                 D3D12_GPU_DESCRIPTOR_HANDLE tex0;
                 HitGroupConstant cb;
             } rootArguments;
-            UINT num = 2;
+            UINT num = 3;
             UINT recordSize = shaderIDSize + sizeof(RootArgument);
             ShaderTable table(device, num, recordSize, L"HitGroupShaderTable");
             //Sphere
             {
-                //rootArguments.cb.color = Color4(1, 1, 0, 1);
+                rootArguments.cb.color = Color4(1, 0, 1, 1);
                 rootArguments.cb.indexOffset = std::get<0>(getOffset(LocalRootSignature::HitGroupIndex::Sphere));
                 rootArguments.cb.vertexOffset = std::get<1>(getOffset(LocalRootSignature::HitGroupIndex::Sphere));
                 rootArguments.tex0 = mTextures[0].gpuHandle;
@@ -646,11 +741,19 @@ void Scene::create() {
             }
             //Quad
             {
-                //rootArguments.cb.color = Color4(1, 0, 0, 1);
+                rootArguments.cb.color = Color4(0, 1, 0, 1);
                 rootArguments.cb.indexOffset = std::get<0>(getOffset(LocalRootSignature::HitGroupIndex::Quad));
                 rootArguments.cb.vertexOffset = std::get<1>(getOffset(LocalRootSignature::HitGroupIndex::Quad));
                 rootArguments.tex0 = mTextures[1].gpuHandle;
                 table.push_back(ShaderRecord(hitGroup_QuadShaderID, shaderIDSize, &rootArguments, sizeof(RootArgument)));
+            }
+            //Floor
+            {
+                rootArguments.cb.color = Color4(1, 1, 1, 1);
+                rootArguments.cb.indexOffset = std::get<0>(getOffset(LocalRootSignature::HitGroupIndex::Floor));
+                rootArguments.cb.vertexOffset = std::get<1>(getOffset(LocalRootSignature::HitGroupIndex::Floor));
+                rootArguments.tex0 = mTextures[2].gpuHandle;
+                table.push_back(ShaderRecord(hitGroup_FloorShaderID, shaderIDSize, &rootArguments, sizeof(RootArgument)));
             }
             mHitGroupStride = table.getShaderRecordSize();
             mHitGroupTable = table.getResource();

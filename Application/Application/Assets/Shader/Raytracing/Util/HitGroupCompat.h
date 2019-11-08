@@ -11,7 +11,7 @@ using namespace DirectX;
 #endif
 
 struct HitGroupConstant {
-    //Color color;
+    Color color;
     UINT vertexOffset;
     UINT indexOffset;
 

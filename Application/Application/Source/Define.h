@@ -47,6 +47,7 @@ namespace LocalRootSignature {
         enum MyEnum {
             Sphere,
             Quad,
+            Floor,
 
             Count
         };
@@ -69,6 +70,7 @@ namespace BottomLevelASType {
     enum MyEnum {
         WaterTower,
         Quad,
+        Floor,
 
         Count
     };

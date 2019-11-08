@@ -52,7 +52,7 @@ void Normal(inout RayPayload payload, in MyAttr attr) {
     float2 uv = getUV(getIndices(), attr);
     float4 color = tex0.SampleLevel(samLinear, uv, 0.0);
 
-    payload.color = color;
+    payload.color = color * l_sceneCB.color;
 
 
 }
