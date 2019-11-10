@@ -114,5 +114,9 @@ inline static float4 getTangent(float4 tangents[3], in MyAttr attr) {
         attr.barycentrics.y * (tangents[2] - tangents[0]);
 }
 
+inline static float4 sampleTexture(in Texture2D tex, in SamplerState sampler, in float2 uv) {
+    return tex.SampleLevel(sampler, uv, 0.0);
+}
+
 
 #endif //! SHADER_RAYTRACING_UTIL_HELPER_HLSLI

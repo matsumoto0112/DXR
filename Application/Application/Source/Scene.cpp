@@ -33,7 +33,7 @@ namespace {
 
     static const std::unordered_map<BottomLevelASType::MyEnum, std::string> MODEL_NAMES =
     {
-        {BottomLevelASType::UFO , "UFO.glb" },
+        {BottomLevelASType::UFO , "dinasour.glb" },
         {BottomLevelASType::Floor , "floor.glb" },
     };
 

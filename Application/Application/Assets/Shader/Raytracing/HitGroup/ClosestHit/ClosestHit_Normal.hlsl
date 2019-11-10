@@ -13,7 +13,7 @@ inline float3 Normal(in MyAttr attr) {
     float3 binormal = normalize(cross(vertexNormal, normalize(tangent.xyz)) * tangent.w);
 
     //法線マップから取得した法線
-    float3 normalMap = normalize(normal.SampleLevel(samLinear, uv, 0.0).rgb);
+    float3 normalMap = normalize(sampleTexture(normal, samLinear, uv).rgb);
 
     float3 N = normalMap.x * tangent.xyz * tangent.w + normalMap.y * binormal + normalMap.z * vertexNormal;
 
@@ -35,14 +35,14 @@ void ClosestHit_Normal(inout RayPayload payload, in MyAttr attr) {
 
     //float3 N = GetNormal(attr);
     float3 N = Normal(attr);
-    float3 diffuse = albedo.SampleLevel(samLinear, uv, 0.0).rgb;
+    float3 diffuse = sampleTexture(albedo, samLinear, uv).rgb;
 
     float dotNL = saturate(dot(N, L));
 
     float4 color = g_sceneCB.lightAmbient;
     color.rgb += (diffuse * g_sceneCB.lightDiffuse.rgb) * dotNL / PI;
     color.rgb += float3(1, 1, 1) * pow(dotNL, 30);
-    //color.rgb += emissive.SampleLevel(samLinear, uv, 0.0).rgb;
+    color.rgb += sampleTexture(emissive, samLinear, uv).rgb;
 
     //color.rgb *= factor;
     color = saturate(color);
