@@ -29,7 +29,10 @@ namespace LocalRootSignature {
         namespace Constants {
             enum MyEnum {
                 Albedo,
-                Texture1,
+                Normal,
+                //RoughMetal,
+                Emissive,
+
                 SceneConstants,
 
                 Count

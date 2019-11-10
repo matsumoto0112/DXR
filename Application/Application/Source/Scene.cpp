@@ -38,7 +38,7 @@ namespace {
     };
 
     static constexpr UINT TRIANGLE_COUNT = 1;
-    static constexpr UINT QUAD_COUNT = 1;
+    static constexpr UINT QUAD_COUNT = 0;
     static constexpr UINT FLOOR_COUNT = 1;
     static constexpr UINT TLAS_NUM = TRIANGLE_COUNT + QUAD_COUNT + FLOOR_COUNT;
 
@@ -102,6 +102,15 @@ namespace {
     D3D12_RAYTRACING_ACCELERATION_STRUCTURE_PREBUILD_INFO topLevelPreInfo = {};
     D3D12_BUILD_RAYTRACING_ACCELERATION_STRUCTURE_DESC topLevelBuildDesc = {};
 
+    enum class ModelTextureType {
+        UFO_Albedo,
+        UFO_Normal,
+        UFO_Emissive,
+        //UFO_RoughMetal,
+
+        Plane_Albedo,
+    };
+    std::unordered_map<ModelTextureType, UINT> mTextureIDs;
 }
 
 Scene::Scene(Framework::DX::DeviceResource* device, UINT width, UINT height)
@@ -207,14 +216,19 @@ void Scene::create() {
             }
             //HitGroupシェーダー用ローカルルートシグネチャ
             {
-                CD3DX12_DESCRIPTOR_RANGE range[2];
-                range[0].Init(D3D12_DESCRIPTOR_RANGE_TYPE::D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 3);
-                range[1].Init(D3D12_DESCRIPTOR_RANGE_TYPE::D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 4);
+                CD3DX12_DESCRIPTOR_RANGE range[3];
+                range[0].Init(D3D12_DESCRIPTOR_RANGE_TYPE::D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 3); //アルベド
+                range[1].Init(D3D12_DESCRIPTOR_RANGE_TYPE::D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 4); //法線
+                //range[0].Init(D3D12_DESCRIPTOR_RANGE_TYPE::D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 5); //粗さ、金属
+                range[2].Init(D3D12_DESCRIPTOR_RANGE_TYPE::D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 6); //発光
 
                 CD3DX12_ROOT_PARAMETER params[LocalRootSignature::HitGroup::Constants::Count];
                 UINT contSize = align(sizeof(HitGroupConstant), sizeof(UINT32));
                 params[LocalRootSignature::HitGroup::Constants::Albedo].InitAsDescriptorTable(1, &range[0]);
-                params[LocalRootSignature::HitGroup::Constants::Texture1].InitAsDescriptorTable(1, &range[1]);
+                params[LocalRootSignature::HitGroup::Constants::Normal].InitAsDescriptorTable(1, &range[1]);
+                //params[LocalRootSignature::HitGroup::Constants::RoughMetal].InitAsDescriptorTable(1, &range[2]);
+                params[LocalRootSignature::HitGroup::Constants::Emissive].InitAsDescriptorTable(1, &range[2]);
+
                 params[LocalRootSignature::HitGroup::Constants::SceneConstants].InitAsConstants(contSize, 1);
 
                 CD3DX12_ROOT_SIGNATURE_DESC local(_countof(params), params);
@@ -384,9 +398,23 @@ void Scene::create() {
                 mVertexOffsets[LocalRootSignature::HitGroupIndex::UFO] = (UINT)vertices.size();
 
                 Material material = loader.getMaterialDatas()[0];
-                TextureData texture = loader.getImageDatas()[material.normalMapID];
-                createTextureResource(texture, &mTextures[texOffset], DescriptorIndex::TextureStart + texOffset);
+                std::vector<TextureData> textureDatas = loader.getImageDatas();
+                TextureData albedo = textureDatas[0];
+                createTextureResource(albedo, &mTextures[texOffset], DescriptorIndex::TextureStart + texOffset);
+                mTextureIDs[ModelTextureType::UFO_Albedo] = texOffset;
                 texOffset++;
+                TextureData normal = textureDatas[material.normalMapID];
+                createTextureResource(normal, &mTextures[texOffset], DescriptorIndex::TextureStart + texOffset);
+                mTextureIDs[ModelTextureType::UFO_Normal] = texOffset;
+                texOffset++;
+                TextureData emissive = textureDatas[material.emissiveMapID];
+                createTextureResource(emissive, &mTextures[texOffset], DescriptorIndex::TextureStart + texOffset);
+                mTextureIDs[ModelTextureType::UFO_Emissive] = texOffset;
+                texOffset++;
+                //TextureData albedo = textureDatas[0];
+                //createTextureResource(albedo, &mTextures[texOffset], DescriptorIndex::TextureStart + texOffset);
+                //mTextureIDs[ModelTextureType::UFO_Albedo] = texOffset;
+                //texOffset++;
             }
             //四角形のバッファ作成
             {
@@ -428,6 +456,7 @@ void Scene::create() {
 
                 TextureData texture = loader.getImageDatas()[0];
                 createTextureResource(texture, &mTextures[texOffset], DescriptorIndex::TextureStart + texOffset);
+                mTextureIDs[ModelTextureType::Plane_Albedo] = texOffset;
                 texOffset++;
             }
             //テクスチャの読み込み
@@ -604,7 +633,8 @@ void Scene::create() {
         {
             struct RootArgument {
                 D3D12_GPU_DESCRIPTOR_HANDLE albedo;
-                D3D12_GPU_DESCRIPTOR_HANDLE tex1;
+                D3D12_GPU_DESCRIPTOR_HANDLE normal;
+                D3D12_GPU_DESCRIPTOR_HANDLE emissive;
                 HitGroupConstant cb;
             } rootArguments;
             UINT num = 3;
@@ -614,7 +644,9 @@ void Scene::create() {
             {
                 rootArguments.cb.indexOffset = std::get<0>(getOffset(LocalRootSignature::HitGroupIndex::UFO));
                 rootArguments.cb.vertexOffset = std::get<1>(getOffset(LocalRootSignature::HitGroupIndex::UFO));
-                rootArguments.albedo = mTextures[0].gpuHandle;
+                rootArguments.albedo = mTextures[mTextureIDs[ModelTextureType::UFO_Albedo]].gpuHandle;
+                rootArguments.normal = mTextures[mTextureIDs[ModelTextureType::UFO_Normal]].gpuHandle;
+                rootArguments.emissive = mTextures[mTextureIDs[ModelTextureType::UFO_Emissive]].gpuHandle;
                 table.push_back(ShaderRecord(hitGroup_SphereShaderID, shaderIDSize, &rootArguments, sizeof(RootArgument)));
             }
             //Quad
@@ -628,8 +660,8 @@ void Scene::create() {
             {
                 rootArguments.cb.indexOffset = std::get<0>(getOffset(LocalRootSignature::HitGroupIndex::Floor));
                 rootArguments.cb.vertexOffset = std::get<1>(getOffset(LocalRootSignature::HitGroupIndex::Floor));
-                rootArguments.albedo = mTextures[5].gpuHandle;
-                rootArguments.tex1 = mTextures[4].gpuHandle;
+                rootArguments.albedo = mTextures[mTextureIDs[ModelTextureType::Plane_Albedo]].gpuHandle;
+                //rootArguments.tex1 = mTextures[4].gpuHandle;
                 table.push_back(ShaderRecord(hitGroup_FloorShaderID, shaderIDSize, &rootArguments, sizeof(RootArgument)));
             }
             mHitGroupStride = table.getShaderRecordSize();

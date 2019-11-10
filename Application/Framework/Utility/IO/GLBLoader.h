@@ -22,6 +22,7 @@ namespace Framework::Utility {
     struct Material {
         std::string name;
         int normalMapID;
+        int emissiveMapID;
         AlphaMode alphaMode;
     };
     /**

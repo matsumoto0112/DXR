@@ -88,6 +88,7 @@ namespace Framework::Utility {
             material.name = mat.name;
             //マップが存在しなければ-1にしておく
             material.normalMapID = (mat.normalTexture.textureId != "") ? std::stoi(mat.normalTexture.textureId) : -1;
+            material.emissiveMapID = (mat.emissiveTexture.textureId != "") ? std::stoi(mat.emissiveTexture.textureId) : -1;
             //gltfのアルファモードによる切り替え
             switch (mat.alphaMode) {
                 case ALPHA_UNKNOWN:
