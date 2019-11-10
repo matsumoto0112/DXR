@@ -38,7 +38,7 @@ namespace {
     };
 
     static constexpr UINT TRIANGLE_COUNT = 1;
-    static constexpr UINT QUAD_COUNT = 0;
+    static constexpr UINT QUAD_COUNT = 1;
     static constexpr UINT FLOOR_COUNT = 1;
     static constexpr UINT TLAS_NUM = TRIANGLE_COUNT + QUAD_COUNT + FLOOR_COUNT;
 
@@ -148,7 +148,7 @@ Scene::Scene(Framework::DX::DeviceResource* device, UINT width, UINT height)
     CAMERA_POSITION_PARAMS("LY", mLightPosition.y, -100.0f, 100.0f);
     CAMERA_POSITION_PARAMS("LZ", mLightPosition.z, -100.0f, 100.0f);
 
-    mTextures.resize(3);
+    mTextures.resize(TEXTURE_NUM);
 }
 
 Scene::~Scene() { }
@@ -207,12 +207,14 @@ void Scene::create() {
             }
             //HitGroupシェーダー用ローカルルートシグネチャ
             {
-                CD3DX12_DESCRIPTOR_RANGE range[1];
+                CD3DX12_DESCRIPTOR_RANGE range[2];
                 range[0].Init(D3D12_DESCRIPTOR_RANGE_TYPE::D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 3);
+                range[1].Init(D3D12_DESCRIPTOR_RANGE_TYPE::D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 4);
 
                 CD3DX12_ROOT_PARAMETER params[LocalRootSignature::HitGroup::Constants::Count];
                 UINT contSize = align(sizeof(HitGroupConstant), sizeof(UINT32));
                 params[LocalRootSignature::HitGroup::Constants::Texture0].InitAsDescriptorTable(1, &range[0]);
+                params[LocalRootSignature::HitGroup::Constants::Texture1].InitAsDescriptorTable(1, &range[1]);
                 params[LocalRootSignature::HitGroup::Constants::SceneConstants].InitAsConstants(contSize, 1);
 
                 CD3DX12_ROOT_SIGNATURE_DESC local(_countof(params), params);
@@ -427,6 +429,28 @@ void Scene::create() {
                 createTextureResource(texture, &mTextures[texOffset], DescriptorIndex::TextureStart + texOffset);
                 texOffset++;
             }
+            //テクスチャの読み込み
+            {
+                Framework::Utility::TextureLoader texLoader;
+                TextureData texture;
+                texture.data = texLoader.load(toWString(texPath + "round.png"), &texture.width, &texture.height);
+                createTextureResource(texture, &mTextures[texOffset], DescriptorIndex::TextureStart + texOffset);
+                texOffset++;
+            }
+            {
+                Framework::Utility::TextureLoader texLoader;
+                TextureData texture;
+                texture.data = texLoader.load(toWString(texPath + "red.png"), &texture.width, &texture.height);
+                createTextureResource(texture, &mTextures[texOffset], DescriptorIndex::TextureStart + texOffset);
+                texOffset++;
+            }
+            {
+                Framework::Utility::TextureLoader texLoader;
+                TextureData texture;
+                texture.data = texLoader.load(toWString(texPath + "blue.png"), &texture.width, &texture.height);
+                createTextureResource(texture, &mTextures[texOffset], DescriptorIndex::TextureStart + texOffset);
+                texOffset++;
+            }
         }
         //BLAS・TLASの構築
         {
@@ -579,6 +603,7 @@ void Scene::create() {
         {
             struct RootArgument {
                 D3D12_GPU_DESCRIPTOR_HANDLE tex0;
+                D3D12_GPU_DESCRIPTOR_HANDLE tex1;
                 HitGroupConstant cb;
             } rootArguments;
             UINT num = 3;
@@ -605,7 +630,8 @@ void Scene::create() {
                 rootArguments.cb.color = Color4(1, 1, 1, 1);
                 rootArguments.cb.indexOffset = std::get<0>(getOffset(LocalRootSignature::HitGroupIndex::Floor));
                 rootArguments.cb.vertexOffset = std::get<1>(getOffset(LocalRootSignature::HitGroupIndex::Floor));
-                rootArguments.tex0 = mTextures[2].gpuHandle;
+                rootArguments.tex0 = mTextures[5].gpuHandle;
+                rootArguments.tex1 = mTextures[4].gpuHandle;
                 table.push_back(ShaderRecord(hitGroup_FloorShaderID, shaderIDSize, &rootArguments, sizeof(RootArgument)));
             }
             mHitGroupStride = table.getShaderRecordSize();
@@ -703,7 +729,7 @@ void Scene::render() {
     }
     offset += TRIANGLE_COUNT;
     for (UINT n = 0; n < QUAD_COUNT; n++) {
-        XMMATRIX transform = XMMatrixScaling(1, 1, 1) * XMMatrixRotationRollPitchYaw(0, mQuadRotate.toRadians().getRad(), 0) * XMMatrixTranslation((float)n * 5, 3, 0);
+        XMMATRIX transform = XMMatrixScaling(1, 1, 1) * XMMatrixRotationRollPitchYaw(0, mQuadRotate.toRadians().getRad(), 0) * XMMatrixTranslation((float)n * 5 + 20, 3, 0);
         instanceDesc[n + offset].InstanceID = 0;
         instanceDesc[n + offset].InstanceMask = 0xff;
         instanceDesc[n + offset].Flags = D3D12_RAYTRACING_INSTANCE_FLAGS::D3D12_RAYTRACING_INSTANCE_FLAG_NONE;

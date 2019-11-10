@@ -29,6 +29,7 @@ namespace LocalRootSignature {
         namespace Constants {
             enum MyEnum {
                 Texture0,
+                Texture1,
                 SceneConstants,
 
                 Count
