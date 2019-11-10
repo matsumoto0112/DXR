@@ -11,16 +11,8 @@ using namespace DirectX;
 #endif
 
 struct HitGroupConstant {
-    //最初にテクスチャがないとテクスチャが使えないっぽい
-//#ifndef HLSL
-//    D3D12_GPU_DESCRIPTOR_HANDLE tex0;
-//    D3D12_GPU_DESCRIPTOR_HANDLE tex1;
-//#endif
-
-    Color color;
     UINT vertexOffset;
     UINT indexOffset;
-
 };
 
 #endif // !SHADER_RAYTRACING_HITGROUP_HITGROUPCOMPAT_H

@@ -611,7 +611,6 @@ void Scene::create() {
             ShaderTable table(device, num, recordSize, L"HitGroupShaderTable");
             //Sphere
             {
-                rootArguments.cb.color = Color4(1, 1, 1, 1);
                 rootArguments.cb.indexOffset = std::get<0>(getOffset(LocalRootSignature::HitGroupIndex::Sphere));
                 rootArguments.cb.vertexOffset = std::get<1>(getOffset(LocalRootSignature::HitGroupIndex::Sphere));
                 rootArguments.tex0 = mTextures[0].gpuHandle;
@@ -619,7 +618,6 @@ void Scene::create() {
             }
             //Quad
             {
-                rootArguments.cb.color = Color4(1, 1, 1, 1);
                 rootArguments.cb.indexOffset = std::get<0>(getOffset(LocalRootSignature::HitGroupIndex::Quad));
                 rootArguments.cb.vertexOffset = std::get<1>(getOffset(LocalRootSignature::HitGroupIndex::Quad));
                 rootArguments.tex0 = mTextures[1].gpuHandle;
@@ -627,7 +625,6 @@ void Scene::create() {
             }
             //Floor
             {
-                rootArguments.cb.color = Color4(1, 1, 1, 1);
                 rootArguments.cb.indexOffset = std::get<0>(getOffset(LocalRootSignature::HitGroupIndex::Floor));
                 rootArguments.cb.vertexOffset = std::get<1>(getOffset(LocalRootSignature::HitGroupIndex::Floor));
                 rootArguments.tex0 = mTextures[5].gpuHandle;
