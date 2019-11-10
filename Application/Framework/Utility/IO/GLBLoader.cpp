@@ -47,6 +47,7 @@ namespace Framework::Utility {
     std::vector<TextureData> GLBLoader::getImageDatas() const {
         std::vector<TextureData> result;
         for (auto&& image : mDocument.images.Elements()) {
+            MY_DEBUG_LOG("%s\n", image.uri);
             TextureData tex;
             tex.textureSizePerPixel = 4;
             std::vector<BYTE> texRowData = mResourceReader->ReadBinaryData(mDocument, image);

@@ -383,7 +383,8 @@ void Scene::create() {
                 mIndexOffsets[LocalRootSignature::HitGroupIndex::UFO] = (UINT)indices.size();
                 mVertexOffsets[LocalRootSignature::HitGroupIndex::UFO] = (UINT)vertices.size();
 
-                TextureData texture = loader.getImageDatas()[0];
+                Material material = loader.getMaterialDatas()[0];
+                TextureData texture = loader.getImageDatas()[material.normalMapID];
                 createTextureResource(texture, &mTextures[texOffset], DescriptorIndex::TextureStart + texOffset);
                 texOffset++;
             }
