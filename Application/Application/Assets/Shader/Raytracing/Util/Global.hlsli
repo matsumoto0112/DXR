@@ -3,7 +3,6 @@
 * @brief シェーダーファイル全体で使用するグローバルヘッダー
 */
 
-
 #ifndef SHADER_RAYTRACING_GLOBAL_HLSLI
 #define SHADER_RAYTRACING_GLOBAL_HLSLI
 

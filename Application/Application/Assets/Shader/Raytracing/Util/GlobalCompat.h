@@ -16,30 +16,42 @@ using namespace DirectX;
 typedef UINT16 Index;
 #endif
 
-static const UINT MAX_RAY_RECURSION_DEPTH = 2;
+static const UINT MAX_RAY_RECURSION_DEPTH = 2; //!< 最大レイ再帰回数
 
-struct SceneConstantBuffer {
-    Mat4 projectionToWorld;
-    Vec4 cameraPosition;
-    Vec4 lightPosition;
-    Color lightDiffuse;
-    Color lightAmbient;
-};
-
+/**
+* @brief 頂点情報
+*/
 struct Vertex {
-    Vec3 position;
-    Vec3 normal;
-    Vec2 uv;
-    Vec4 tangent;
+    Vec3 position; //!< 座標
+    Vec3 normal; //!< 法線
+    Vec2 uv; //!< UV座標
+    Vec4 tangent; //!< 接線
 };
 
+/**
+* @brief シーン全体の情報
+*/
+struct SceneConstantBuffer {
+    Mat4 projectionToWorld; //!< プロジェクション空間からワールド空間への変換行列
+    Vec4 cameraPosition; //!< カメラのワールド座標
+    Vec4 lightPosition; //!< ディレクショナルライトのワールド座標
+    Color lightDiffuse; //!< ディレクショナルライトの色
+    Color lightAmbient; //!< 環境色
+};
+
+/**
+* @brief レイペイロード
+*/
 struct RayPayload {
-    Color color;
-    UINT hitNum;
+    Color color; //!< 色
+    UINT recursionCount; //!<
 };
 
+/**
+* @brief 影用ペイロード
+*/
 struct ShadowPayload {
-    bool hit;
+    bool hit; //!< 何かに当たったか
 };
 
 #endif // !SHADER_RAYTRACING_GLOBALCOMPAT_H

@@ -13,7 +13,7 @@ inline float3 Normal(in MyAttr attr) {
     float3 binormal = normalize(cross(vertexNormal, normalize(tangent.xyz)) * tangent.w);
 
     //法線マップから取得した法線
-    float3 normalMap = normalize(sampleTexture(normal, samLinear, uv).rgb);
+    float3 normalMap = normalize(SampleTexture(normal, samLinear, uv).rgb);
 
     float3 N = normalMap.x * tangent.xyz * tangent.w + normalMap.y * binormal + normalMap.z * vertexNormal;
 
@@ -30,19 +30,18 @@ void ClosestHit_Normal(inout RayPayload payload, in MyAttr attr) {
     float3 L = normalize(g_sceneCB.lightPosition.xyz - hitPosition);
 
     Ray shadowRay = { hitPosition,L };
-    float factor = ShadowCast(shadowRay, payload.hitNum) ? 0.1 : 1.0;
+    float factor = ShadowRayCast(shadowRay, payload.recursionCount) ? 0.1 : 1.0;
     float2 uv = GetUV(attr);
 
-    //float3 N = GetNormal(attr);
     float3 N = Normal(attr);
-    float3 diffuse = sampleTexture(albedo, samLinear, uv).rgb;
+    float3 diffuse = SampleTexture(albedo, samLinear, uv).rgb;
 
     float dotNL = saturate(dot(N, L));
 
     float4 color = g_sceneCB.lightAmbient;
     color.rgb += (diffuse * g_sceneCB.lightDiffuse.rgb) * dotNL / PI;
     color.rgb += float3(1, 1, 1) * pow(dotNL, 30);
-    color.rgb += sampleTexture(emissive, samLinear, uv).rgb;
+    color.rgb += SampleTexture(emissive, samLinear, uv).rgb;
 
     //color.rgb *= factor;
     color = saturate(color);

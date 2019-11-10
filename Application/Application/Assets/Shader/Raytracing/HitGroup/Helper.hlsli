@@ -7,7 +7,7 @@
 #include "../Util/Helper.hlsli"
 #include "Local.hlsli"
 
-inline bool ShadowCast(in Ray ray,in uint currentRecursionNum) {
+inline bool ShadowRayCast(in Ray ray,in uint currentRecursionNum) {
     //最大再帰回数を超えていたら何もしない
     if (currentRecursionNum >= MAX_RAY_RECURSION_DEPTH) {
         return false;
@@ -32,16 +32,39 @@ inline bool ShadowCast(in Ray ray,in uint currentRecursionNum) {
         shadow);
     return shadow.hit;
 }
-
+/**
+* @brief 三角形のインデックスを取得する
+*/
 inline uint3 GetIndices() {
-    uint indexSizeInBytes = 2;
+    uint indexSizeInBytes = 2; //2Byteのインデックスを利用しているため
     uint indicesPerTriangle = 3;
     uint triangleIndexStride = indicesPerTriangle * indexSizeInBytes;
     uint baseIndex = PrimitiveIndex() * triangleIndexStride + l_sceneCB.indexOffset * indexSizeInBytes;
 
-    return loadIndices(baseIndex, Indices) + l_sceneCB.vertexOffset;
+    return LoadIndices(baseIndex, Indices) + l_sceneCB.vertexOffset;
 }
 
+/**
+* @brief 衝突点の法線を取得する
+*/
+inline float3 GetNormal(in MyAttr attr) {
+    uint3 indices = GetIndices();
+
+    float3 normals[3] =
+    {
+        Vertices[indices[0]].normal,
+        Vertices[indices[1]].normal,
+        Vertices[indices[2]].normal,
+    };
+
+    return normals[0] +
+        attr.barycentrics.x * (normals[1] - normals[0]) +
+        attr.barycentrics.y * (normals[2] - normals[0]);
+}
+
+/**
+* @brief 衝突点のUV座標を取得する
+*/
 inline float2 GetUV(in MyAttr attr) {
     uint3 indices = GetIndices();
 
@@ -51,27 +74,17 @@ inline float2 GetUV(in MyAttr attr) {
         Vertices[indices[1]].uv,
         Vertices[indices[2]].uv,
     };
-    return getUV(uvs, attr);
+    return uvs[0] +
+        attr.barycentrics.x * (uvs[1] - uvs[0]) +
+        attr.barycentrics.y * (uvs[2] - uvs[0]);
 }
 
-inline float3 GetNormal(in MyAttr attr) {
-    uint3 indices = GetIndices();
-
-    //法線の取得
-    float3 normals[3] =
-    {
-        Vertices[indices[0]].normal,
-        Vertices[indices[1]].normal,
-        Vertices[indices[2]].normal,
-    };
-
-    return getNormal(normals, attr);
-}
-
+/**
+* @brief 衝突点の接線を取得する
+*/
 inline float4 GetTangent(in MyAttr attr) {
     uint3 indices = GetIndices();
 
-    //法線の取得
     float4 tangents[3] =
     {
         Vertices[indices[0]].tangent,
@@ -79,8 +92,9 @@ inline float4 GetTangent(in MyAttr attr) {
         Vertices[indices[2]].tangent,
     };
 
-    return getTangent(tangents, attr);
+    return tangents[0] +
+        attr.barycentrics.x * (tangents[1] - tangents[0]) +
+        attr.barycentrics.y * (tangents[2] - tangents[0]);
 }
-
 
 #endif //! SHADER_RAYTRACING_HITGROUP_HELPER_HLSLI

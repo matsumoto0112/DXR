@@ -10,9 +10,12 @@
 using namespace DirectX;
 #endif
 
+/**
+* @brief ヒットグループのコンスタントバッファ
+*/
 struct HitGroupConstant {
-    UINT vertexOffset;
-    UINT indexOffset;
+    UINT vertexOffset; //!< 頂点オフセット
+    UINT indexOffset; //!< インデックスオフセット
 };
 
 #endif // !SHADER_RAYTRACING_HITGROUP_HITGROUPCOMPAT_H

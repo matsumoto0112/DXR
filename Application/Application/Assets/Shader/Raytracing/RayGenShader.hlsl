@@ -7,9 +7,11 @@
 
 [shader("raygeneration")]
 void RayGenShader() {
-    Ray ray = generateCameraRay(DispatchRaysIndex().xy, g_sceneCB.cameraPosition.xyz, g_sceneCB.projectionToWorld);
+    //ƒJƒƒ‰‚©‚ç‚ÌƒŒƒC‚ğ¶¬
+    Ray ray = GenerateCameraRay(DispatchRaysIndex().xy, g_sceneCB.cameraPosition.xyz, g_sceneCB.projectionToWorld);
 
-    float4 color = traceRadianceRay(ray, 0);
+    //”ò‚Î‚µ‚½æ‚ÌF‚ğæ“¾
+    float4 color = RayCast(ray, 0);
     g_renderTarget[DispatchRaysIndex().xy] = color;
 }
 

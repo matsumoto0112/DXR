@@ -15,8 +15,11 @@
 using namespace DirectX;
 #endif
 
+/**
+* @brief ミスシェーダー用のコンスタントバッファ
+*/
 struct MissConstant {
-    Color back;
+    Color back; //!< 背景色
 };
 
 #endif // !SHADER_RAYTRACING_UTIL_MISSCOMPAT_H
