@@ -162,6 +162,26 @@ namespace Framework::Utility {
         }
         return result;
     }
+    std::vector<TangentList> GLBLoader::getTangentsPerSubMeshes() const {
+        std::vector<TangentList> result;
+        for (auto&& mesh : mDocument.meshes.Elements()) {
+            for (auto&& prim : mesh.primitives) {
+                std::string accessorID;
+                if (!prim.TryGetAttributeAccessorId(ACCESSOR_TANGENT, accessorID))continue;
+                auto&& accessor = mDocument.accessors.Get(accessorID);
+                std::vector<float> data = mResourceReader->ReadBinaryData<float>(mDocument, accessor);
+                const int elemCount = 4;
+                const int vertexSize = static_cast<int>(data.size()) / elemCount;
+                std::vector<Math::Vector4> tangents(vertexSize);
+                for (int i = 0; i < vertexSize; i++) {
+                    tangents[i] = Math::Vector4(data[i * elemCount], data[i * elemCount + 1], data[i * elemCount + 2], data[i * elemCount + 3]);
+                }
+                result.emplace_back(tangents);
+            }
+        }
+        return result;
+    }
+
     std::vector<std::vector<Math::Vector2>> GLBLoader::getUVsPerSubMeshes() const {
         std::vector<std::vector<Math::Vector2>> result;
         for (auto&& mesh : mDocument.meshes.Elements()) {

@@ -105,5 +105,14 @@ inline float4 traceRadianceRay(in Ray ray, in uint currentRecursionNum) {
     return payload.color;
 }
 
+/**
+* @brief Õ“Ë“_‚Ì–@ü‚ğæ“¾‚·‚é
+*/
+inline static float4 getTangent(float4 tangents[3], in MyAttr attr) {
+    return tangents[0] +
+        attr.barycentrics.x * (tangents[1] - tangents[0]) +
+        attr.barycentrics.y * (tangents[2] - tangents[0]);
+}
+
 
 #endif //! SHADER_RAYTRACING_UTIL_HELPER_HLSLI

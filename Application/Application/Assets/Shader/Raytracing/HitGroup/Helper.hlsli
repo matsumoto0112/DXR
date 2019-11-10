@@ -68,6 +68,19 @@ inline float3 GetNormal(in MyAttr attr) {
     return getNormal(normals, attr);
 }
 
+inline float4 GetTangent(in MyAttr attr) {
+    uint3 indices = GetIndices();
+
+    //–@ü‚Ìæ“¾
+    float4 tangents[3] =
+    {
+        Vertices[indices[0]].tangent,
+        Vertices[indices[1]].tangent,
+        Vertices[indices[2]].tangent,
+    };
+
+    return getTangent(tangents, attr);
+}
 
 
 #endif //! SHADER_RAYTRACING_HITGROUP_HELPER_HLSLI

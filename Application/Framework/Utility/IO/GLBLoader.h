@@ -6,6 +6,7 @@
 #include <GLTFSDK/Deserialize.h>
 #include "Framework/Math/Vector2.h"
 #include "Framework/Math/Vector3.h"
+#include "Framework/Math/Vector4.h"
 
 namespace Framework::Utility {
     /**
@@ -39,6 +40,7 @@ namespace Framework::Utility {
     using PositionList = std::vector<Math::Vector3>;
     using NormalList = std::vector<Math::Vector3>;
     using UVList = std::vector<Math::Vector2>;
+    using TangentList = std::vector<Math::Vector4>;
 
     /**
     * @class GLBLoader
@@ -74,6 +76,10 @@ namespace Framework::Utility {
         * @brief サブメッシュごとの法線を取得する
         */
         std::vector<NormalList> getNormalsPerSubMeshes() const;
+        /**
+        * @brief サブメッシュごとのタンジェントを取得する
+        */
+        std::vector<TangentList> getTangentsPerSubMeshes() const;
         /**
         * @brief サブメッシュごとのUV座標を取得する
         */

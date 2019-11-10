@@ -30,6 +30,7 @@ struct Vertex {
     Vec3 position;
     Vec3 normal;
     Vec2 uv;
+    Vec4 tangent;
 };
 
 struct RayPayload {

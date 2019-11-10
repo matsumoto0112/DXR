@@ -33,7 +33,7 @@ namespace {
 
     static const std::unordered_map<BottomLevelASType::MyEnum, std::string> MODEL_NAMES =
     {
-        {BottomLevelASType::UFO , "ufo.glb" },
+        {BottomLevelASType::UFO , "UFO.glb" },
         {BottomLevelASType::Floor , "floor.glb" },
     };
 
@@ -68,10 +68,16 @@ namespace {
         return res;
     }
 
+    using PositionList = std::vector<Framework::Math::Vector3>;
+    using NormalList = std::vector<Framework::Math::Vector3>;
+    using UVList = std::vector<Framework::Math::Vector2>;
+    using TangentList = std::vector<Framework::Math::Vector4>;
+
     inline std::vector<Vertex> toLinearVertices(
-        const std::vector<std::vector<Framework::Math::Vector3>>& positions,
-        const std::vector<std::vector<Framework::Math::Vector3>>& normals = {},
-        const std::vector<std::vector<Framework::Math::Vector2>>& uvs = {}) {
+        const std::vector<PositionList>& positions,
+        const std::vector<NormalList>& normals = {},
+        const std::vector<UVList>& uvs = {},
+        const std::vector<TangentList>& tangents = {}) {
         std::vector<Vertex> res;
         for (size_t i = 0; i < positions.size(); i++) {
             for (size_t j = 0; j < positions[i].size(); j++) {
@@ -79,6 +85,7 @@ namespace {
                 v.position = positions[i][j];
                 v.normal = normals.empty() ? Vec3(0, 0, 0) : normals[i][j];
                 v.uv = uvs.empty() ? Vec2(0, 0) : uvs[i][j];
+                v.tangent = tangents.empty() ? Vec4(0, 0, 0, 0) : tangents[i][j];
                 res.emplace_back(v);
             }
         }
@@ -388,7 +395,9 @@ void Scene::create() {
             {
                 Framework::Utility::GLBLoader loader(modelPath + MODEL_NAMES.at(BottomLevelASType::UFO));
                 auto indices = toLinearList(loader.getIndicesPerSubMeshes());
-                auto vertices = toLinearVertices(loader.getPositionsPerSubMeshes(), loader.getNormalsPerSubMeshes(), loader.getUVsPerSubMeshes());
+                auto vertices = toLinearVertices(loader.getPositionsPerSubMeshes(),
+                    loader.getNormalsPerSubMeshes(), loader.getUVsPerSubMeshes(),
+                    loader.getTangentsPerSubMeshes());
                 createBuffer(mDeviceResource->getDevice(), &mIndexBuffer[BottomLevelASType::UFO].resource, indices.data(), indices.size() * sizeof(indices[0]), L"IndexBuffer");
                 createBuffer(mDeviceResource->getDevice(), &mVertexBuffer[BottomLevelASType::UFO].resource, vertices.data(), vertices.size() * sizeof(vertices[0]), L"VertexBuffer");
 
@@ -397,17 +406,26 @@ void Scene::create() {
                 mIndexOffsets[LocalRootSignature::HitGroupIndex::UFO] = (UINT)indices.size();
                 mVertexOffsets[LocalRootSignature::HitGroupIndex::UFO] = (UINT)vertices.size();
 
-                Material material = loader.getMaterialDatas()[0];
+                auto materialList = loader.getMaterialDatas();
+                Material material;
+                if (materialList.empty()) material = { "",-1,-1 ,AlphaMode::Opaque };
+                else material = loader.getMaterialDatas()[0];
                 std::vector<TextureData> textureDatas = loader.getImageDatas();
-                TextureData albedo = textureDatas[0];
+                TextureData albedo;
+                if (textureDatas.empty()) {
+                    Framework::Utility::TextureLoader texLoader;
+                    albedo.data = texLoader.load(toWString(texPath + "back2.png"), &albedo.width, &albedo.height);
+                    textureDatas.emplace_back(albedo);
+                }
+                else albedo = textureDatas[0];
                 createTextureResource(albedo, &mTextures[texOffset], DescriptorIndex::TextureStart + texOffset);
                 mTextureIDs[ModelTextureType::UFO_Albedo] = texOffset;
                 texOffset++;
-                TextureData normal = textureDatas[material.normalMapID];
+                TextureData normal = textureDatas[material.normalMapID == -1 ? 0 : material.normalMapID];
                 createTextureResource(normal, &mTextures[texOffset], DescriptorIndex::TextureStart + texOffset);
                 mTextureIDs[ModelTextureType::UFO_Normal] = texOffset;
                 texOffset++;
-                TextureData emissive = textureDatas[material.emissiveMapID];
+                TextureData emissive = textureDatas[material.emissiveMapID == -1 ? 0 : material.emissiveMapID];
                 createTextureResource(emissive, &mTextures[texOffset], DescriptorIndex::TextureStart + texOffset);
                 mTextureIDs[ModelTextureType::UFO_Emissive] = texOffset;
                 texOffset++;
