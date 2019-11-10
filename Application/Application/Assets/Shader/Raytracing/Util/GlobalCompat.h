@@ -16,7 +16,7 @@ using namespace DirectX;
 typedef UINT16 Index;
 #endif
 
-static const UINT MAX_RECURSION_NUM = 2;
+static const UINT MAX_RAY_RECURSION_DEPTH = 2;
 
 struct SceneConstantBuffer {
     Mat4 projectionToWorld;
@@ -34,6 +34,7 @@ struct Vertex {
 
 struct RayPayload {
     Color color;
+    UINT hitNum;
 };
 
 struct ShadowPayload {

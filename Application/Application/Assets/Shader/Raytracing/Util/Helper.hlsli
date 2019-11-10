@@ -79,5 +79,31 @@ inline static float2 getUV(float2 uvs[3], in MyAttr attr) {
         attr.barycentrics.y * (uvs[2] - uvs[0]);
 }
 
+inline float4 traceRadianceRay(in Ray ray, in uint currentRecursionNum) {
+    if (currentRecursionNum >= MAX_RAY_RECURSION_DEPTH) {
+        return float4(0, 0, 0, 0);
+    }
+
+    RayDesc rayDesc;
+    rayDesc.Origin = ray.origin;
+    rayDesc.Direction = ray.direction;
+    rayDesc.TMin = 0.01;
+    rayDesc.TMax = 10000.0;
+
+    RayPayload payload = { float4(0,0,0,0),currentRecursionNum + 1 };
+
+    TraceRay(
+        g_scene,
+        RAY_FLAG_CULL_BACK_FACING_TRIANGLES,
+        ~0,
+        0,
+        1,
+        0,
+        rayDesc,
+        payload);
+
+    return payload.color;
+}
+
 
 #endif //! SHADER_RAYTRACING_UTIL_HELPER_HLSLI

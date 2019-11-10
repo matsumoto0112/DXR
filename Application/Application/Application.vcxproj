@@ -89,6 +89,20 @@
     <ClInclude Include="Source\Typedef.h" />
   </ItemGroup>
   <ItemGroup>
+    <FxCompile Include="Assets\Shader\Raytracing\HitGroup\ClosestHit\ClosestHit_Plane.hlsl">
+      <FileType>Document</FileType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Library</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Library</ShaderType>
+      <VariableName Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">g_p%(Filename)</VariableName>
+      <VariableName Condition="'$(Configuration)|$(Platform)'=='Release|x64'">g_p%(Filename)</VariableName>
+      <HeaderFileOutput Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(OutDir)\CompiledShaders\%(Filename).hlsl.h</HeaderFileOutput>
+      <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+      </ObjectFileOutput>
+      <HeaderFileOutput Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(OutDir)\CompiledShaders\%(Filename).hlsl.h</HeaderFileOutput>
+      <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+      </ObjectFileOutput>
+    </FxCompile>
+    <None Include="Assets\Shader\Raytracing\HitGroup\Helper.hlsli" />
     <None Include="Assets\Shader\Raytracing\HitGroup\Local.hlsli" />
     <None Include="Assets\Shader\Raytracing\MissShader\Local.hlsli" />
     <None Include="Assets\Shader\Raytracing\Util\Global.hlsli" />
@@ -97,7 +111,7 @@
     <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
-    <FxCompile Include="Assets\Shader\Raytracing\HitGroup\ClosestHit\Normal.hlsl">
+    <FxCompile Include="Assets\Shader\Raytracing\HitGroup\ClosestHit\ClosestHit_Normal.hlsl">
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Library</ShaderType>
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Library</ShaderType>
       <VariableName Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">g_p%(Filename)</VariableName>

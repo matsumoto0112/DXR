@@ -22,11 +22,13 @@
     <None Include="Assets\Shader\Raytracing\Util\Typedef.hlsli" />
     <None Include="Assets\Shader\Raytracing\MissShader\Local.hlsli" />
     <None Include="Assets\Shader\Raytracing\HitGroup\Local.hlsli" />
+    <None Include="Assets\Shader\Raytracing\HitGroup\Helper.hlsli" />
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="Assets\Shader\Raytracing\RayGenShader.hlsl" />
-    <FxCompile Include="Assets\Shader\Raytracing\HitGroup\ClosestHit\Normal.hlsl" />
     <FxCompile Include="Assets\Shader\Raytracing\MissShader\Miss.hlsl" />
     <FxCompile Include="Assets\Shader\Raytracing\MissShader\Shadow.hlsl" />
+    <FxCompile Include="Assets\Shader\Raytracing\HitGroup\ClosestHit\ClosestHit_Plane.hlsl" />
+    <FxCompile Include="Assets\Shader\Raytracing\HitGroup\ClosestHit\ClosestHit_Normal.hlsl" />
   </ItemGroup>
 </Project>

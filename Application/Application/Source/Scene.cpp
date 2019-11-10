@@ -10,7 +10,8 @@
 #include "ImGui/ImGuiManager.h"
 
 #include "CompiledShaders/Miss.hlsl.h"
-#include "CompiledShaders/Normal.hlsl.h"
+#include "CompiledShaders/ClosestHit_Normal.hlsl.h"
+#include "CompiledShaders/ClosestHit_Plane.hlsl.h"
 #include "CompiledShaders/RayGenShader.hlsl.h"
 #include "CompiledShaders/Shadow.hlsl.h"
 
@@ -23,7 +24,8 @@ using namespace Framework::Utility;
 namespace {
     static const std::wstring MISS_SHADER_NAME = L"Miss";
     static const std::wstring MISS_SHADOW_SHADER_NAME = L"Shadow";
-    static const std::wstring CLOSEST_HIT_NAME = L"Normal";
+    static const std::wstring CLOSEST_HIT_NORMAL_NAME = L"ClosestHit_Normal";
+    static const std::wstring CLOSEST_HIT_PLANE_NAME = L"ClosestHit_Plane";
     static const std::wstring RAY_GEN_NAME = L"RayGenShader";
     static const std::wstring HIT_GROUP_SPHERE_NAME = L"HitGroup_Sphere";
     static const std::wstring HIT_GROUP_QUAD_NAME = L"HitGroup_Quad";
@@ -114,7 +116,7 @@ Scene::Scene(Framework::DX::DeviceResource* device, UINT width, UINT height)
     mCameraPosition = Vec3(0, 0, -10);
     mLightPosition = Vec3(0, 100, -100);
     mLightDiffuse = Color4(1.0f, 1.0f, 1.0f, 1.0f);
-    mLightAmbient = Color4(0.3f, 0.3f, 0.3f, 1.0f);
+    mLightAmbient = Color4(0.1f, 0.1f, 0.1f, 1.0f);
 
 #define CAMERA_POSITION_PARAMS(name,type,min,max) {\
         std::shared_ptr<Framework::ImGUI::FloatField> field = \
@@ -234,7 +236,8 @@ void Scene::create() {
             };
 
             exportShader((void*)g_pMiss, _countof(g_pMiss), MISS_SHADER_NAME);
-            exportShader((void*)g_pNormal, _countof(g_pNormal), CLOSEST_HIT_NAME);
+            exportShader((void*)g_pClosestHit_Normal, _countof(g_pClosestHit_Normal), CLOSEST_HIT_NORMAL_NAME);
+            exportShader((void*)g_pClosestHit_Plane, _countof(g_pClosestHit_Plane), CLOSEST_HIT_PLANE_NAME);
             exportShader((void*)g_pRayGenShader, _countof(g_pRayGenShader), RAY_GEN_NAME);
             exportShader((void*)g_pShadow, _countof(g_pShadow), MISS_SHADOW_SHADER_NAME);
         }
@@ -250,9 +253,9 @@ void Scene::create() {
                     hitGroup->SetHitGroupType(type);
             };
 
-            bindHitGroup(HIT_GROUP_SPHERE_NAME, D3D12_HIT_GROUP_TYPE::D3D12_HIT_GROUP_TYPE_TRIANGLES, CLOSEST_HIT_NAME);
-            bindHitGroup(HIT_GROUP_QUAD_NAME, D3D12_HIT_GROUP_TYPE::D3D12_HIT_GROUP_TYPE_TRIANGLES, CLOSEST_HIT_NAME);
-            bindHitGroup(HIT_GROUP_FLOOR_NAME, D3D12_HIT_GROUP_TYPE::D3D12_HIT_GROUP_TYPE_TRIANGLES, CLOSEST_HIT_NAME);
+            bindHitGroup(HIT_GROUP_SPHERE_NAME, D3D12_HIT_GROUP_TYPE::D3D12_HIT_GROUP_TYPE_TRIANGLES, CLOSEST_HIT_NORMAL_NAME);
+            bindHitGroup(HIT_GROUP_QUAD_NAME, D3D12_HIT_GROUP_TYPE::D3D12_HIT_GROUP_TYPE_TRIANGLES, CLOSEST_HIT_NORMAL_NAME);
+            bindHitGroup(HIT_GROUP_FLOOR_NAME, D3D12_HIT_GROUP_TYPE::D3D12_HIT_GROUP_TYPE_TRIANGLES, CLOSEST_HIT_PLANE_NAME);
         }
         //シェーダーコンフィグ
         {
@@ -285,7 +288,8 @@ void Scene::create() {
         //パイプラインコンフィグ
         {
             CD3DX12_RAYTRACING_PIPELINE_CONFIG_SUBOBJECT* config = pipeline.CreateSubobject<CD3DX12_RAYTRACING_PIPELINE_CONFIG_SUBOBJECT>();
-            config->Config(MAX_RECURSION_NUM);
+            UINT maxRecursionDepth = MAX_RAY_RECURSION_DEPTH;
+            config->Config(maxRecursionDepth);
         }
 
         PrintStateObjectDesc(pipeline);
