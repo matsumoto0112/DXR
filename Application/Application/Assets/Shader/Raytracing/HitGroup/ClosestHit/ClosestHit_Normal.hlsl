@@ -15,7 +15,7 @@ void ClosestHit_Normal(inout RayPayload payload, in MyAttr attr) {
 
     float3 N = GetNormal(attr);
     float2 uv = GetUV(attr);
-    float3 diffuse = tex0.SampleLevel(samLinear, uv, 0.0).rgb;
+    float3 diffuse = albedo.SampleLevel(samLinear, uv, 0.0).rgb;
 
     float dotNL = saturate(dot(N, L));
 

@@ -33,7 +33,7 @@ namespace {
 
     static const std::unordered_map<BottomLevelASType::MyEnum, std::string> MODEL_NAMES =
     {
-        {BottomLevelASType::WaterTower , "dinasour.glb" },
+        {BottomLevelASType::UFO , "ufo.glb" },
         {BottomLevelASType::Floor , "floor.glb" },
     };
 
@@ -213,7 +213,7 @@ void Scene::create() {
 
                 CD3DX12_ROOT_PARAMETER params[LocalRootSignature::HitGroup::Constants::Count];
                 UINT contSize = align(sizeof(HitGroupConstant), sizeof(UINT32));
-                params[LocalRootSignature::HitGroup::Constants::Texture0].InitAsDescriptorTable(1, &range[0]);
+                params[LocalRootSignature::HitGroup::Constants::Albedo].InitAsDescriptorTable(1, &range[0]);
                 params[LocalRootSignature::HitGroup::Constants::Texture1].InitAsDescriptorTable(1, &range[1]);
                 params[LocalRootSignature::HitGroup::Constants::SceneConstants].InitAsConstants(contSize, 1);
 
@@ -370,18 +370,18 @@ void Scene::create() {
             };
 
             UINT texOffset = 0;
-           //三角形のバッファ作成
+           //UFOのバッファ作成
             {
-                Framework::Utility::GLBLoader loader(modelPath + MODEL_NAMES.at(BottomLevelASType::WaterTower));
+                Framework::Utility::GLBLoader loader(modelPath + MODEL_NAMES.at(BottomLevelASType::UFO));
                 auto indices = toLinearList(loader.getIndicesPerSubMeshes());
                 auto vertices = toLinearVertices(loader.getPositionsPerSubMeshes(), loader.getNormalsPerSubMeshes(), loader.getUVsPerSubMeshes());
-                createBuffer(mDeviceResource->getDevice(), &mIndexBuffer[BottomLevelASType::WaterTower].resource, indices.data(), indices.size() * sizeof(indices[0]), L"IndexBuffer");
-                createBuffer(mDeviceResource->getDevice(), &mVertexBuffer[BottomLevelASType::WaterTower].resource, vertices.data(), vertices.size() * sizeof(vertices[0]), L"VertexBuffer");
+                createBuffer(mDeviceResource->getDevice(), &mIndexBuffer[BottomLevelASType::UFO].resource, indices.data(), indices.size() * sizeof(indices[0]), L"IndexBuffer");
+                createBuffer(mDeviceResource->getDevice(), &mVertexBuffer[BottomLevelASType::UFO].resource, vertices.data(), vertices.size() * sizeof(vertices[0]), L"VertexBuffer");
 
                 resourceIndices.insert(resourceIndices.end(), indices.begin(), indices.end());
                 resourceVertices.insert(resourceVertices.end(), vertices.begin(), vertices.end());
-                mIndexOffsets[LocalRootSignature::HitGroupIndex::Sphere] = (UINT)indices.size();
-                mVertexOffsets[LocalRootSignature::HitGroupIndex::Sphere] = (UINT)vertices.size();
+                mIndexOffsets[LocalRootSignature::HitGroupIndex::UFO] = (UINT)indices.size();
+                mVertexOffsets[LocalRootSignature::HitGroupIndex::UFO] = (UINT)vertices.size();
 
                 TextureData texture = loader.getImageDatas()[0];
                 createTextureResource(texture, &mTextures[texOffset], DescriptorIndex::TextureStart + texOffset);
@@ -602,32 +602,32 @@ void Scene::create() {
         //HitGroup
         {
             struct RootArgument {
-                D3D12_GPU_DESCRIPTOR_HANDLE tex0;
+                D3D12_GPU_DESCRIPTOR_HANDLE albedo;
                 D3D12_GPU_DESCRIPTOR_HANDLE tex1;
                 HitGroupConstant cb;
             } rootArguments;
             UINT num = 3;
             UINT recordSize = shaderIDSize + sizeof(RootArgument);
             ShaderTable table(device, num, recordSize, L"HitGroupShaderTable");
-            //Sphere
+            //UFO
             {
-                rootArguments.cb.indexOffset = std::get<0>(getOffset(LocalRootSignature::HitGroupIndex::Sphere));
-                rootArguments.cb.vertexOffset = std::get<1>(getOffset(LocalRootSignature::HitGroupIndex::Sphere));
-                rootArguments.tex0 = mTextures[0].gpuHandle;
+                rootArguments.cb.indexOffset = std::get<0>(getOffset(LocalRootSignature::HitGroupIndex::UFO));
+                rootArguments.cb.vertexOffset = std::get<1>(getOffset(LocalRootSignature::HitGroupIndex::UFO));
+                rootArguments.albedo = mTextures[0].gpuHandle;
                 table.push_back(ShaderRecord(hitGroup_SphereShaderID, shaderIDSize, &rootArguments, sizeof(RootArgument)));
             }
             //Quad
             {
                 rootArguments.cb.indexOffset = std::get<0>(getOffset(LocalRootSignature::HitGroupIndex::Quad));
                 rootArguments.cb.vertexOffset = std::get<1>(getOffset(LocalRootSignature::HitGroupIndex::Quad));
-                rootArguments.tex0 = mTextures[1].gpuHandle;
+                rootArguments.albedo = mTextures[1].gpuHandle;
                 table.push_back(ShaderRecord(hitGroup_QuadShaderID, shaderIDSize, &rootArguments, sizeof(RootArgument)));
             }
             //Floor
             {
                 rootArguments.cb.indexOffset = std::get<0>(getOffset(LocalRootSignature::HitGroupIndex::Floor));
                 rootArguments.cb.vertexOffset = std::get<1>(getOffset(LocalRootSignature::HitGroupIndex::Floor));
-                rootArguments.tex0 = mTextures[5].gpuHandle;
+                rootArguments.albedo = mTextures[5].gpuHandle;
                 rootArguments.tex1 = mTextures[4].gpuHandle;
                 table.push_back(ShaderRecord(hitGroup_FloorShaderID, shaderIDSize, &rootArguments, sizeof(RootArgument)));
             }
@@ -714,14 +714,14 @@ void Scene::render() {
     std::vector<D3D12_RAYTRACING_INSTANCE_DESC> instanceDesc(TLAS_NUM);
     UINT offset = 0;
     for (UINT n = 0; n < TRIANGLE_COUNT; n++) {
-        XMMATRIX transform = XMMatrixScaling(0.01f, 0.01f, 0.01f) *
+        XMMATRIX transform = XMMatrixScaling(0.1f, 0.1f, 0.1f) *
             XMMatrixRotationRollPitchYaw(0, 0, 0) *
             XMMatrixTranslation((float)n * 5, 0, 0);
         instanceDesc[n + offset].InstanceID = 0;
         instanceDesc[n + offset].InstanceMask = 0xff;
         instanceDesc[n + offset].Flags = D3D12_RAYTRACING_INSTANCE_FLAGS::D3D12_RAYTRACING_INSTANCE_FLAG_NONE;
-        instanceDesc[n + offset].InstanceContributionToHitGroupIndex = LocalRootSignature::HitGroupIndex::Sphere;
-        instanceDesc[n + offset].AccelerationStructure = mBLASBuffers[BottomLevelASType::WaterTower].buffer->GetGPUVirtualAddress();
+        instanceDesc[n + offset].InstanceContributionToHitGroupIndex = LocalRootSignature::HitGroupIndex::UFO;
+        instanceDesc[n + offset].AccelerationStructure = mBLASBuffers[BottomLevelASType::UFO].buffer->GetGPUVirtualAddress();
         XMStoreFloat3x4(reinterpret_cast<XMFLOAT3X4*>(instanceDesc[n + offset].Transform), transform);
     }
     offset += TRIANGLE_COUNT;

@@ -28,7 +28,7 @@ namespace LocalRootSignature {
     namespace HitGroup {
         namespace Constants {
             enum MyEnum {
-                Texture0,
+                Albedo,
                 Texture1,
                 SceneConstants,
 
@@ -46,7 +46,7 @@ namespace LocalRootSignature {
     };
     namespace HitGroupIndex {
         enum MyEnum {
-            Sphere,
+            UFO,
             Quad,
             Floor,
 
@@ -69,7 +69,7 @@ namespace RayType {
 
 namespace BottomLevelASType {
     enum MyEnum {
-        WaterTower,
+        UFO,
         Quad,
         Floor,
 
