@@ -12,7 +12,6 @@ inline float3 Normal(in MyAttr attr) {
     float4 tangent = GetTangent(attr);
     float3 binormal = normalize(cross(vertexNormal, normalize(tangent.xyz)) * tangent.w);
 
-    //法線マップから取得した法線
     float3 normalMap = normalize(SampleTexture(normal, samLinear, uv).rgb);
 
     float3 N = normalMap.x * tangent.xyz * tangent.w + normalMap.y * binormal + normalMap.z * vertexNormal;

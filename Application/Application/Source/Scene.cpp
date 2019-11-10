@@ -765,7 +765,7 @@ void Scene::render() {
     std::vector<D3D12_RAYTRACING_INSTANCE_DESC> instanceDesc(TLAS_NUM);
     UINT offset = 0;
     for (UINT n = 0; n < TRIANGLE_COUNT; n++) {
-        XMMATRIX transform = XMMatrixScaling(0.1f, 0.1f, 0.1f) *
+        XMMATRIX transform = XMMatrixScaling(0.01f, 0.01f, 0.01f) *
             XMMatrixRotationRollPitchYaw(0, 0, 0) *
             XMMatrixTranslation((float)n * 5, 0, 0);
         instanceDesc[n + offset].InstanceID = 0;

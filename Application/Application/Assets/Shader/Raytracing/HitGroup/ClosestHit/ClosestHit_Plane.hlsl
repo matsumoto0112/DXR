@@ -18,15 +18,20 @@ void ClosestHit_Plane(inout RayPayload payload, in MyAttr attr) {
 
     float2 uv = GetUV(attr);
 
-    float3 diffuse = albedo.SampleLevel(samLinear, uv, 0.0).rgb;
-    float dotNL = saturate(dot(N, L));
-
+    //アンビエント
     float4 color = g_sceneCB.lightAmbient;
+
+    //ディフューズ
+    float3 diffuse = SampleTexture(albedo, samLinear, uv).rgb;
+    float dotNL = saturate(dot(N, L));
     color.rgb += (diffuse * g_sceneCB.lightDiffuse.rgb) * dotNL / PI;
 
+    //二次レイキャスト
     Ray secondRay;
     secondRay.origin = hitPosition;
     secondRay.direction = reflect(currentRayDirection, N);
+
+    //反射色の取得
     float3 reflectColor = RayCast(secondRay, payload.recursionCount).rgb;
     color.rgb += reflectColor;
 
