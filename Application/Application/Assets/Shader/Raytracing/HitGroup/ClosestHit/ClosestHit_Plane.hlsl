@@ -38,8 +38,6 @@ void ClosestHit_Plane(inout RayPayload payload, in MyAttr attr) {
     color.rgb *= factor;
     color = saturate(color);
 
-    color = SampleTexture(metalRough, samLinear, uv);
-
     payload.color = color;
 }
 
