@@ -63,6 +63,5 @@ namespace Framework::DX {
     private:
         ComPtr<ID3D12DescriptorHeap> mHeap; //!< ディスクリプタヒープ
         UINT mDescriptorSize; //!< ディスクリプタのサイズ
-        UINT mAllocatedNum; //!< 現在割り当てた数
     };
 } //Framework::DX

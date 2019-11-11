@@ -22,7 +22,7 @@ namespace {
 namespace Framework::DX {
     //コンストラクタ
     DescriptorTable::DescriptorTable()
-        :mHeap(nullptr), mDescriptorSize(0), mAllocatedNum(0) { }
+        :mHeap(nullptr), mDescriptorSize(0) { }
     //デストラクタ
     DescriptorTable::~DescriptorTable() { }
     //ヒープの作成
@@ -41,7 +41,6 @@ namespace Framework::DX {
     void DescriptorTable::reset() {
         mHeap.Reset();
         mDescriptorSize = 0;
-        mAllocatedNum = 0;
     }
     CD3DX12_CPU_DESCRIPTOR_HANDLE DescriptorTable::getCPUHandle(UINT index) {
         return CD3DX12_CPU_DESCRIPTOR_HANDLE(mHeap->GetCPUDescriptorHandleForHeapStart(), index, mDescriptorSize);

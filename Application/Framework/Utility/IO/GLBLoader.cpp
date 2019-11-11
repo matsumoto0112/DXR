@@ -34,9 +34,9 @@ namespace {
 }
 
 namespace Framework::Utility {
-    GLBLoader::GLBLoader(const std::wstring& filepath) {
+    GLBLoader::GLBLoader(const std::filesystem::path& filepath) {
         auto streamReader = std::make_unique<StreamReader>();
-        auto glbStream = streamReader->GetInputStream(toString(filepath));
+        auto glbStream = streamReader->GetInputStream(filepath.generic_string());
         mResourceReader = std::make_unique<GLBResourceReader>(std::move(streamReader), std::move(glbStream));
         auto manifest = mResourceReader->GetJson();
         mDocument = Deserialize(manifest);
@@ -47,7 +47,7 @@ namespace Framework::Utility {
     std::vector<TextureData> GLBLoader::getImageDatas() const {
         std::vector<TextureData> result;
         for (auto&& image : mDocument.images.Elements()) {
-            MY_DEBUG_LOG("%s\n", image.uri);
+            std::string n = image.name;
             TextureData tex;
             tex.textureSizePerPixel = 4;
             std::vector<BYTE> texRowData = mResourceReader->ReadBinaryData(mDocument, image);

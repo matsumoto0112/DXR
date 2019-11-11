@@ -24,6 +24,7 @@
     <ClInclude Include="$(MSBuildThisFileDirectory)DX\Model.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)DX\ModelCompat.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)DX\Raytracing\Helper.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)DX\Texture2D.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)DX\Util\DXHelper.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)DX\Raytracing\DXRDevice.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)DX\Util\Buffer.h" />

@@ -1,4 +1,5 @@
 #pragma once
+#include <filesystem>
 #include <string>
 #include <Windows.h>
 #include <GLTFSDK/GLTF.h>
@@ -51,7 +52,7 @@ namespace Framework::Utility {
         /**
         * @brief コンストラクタ
         */
-        GLBLoader(const std::wstring& filepath);
+        GLBLoader(const std::filesystem::path& filepath);
         /**
         * @brief デストラクタ
         */
@@ -87,5 +88,6 @@ namespace Framework::Utility {
     private:
         std::unique_ptr<Microsoft::glTF::GLBResourceReader> mResourceReader;
         Microsoft::glTF::Document mDocument;
+        std::string mModelName;
     };
 } //Framework::Utility

@@ -392,7 +392,7 @@ void Scene::create() {
             UINT texOffset = 0;
            //UFOのバッファ作成
             {
-                Framework::Utility::GLBLoader loader(std::filesystem::path(modelPath).append(MODEL_NAMES.at(BottomLevelASType::UFO)));
+                Framework::Utility::GLBLoader loader(modelPath / MODEL_NAMES.at(BottomLevelASType::UFO));
                 auto indices = toLinearList(loader.getIndicesPerSubMeshes());
                 auto vertices = toLinearVertices(loader.getPositionsPerSubMeshes(),
                     loader.getNormalsPerSubMeshes(), loader.getUVsPerSubMeshes(),
@@ -456,7 +456,7 @@ void Scene::create() {
 
             //床のバッファ作成
             {
-                Framework::Utility::GLBLoader loader(std::filesystem::path(modelPath).append(MODEL_NAMES.at(BottomLevelASType::Floor)));
+                Framework::Utility::GLBLoader loader(modelPath / MODEL_NAMES.at(BottomLevelASType::Floor));
                 auto indices = toLinearList(loader.getIndicesPerSubMeshes());
                 auto vertices = toLinearVertices(loader.getPositionsPerSubMeshes(), loader.getNormalsPerSubMeshes(), loader.getUVsPerSubMeshes());
                 createBuffer(mDeviceResource->getDevice(), &mIndexBuffer[BottomLevelASType::Floor].resource, indices.data(), indices.size() * sizeof(indices[0]), L"IndexBuffer");
@@ -806,7 +806,7 @@ void Scene::render() {
     mSceneCB.copyStatingToGPU(frameIndex);
 
     ID3D12DescriptorHeap* heaps[] = { mDescriptorTable->getHeap() };
-    commandList->SetDescriptorHeaps(1, heaps);
+    commandList->SetDescriptorHeaps(_countof(heaps), heaps);
     commandList->SetComputeRootDescriptorTable(GlobalRootSignature::Slot::RenderTarget, mRaytracingOutput.gpuHandle);
     commandList->SetComputeRootShaderResourceView(GlobalRootSignature::Slot::AccelerationStructure, mTLASBuffer.buffer->GetGPUVirtualAddress());
     commandList->SetComputeRootConstantBufferView(GlobalRootSignature::Slot::SceneConstant, mSceneCB.gpuVirtualAddress());
