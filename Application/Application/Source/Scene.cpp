@@ -109,15 +109,28 @@ namespace {
     D3D12_RAYTRACING_ACCELERATION_STRUCTURE_PREBUILD_INFO topLevelPreInfo = {};
     D3D12_BUILD_RAYTRACING_ACCELERATION_STRUCTURE_DESC topLevelBuildDesc = {};
 
-    enum class ModelTextureType {
+    enum  ModelTextureType {
+        Default_Albedo,
+        Default_NormalMap,
+        Default_MetalRough,
+        Default_Emissive,
+
         UFO_Albedo,
         UFO_Normal,
-        UFO_Emissive,
         UFO_MetalRough,
+        UFO_Emissive,
 
         Plane_Albedo,
+        Plane_Normal,
+        Plane_MetalRough,
+        Plane_Emissive,
     };
     std::unordered_map<ModelTextureType, UINT> mTextureIDs;
+
+    D3D12_GPU_DESCRIPTOR_HANDLE mDefaultAlbedoTexture;
+    D3D12_GPU_DESCRIPTOR_HANDLE mDefaultNormalMapTexture;
+    D3D12_GPU_DESCRIPTOR_HANDLE mDefaultMetalRoughTexture;
+    D3D12_GPU_DESCRIPTOR_HANDLE mDefaultEmissiveTexture;
 }
 
 Scene::Scene(Framework::DX::DeviceResource* device, UINT width, UINT height)
@@ -390,6 +403,115 @@ void Scene::create() {
             };
 
             UINT texOffset = 0;
+            //デフォルトのテクスチャ読み込み
+            {
+                {
+                    TextureData albedo;
+                    albedo.textureSizePerPixel = 4;
+                    albedo.width = 1;
+                    albedo.height = 1;
+                    albedo.data.resize(albedo.width * albedo.height * 4);
+                    for (UINT i = 0; i < albedo.width * albedo.height; i++) {
+                        albedo.data[i * albedo.width + 0] = 0xff;
+                        albedo.data[i * albedo.width + 1] = 0xff;
+                        albedo.data[i * albedo.width + 2] = 0xff;
+                        albedo.data[i * albedo.width + 3] = 0xff;
+                    }
+                    createTextureResource(albedo, &mTextures[texOffset], DescriptorIndex::TextureStart + texOffset);
+                    mTextureIDs[ModelTextureType::Default_Albedo] = texOffset++;
+                }
+                {
+                    TextureData normal;
+                    normal.textureSizePerPixel = 4;
+                    normal.width = 1;
+                    normal.height = 1;
+                    normal.data.resize(normal.width * normal.height * 4);
+                    for (UINT i = 0; i < normal.width * normal.height; i++) {
+                        normal.data[i * normal.width + 0] = 0x7f;
+                        normal.data[i * normal.width + 1] = 0x7f;
+                        normal.data[i * normal.width + 2] = 0xff;
+                        normal.data[i * normal.width + 3] = 0xff;
+                    }
+                    createTextureResource(normal, &mTextures[texOffset], DescriptorIndex::TextureStart + texOffset);
+                    mTextureIDs[ModelTextureType::Default_NormalMap] = texOffset++;
+                }
+                {
+                    TextureData metalRough;
+                    metalRough.textureSizePerPixel = 4;
+                    metalRough.width = 1;
+                    metalRough.height = 1;
+                    metalRough.data.resize(metalRough.width * metalRough.height * 4);
+                    for (UINT i = 0; i < metalRough.width * metalRough.height; i++) {
+                        metalRough.data[i * metalRough.width + 0] = 0;
+                        metalRough.data[i * metalRough.width + 1] = 0;
+                        metalRough.data[i * metalRough.width + 2] = 0;
+                        metalRough.data[i * metalRough.width + 3] = 0xff;
+                    }
+                    createTextureResource(metalRough, &mTextures[texOffset], DescriptorIndex::TextureStart + texOffset);
+                    mTextureIDs[ModelTextureType::Default_MetalRough] = texOffset++;
+                }
+                {
+                    TextureData emissive;
+                    emissive.textureSizePerPixel = 4;
+                    emissive.width = 1;
+                    emissive.height = 1;
+                    emissive.data.resize(emissive.width * emissive.height * 4);
+                    for (UINT i = 0; i < emissive.width * emissive.height; i++) {
+                        emissive.data[i * emissive.width + 0] = 0;
+                        emissive.data[i * emissive.width + 1] = 0;
+                        emissive.data[i * emissive.width + 2] = 0;
+                        emissive.data[i * emissive.width + 3] = 0xff;
+                    }
+                    createTextureResource(emissive, &mTextures[texOffset], DescriptorIndex::TextureStart + texOffset);
+                    mTextureIDs[ModelTextureType::Default_Emissive] = texOffset++;
+                }
+            }
+
+            auto loadTextures = [&](const Material& material, const std::vector<TextureData>& textureDatas, ModelTextureType idOffset, UINT& texOffset) {
+                ModelTextureType nextID = idOffset;
+                if (textureDatas.empty()) {
+                    mTextureIDs[nextID] = mTextureIDs[ModelTextureType::Default_Albedo];
+                }
+                else {
+                    TextureData albedo = textureDatas[0];
+                    createTextureResource(albedo, &mTextures[texOffset], DescriptorIndex::TextureStart + texOffset);
+                    mTextureIDs[nextID] = texOffset;
+                    texOffset++;
+                }
+                nextID = ModelTextureType(nextID + 1);
+                if (material.normalMapID == -1) {
+                    mTextureIDs[nextID] = mTextureIDs[ModelTextureType::Default_NormalMap];
+                }
+                else {
+                    TextureData normal = textureDatas[material.normalMapID];
+                    createTextureResource(normal, &mTextures[texOffset], DescriptorIndex::TextureStart + texOffset);
+                    mTextureIDs[nextID] = texOffset;
+                    texOffset++;
+                }
+
+                nextID = ModelTextureType(nextID + 1);
+                if (material.metalRoughID == -1) {
+                    mTextureIDs[nextID] = mTextureIDs[ModelTextureType::Default_MetalRough];
+                }
+                else {
+                    TextureData metalRough = textureDatas[material.metalRoughID];
+                    createTextureResource(metalRough, &mTextures[texOffset], DescriptorIndex::TextureStart + texOffset);
+                    mTextureIDs[nextID] = texOffset;
+                    texOffset++;
+                }
+
+                nextID = ModelTextureType(nextID + 1);
+                if (material.emissiveMapID == -1) {
+                    mTextureIDs[nextID] = mTextureIDs[ModelTextureType::Default_Emissive];
+                }
+                else {
+                    TextureData emissive = textureDatas[material.emissiveMapID];
+                    createTextureResource(emissive, &mTextures[texOffset], DescriptorIndex::TextureStart + texOffset);
+                    mTextureIDs[nextID] = texOffset;
+                    texOffset++;
+                }
+            };
+
            //UFOのバッファ作成
             {
                 Framework::Utility::GLBLoader loader(modelPath / MODEL_NAMES.at(BottomLevelASType::UFO));
@@ -409,31 +531,7 @@ void Scene::create() {
                 Material material;
                 if (!materialList.empty()) material = loader.getMaterialDatas()[0];
                 std::vector<TextureData> textureDatas = loader.getImageDatas();
-                TextureData albedo;
-                if (textureDatas.empty()) {
-                    Framework::Utility::TextureLoader texLoader;
-                    albedo.data = texLoader.load(texPath / "back.png", &albedo.width, &albedo.height);
-                    textureDatas.emplace_back(albedo);
-                }
-                else albedo = textureDatas[0];
-                createTextureResource(albedo, &mTextures[texOffset], DescriptorIndex::TextureStart + texOffset);
-                mTextureIDs[ModelTextureType::UFO_Albedo] = texOffset;
-                texOffset++;
-
-                TextureData normal = textureDatas[material.normalMapID == -1 ? 0 : material.normalMapID];
-                createTextureResource(normal, &mTextures[texOffset], DescriptorIndex::TextureStart + texOffset);
-                mTextureIDs[ModelTextureType::UFO_Normal] = texOffset;
-                texOffset++;
-
-                TextureData metalRough = textureDatas[material.metalRoughID == -1 ? 0 : material.metalRoughID];
-                createTextureResource(metalRough, &mTextures[texOffset], DescriptorIndex::TextureStart + texOffset);
-                mTextureIDs[ModelTextureType::UFO_MetalRough] = texOffset;
-                texOffset++;
-
-                TextureData emissive = textureDatas[material.emissiveMapID == -1 ? 0 : material.emissiveMapID];
-                createTextureResource(emissive, &mTextures[texOffset], DescriptorIndex::TextureStart + texOffset);
-                mTextureIDs[ModelTextureType::UFO_Emissive] = texOffset;
-                texOffset++;
+                loadTextures(material, textureDatas, ModelTextureType::UFO_Albedo, texOffset);
             }
             //四角形のバッファ作成
             {
@@ -473,38 +571,13 @@ void Scene::create() {
                 mIndexOffsets[LocalRootSignature::HitGroupIndex::Floor] = (UINT)indices.size();
                 mVertexOffsets[LocalRootSignature::HitGroupIndex::Floor] = (UINT)vertices.size();
 
-                TextureData texture = loader.getImageDatas()[0];
-                createTextureResource(texture, &mTextures[texOffset], DescriptorIndex::TextureStart + texOffset);
-                mTextureIDs[ModelTextureType::Plane_Albedo] = texOffset;
-                texOffset++;
-            }
-            //テクスチャの読み込み
-            {
-                Framework::Utility::TextureLoader texLoader;
-                TextureData texture;
-                texture.data = texLoader.load(texPath / "round.png", &texture.width, &texture.height);
-                createTextureResource(texture, &mTextures[texOffset], DescriptorIndex::TextureStart + texOffset);
-                texOffset++;
-            }
-            {
-                Framework::Utility::TextureLoader texLoader;
-                TextureData texture;
-                texture.data = texLoader.load(texPath / "red.png", &texture.width, &texture.height);
-                createTextureResource(texture, &mTextures[texOffset], DescriptorIndex::TextureStart + texOffset);
-                texOffset++;
-            }
-            {
-                Framework::Utility::TextureLoader texLoader;
-                TextureData texture;
-                texture.data = texLoader.load(texPath / "blue.png", &texture.width, &texture.height);
-                createTextureResource(texture, &mTextures[texOffset], DescriptorIndex::TextureStart + texOffset);
-                texOffset++;
+                Material mat = loader.getMaterialDatas()[0];
+                std::vector<TextureData> textureDatas = loader.getImageDatas();
+                loadTextures(mat, textureDatas, ModelTextureType::Plane_Albedo, texOffset);
             }
         }
         //BLAS・TLASの構築
         {
-
-
             ID3D12Device* device = mDeviceResource->getDevice();
             ID3D12GraphicsCommandList* commandList = mDeviceResource->getCommandList();
             ID3D12CommandAllocator* allocator = mDeviceResource->getCommandAllocator();
@@ -512,8 +585,6 @@ void Scene::create() {
             ID3D12GraphicsCommandList5* dxrCommandList = mDXRDevice->getDXRCommandList();
 
             commandList->Reset(allocator, nullptr);
-
-            //BLAS
 
             //BLAS用のジオメトリディスク作成
             for (int i = 0; i < BottomLevelASType::Count; i++) {
@@ -682,6 +753,9 @@ void Scene::create() {
                 rootArguments.cb.indexOffset = std::get<0>(getOffset(LocalRootSignature::HitGroupIndex::Floor));
                 rootArguments.cb.vertexOffset = std::get<1>(getOffset(LocalRootSignature::HitGroupIndex::Floor));
                 rootArguments.albedo = mTextures[mTextureIDs[ModelTextureType::Plane_Albedo]].gpuHandle;
+                rootArguments.normal = mTextures[mTextureIDs[ModelTextureType::Plane_Normal]].gpuHandle;
+                rootArguments.metalRough = mTextures[mTextureIDs[ModelTextureType::Plane_MetalRough]].gpuHandle;
+                rootArguments.emissive = mTextures[mTextureIDs[ModelTextureType::Plane_Emissive]].gpuHandle;
                 table.push_back(ShaderRecord(hitGroup_FloorShaderID, shaderIDSize, &rootArguments, sizeof(RootArgument)));
             }
             mHitGroupStride = table.getShaderRecordSize();
