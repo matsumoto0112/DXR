@@ -34,9 +34,9 @@ namespace {
 }
 
 namespace Framework::Utility {
-    GLBLoader::GLBLoader(const std::string& filepath) {
+    GLBLoader::GLBLoader(const std::wstring& filepath) {
         auto streamReader = std::make_unique<StreamReader>();
-        auto glbStream = streamReader->GetInputStream(filepath);
+        auto glbStream = streamReader->GetInputStream(toString(filepath));
         mResourceReader = std::make_unique<GLBResourceReader>(std::move(streamReader), std::move(glbStream));
         auto manifest = mResourceReader->GetJson();
         mDocument = Deserialize(manifest);

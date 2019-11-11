@@ -31,10 +31,10 @@ namespace {
     static const std::wstring HIT_GROUP_QUAD_NAME = L"HitGroup_Quad";
     static const std::wstring HIT_GROUP_FLOOR_NAME = L"HitGroup_Floor";
 
-    static const std::unordered_map<BottomLevelASType::MyEnum, std::string> MODEL_NAMES =
+    static const std::unordered_map<BottomLevelASType::MyEnum, std::wstring> MODEL_NAMES =
     {
-        {BottomLevelASType::UFO , "dinasour.glb" },
-        {BottomLevelASType::Floor , "floor.glb" },
+        {BottomLevelASType::UFO , L"UFO.glb" },
+        {BottomLevelASType::Floor , L"floor.glb" },
     };
 
     static constexpr UINT TRIANGLE_COUNT = 1;
@@ -73,15 +73,15 @@ namespace {
     using UVList = std::vector<Framework::Math::Vector2>;
     using TangentList = std::vector<Framework::Math::Vector4>;
 
-    inline std::vector<Vertex> toLinearVertices(
+    inline std::vector<Framework::DX::Vertex> toLinearVertices(
         const std::vector<PositionList>& positions,
         const std::vector<NormalList>& normals = {},
         const std::vector<UVList>& uvs = {},
         const std::vector<TangentList>& tangents = {}) {
-        std::vector<Vertex> res;
+        std::vector<Framework::DX::Vertex> res;
         for (size_t i = 0; i < positions.size(); i++) {
             for (size_t j = 0; j < positions[i].size(); j++) {
-                Vertex v;
+                Framework::DX::Vertex v;
                 v.position = positions[i][j];
                 v.normal = normals.empty() ? Vec3(0, 0, 0) : normals[i][j];
                 v.uv = uvs.empty() ? Vec2(0, 0) : uvs[i][j];
@@ -337,15 +337,14 @@ void Scene::create() {
         std::array<Buffer, BottomLevelASType::Count> mIndexBuffer;
         std::array<Buffer, BottomLevelASType::Count> mVertexBuffer;
 
-        std::vector<Vertex> resourceVertices;
+        std::vector<Framework::DX::Vertex> resourceVertices;
         std::vector<Index> resourceIndices;
         {
 
             auto path = Framework::Utility::ExePath::getInstance()->exe();
             path = path.remove_filename();
-            auto resourcePath = Framework::Utility::toString(path.append("Resources\\").c_str());
-            auto modelPath = resourcePath + "Model\\";
-            auto texPath = resourcePath + "Texture\\";
+            auto modelPath = path / "Resources" / "Model";
+            auto texPath = path / "Resources" / "Texture";
 
             auto createTextureResource = [&](const TextureData& texture, Buffer* texBuffer, UINT heapIndex) {
                 //テクスチャリソースを作成する
@@ -393,7 +392,7 @@ void Scene::create() {
             UINT texOffset = 0;
            //UFOのバッファ作成
             {
-                Framework::Utility::GLBLoader loader(modelPath + MODEL_NAMES.at(BottomLevelASType::UFO));
+                Framework::Utility::GLBLoader loader(std::filesystem::path(modelPath).append(MODEL_NAMES.at(BottomLevelASType::UFO)));
                 auto indices = toLinearList(loader.getIndicesPerSubMeshes());
                 auto vertices = toLinearVertices(loader.getPositionsPerSubMeshes(),
                     loader.getNormalsPerSubMeshes(), loader.getUVsPerSubMeshes(),
@@ -414,7 +413,7 @@ void Scene::create() {
                 TextureData albedo;
                 if (textureDatas.empty()) {
                     Framework::Utility::TextureLoader texLoader;
-                    albedo.data = texLoader.load(toWString(texPath + "back2.png"), &albedo.width, &albedo.height);
+                    albedo.data = texLoader.load(texPath / "back.png", &albedo.width, &albedo.height);
                     textureDatas.emplace_back(albedo);
                 }
                 else albedo = textureDatas[0];
@@ -438,7 +437,7 @@ void Scene::create() {
             {
                 std::vector<Index> indices = { 0,1,2,0,2,3 };
                 createBuffer(mDeviceResource->getDevice(), &mIndexBuffer[BottomLevelASType::Quad].resource, indices.data(), indices.size() * sizeof(indices[0]), L"IndexBuffer");
-                std::vector<Vertex> vertices =
+                std::vector<Framework::DX::Vertex> vertices =
                 {
                     { Vec3(-1,1,0),Vec3(0,0,-1),Vec2(0,0) },
                     { Vec3(1,1,0),Vec3(0,0,-1),Vec2(1,0)  },
@@ -454,14 +453,14 @@ void Scene::create() {
 
                 Framework::Utility::TextureLoader texLoader;
                 TextureData texture;
-                texture.data = texLoader.load(toWString(texPath + "back2.png"), &texture.width, &texture.height);
+                texture.data = texLoader.load(texPath / "back2.png", &texture.width, &texture.height);
                 createTextureResource(texture, &mTextures[texOffset], DescriptorIndex::TextureStart + texOffset);
                 texOffset++;
             }
 
             //床のバッファ作成
             {
-                Framework::Utility::GLBLoader loader(modelPath + MODEL_NAMES.at(BottomLevelASType::Floor));
+                Framework::Utility::GLBLoader loader(std::filesystem::path(modelPath).append(MODEL_NAMES.at(BottomLevelASType::Floor)));
                 auto indices = toLinearList(loader.getIndicesPerSubMeshes());
                 auto vertices = toLinearVertices(loader.getPositionsPerSubMeshes(), loader.getNormalsPerSubMeshes(), loader.getUVsPerSubMeshes());
                 createBuffer(mDeviceResource->getDevice(), &mIndexBuffer[BottomLevelASType::Floor].resource, indices.data(), indices.size() * sizeof(indices[0]), L"IndexBuffer");
@@ -481,21 +480,21 @@ void Scene::create() {
             {
                 Framework::Utility::TextureLoader texLoader;
                 TextureData texture;
-                texture.data = texLoader.load(toWString(texPath + "round.png"), &texture.width, &texture.height);
+                texture.data = texLoader.load(texPath / "round.png", &texture.width, &texture.height);
                 createTextureResource(texture, &mTextures[texOffset], DescriptorIndex::TextureStart + texOffset);
                 texOffset++;
             }
             {
                 Framework::Utility::TextureLoader texLoader;
                 TextureData texture;
-                texture.data = texLoader.load(toWString(texPath + "red.png"), &texture.width, &texture.height);
+                texture.data = texLoader.load(texPath / "red.png", &texture.width, &texture.height);
                 createTextureResource(texture, &mTextures[texOffset], DescriptorIndex::TextureStart + texOffset);
                 texOffset++;
             }
             {
                 Framework::Utility::TextureLoader texLoader;
                 TextureData texture;
-                texture.data = texLoader.load(toWString(texPath + "blue.png"), &texture.width, &texture.height);
+                texture.data = texLoader.load(texPath / "blue.png", &texture.width, &texture.height);
                 createTextureResource(texture, &mTextures[texOffset], DescriptorIndex::TextureStart + texOffset);
                 texOffset++;
             }
@@ -523,8 +522,8 @@ void Scene::create() {
                 geometryDesc.Triangles.IndexFormat = DXGI_FORMAT::DXGI_FORMAT_R16_UINT;
                 geometryDesc.Triangles.Transform3x4 = 0;
                 geometryDesc.Triangles.VertexBuffer.StartAddress = mVertexBuffer[i].resource->GetGPUVirtualAddress();
-                geometryDesc.Triangles.VertexBuffer.StrideInBytes = sizeof(Vertex);
-                geometryDesc.Triangles.VertexCount = static_cast<UINT>(mVertexBuffer[i].resource->GetDesc().Width) / sizeof(Vertex);
+                geometryDesc.Triangles.VertexBuffer.StrideInBytes = sizeof(Framework::DX::Vertex);
+                geometryDesc.Triangles.VertexCount = static_cast<UINT>(mVertexBuffer[i].resource->GetDesc().Width) / sizeof(Framework::DX::Vertex);
                 geometryDesc.Triangles.VertexFormat = DXGI_FORMAT::DXGI_FORMAT_R32G32B32_FLOAT;
                 geometryDesc.Flags = D3D12_RAYTRACING_GEOMETRY_FLAGS::D3D12_RAYTRACING_GEOMETRY_FLAG_OPAQUE;
 

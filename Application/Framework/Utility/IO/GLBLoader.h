@@ -51,7 +51,7 @@ namespace Framework::Utility {
         /**
         * @brief コンストラクタ
         */
-        GLBLoader(const std::string& filepath);
+        GLBLoader(const std::wstring& filepath);
         /**
         * @brief デストラクタ
         */

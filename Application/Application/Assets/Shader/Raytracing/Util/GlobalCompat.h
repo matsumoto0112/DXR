@@ -12,6 +12,7 @@
 #include <DirectXMath.h>
 #include <Windows.h>
 #include "Application/Source/Typedef.h"
+#include "Framework/DX/ModelCompat.h"
 using namespace DirectX;
 typedef UINT16 Index;
 #endif

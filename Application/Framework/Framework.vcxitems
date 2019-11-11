@@ -20,6 +20,9 @@
     <ClInclude Include="$(MSBuildThisFileDirectory)DX\ConstantBuffer.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)DX\DeviceResource.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)DX\DescriptorTable.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)DX\GLBModel.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)DX\Model.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)DX\ModelCompat.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)DX\Raytracing\Helper.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)DX\Util\DXHelper.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)DX\Raytracing\DXRDevice.h" />
@@ -85,6 +88,7 @@
     <ClCompile Include="$(MSBuildThisFileDirectory)Camera\Perspective.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)DX\DescriptorTable.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)DX\DeviceResource.cpp" />
+    <ClCompile Include="$(MSBuildThisFileDirectory)DX\GLBModel.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)DX\Raytracing\DXRDevice.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)DX\Util\GPUUploadBuffer.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)Game.cpp" />
