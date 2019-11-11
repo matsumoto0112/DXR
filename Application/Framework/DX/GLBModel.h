@@ -7,7 +7,7 @@ namespace Framework::DX {
     * @class GLBModel
     * @brief discription
     */
-    class GLBModel {
+    class GLBModel :public Model {
     public:
         /**
         * @brief コンストラクタ

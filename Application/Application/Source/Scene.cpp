@@ -6,7 +6,7 @@
 #include "Utility/IO/TextureLoader.h"
 #include "Utility/Path.h"
 #include "Utility/StringUtil.h"
-
+#include "Framework/DX/GLBModel.h"
 #include "ImGui/ImGuiManager.h"
 
 #include "CompiledShaders/Miss.hlsl.h"
@@ -428,10 +428,6 @@ void Scene::create() {
                 createTextureResource(emissive, &mTextures[texOffset], DescriptorIndex::TextureStart + texOffset);
                 mTextureIDs[ModelTextureType::UFO_Emissive] = texOffset;
                 texOffset++;
-                //TextureData albedo = textureDatas[0];
-                //createTextureResource(albedo, &mTextures[texOffset], DescriptorIndex::TextureStart + texOffset);
-                //mTextureIDs[ModelTextureType::UFO_Albedo] = texOffset;
-                //texOffset++;
             }
             //四角形のバッファ作成
             {
