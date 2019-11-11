@@ -8,7 +8,7 @@
 inline float3 Normal(in MyAttr attr) {
     float2 uv = GetUV(attr);
 
-    float3 vertexNormal = normalize(mul(GetNormal(attr), (float3x3)ObjectToWorld4x3()));
+    float3 vertexNormal = normalize(mul(GetNormal(attr), (float3x3)ObjectToWorld3x4()));
     float4 tangent = GetTangent(attr);
     float3 binormal = normalize(cross(vertexNormal, normalize(tangent.xyz)) * tangent.w);
 
@@ -42,8 +42,10 @@ void ClosestHit_Normal(inout RayPayload payload, in MyAttr attr) {
     color.rgb += float3(1, 1, 1) * pow(dotNL, 30);
     color.rgb += SampleTexture(emissive, samLinear, uv).rgb;
 
-    //color.rgb *= factor;
+    color.rgb *= factor;
     color = saturate(color);
+
+    color = SampleTexture(metalRough, samLinear, uv);
 
     payload.color = color;
 }

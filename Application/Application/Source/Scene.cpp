@@ -113,7 +113,7 @@ namespace {
         UFO_Albedo,
         UFO_Normal,
         UFO_Emissive,
-        //UFO_RoughMetal,
+        UFO_MetalRough,
 
         Plane_Albedo,
     };
@@ -223,18 +223,18 @@ void Scene::create() {
             }
             //HitGroupシェーダー用ローカルルートシグネチャ
             {
-                CD3DX12_DESCRIPTOR_RANGE range[3];
+                CD3DX12_DESCRIPTOR_RANGE range[4];
                 range[0].Init(D3D12_DESCRIPTOR_RANGE_TYPE::D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 3); //アルベド
                 range[1].Init(D3D12_DESCRIPTOR_RANGE_TYPE::D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 4); //法線
-                //range[0].Init(D3D12_DESCRIPTOR_RANGE_TYPE::D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 5); //粗さ、金属
-                range[2].Init(D3D12_DESCRIPTOR_RANGE_TYPE::D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 6); //発光
+                range[2].Init(D3D12_DESCRIPTOR_RANGE_TYPE::D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 5); //金属、粗さ
+                range[3].Init(D3D12_DESCRIPTOR_RANGE_TYPE::D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 6); //発光
 
                 CD3DX12_ROOT_PARAMETER params[LocalRootSignature::HitGroup::Constants::Count];
                 UINT contSize = align(sizeof(HitGroupConstant), sizeof(UINT32));
                 params[LocalRootSignature::HitGroup::Constants::Albedo].InitAsDescriptorTable(1, &range[0]);
                 params[LocalRootSignature::HitGroup::Constants::Normal].InitAsDescriptorTable(1, &range[1]);
-                //params[LocalRootSignature::HitGroup::Constants::RoughMetal].InitAsDescriptorTable(1, &range[2]);
-                params[LocalRootSignature::HitGroup::Constants::Emissive].InitAsDescriptorTable(1, &range[2]);
+                params[LocalRootSignature::HitGroup::Constants::MetalRough].InitAsDescriptorTable(1, &range[2]);
+                params[LocalRootSignature::HitGroup::Constants::Emissive].InitAsDescriptorTable(1, &range[3]);
 
                 params[LocalRootSignature::HitGroup::Constants::SceneConstants].InitAsConstants(contSize, 1);
 
@@ -407,8 +407,7 @@ void Scene::create() {
 
                 auto materialList = loader.getMaterialDatas();
                 Material material;
-                if (materialList.empty()) material = { "",-1,-1 ,AlphaMode::Opaque };
-                else material = loader.getMaterialDatas()[0];
+                if (!materialList.empty()) material = loader.getMaterialDatas()[0];
                 std::vector<TextureData> textureDatas = loader.getImageDatas();
                 TextureData albedo;
                 if (textureDatas.empty()) {
@@ -420,10 +419,17 @@ void Scene::create() {
                 createTextureResource(albedo, &mTextures[texOffset], DescriptorIndex::TextureStart + texOffset);
                 mTextureIDs[ModelTextureType::UFO_Albedo] = texOffset;
                 texOffset++;
+
                 TextureData normal = textureDatas[material.normalMapID == -1 ? 0 : material.normalMapID];
                 createTextureResource(normal, &mTextures[texOffset], DescriptorIndex::TextureStart + texOffset);
                 mTextureIDs[ModelTextureType::UFO_Normal] = texOffset;
                 texOffset++;
+
+                TextureData metalRough = textureDatas[material.metalRoughID == -1 ? 0 : material.metalRoughID];
+                createTextureResource(metalRough, &mTextures[texOffset], DescriptorIndex::TextureStart + texOffset);
+                mTextureIDs[ModelTextureType::UFO_MetalRough] = texOffset;
+                texOffset++;
+
                 TextureData emissive = textureDatas[material.emissiveMapID == -1 ? 0 : material.emissiveMapID];
                 createTextureResource(emissive, &mTextures[texOffset], DescriptorIndex::TextureStart + texOffset);
                 mTextureIDs[ModelTextureType::UFO_Emissive] = texOffset;
@@ -647,6 +653,7 @@ void Scene::create() {
             struct RootArgument {
                 D3D12_GPU_DESCRIPTOR_HANDLE albedo;
                 D3D12_GPU_DESCRIPTOR_HANDLE normal;
+                D3D12_GPU_DESCRIPTOR_HANDLE metalRough;
                 D3D12_GPU_DESCRIPTOR_HANDLE emissive;
                 HitGroupConstant cb;
             } rootArguments;
@@ -659,6 +666,7 @@ void Scene::create() {
                 rootArguments.cb.vertexOffset = std::get<1>(getOffset(LocalRootSignature::HitGroupIndex::UFO));
                 rootArguments.albedo = mTextures[mTextureIDs[ModelTextureType::UFO_Albedo]].gpuHandle;
                 rootArguments.normal = mTextures[mTextureIDs[ModelTextureType::UFO_Normal]].gpuHandle;
+                rootArguments.metalRough = mTextures[mTextureIDs[ModelTextureType::UFO_MetalRough]].gpuHandle;
                 rootArguments.emissive = mTextures[mTextureIDs[ModelTextureType::UFO_Emissive]].gpuHandle;
                 table.push_back(ShaderRecord(hitGroup_SphereShaderID, shaderIDSize, &rootArguments, sizeof(RootArgument)));
             }
@@ -674,7 +682,6 @@ void Scene::create() {
                 rootArguments.cb.indexOffset = std::get<0>(getOffset(LocalRootSignature::HitGroupIndex::Floor));
                 rootArguments.cb.vertexOffset = std::get<1>(getOffset(LocalRootSignature::HitGroupIndex::Floor));
                 rootArguments.albedo = mTextures[mTextureIDs[ModelTextureType::Plane_Albedo]].gpuHandle;
-                //rootArguments.tex1 = mTextures[4].gpuHandle;
                 table.push_back(ShaderRecord(hitGroup_FloorShaderID, shaderIDSize, &rootArguments, sizeof(RootArgument)));
             }
             mHitGroupStride = table.getShaderRecordSize();

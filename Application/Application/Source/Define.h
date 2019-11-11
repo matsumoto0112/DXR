@@ -30,7 +30,7 @@ namespace LocalRootSignature {
             enum MyEnum {
                 Albedo,
                 Normal,
-                //RoughMetal,
+                MetalRough,
                 Emissive,
 
                 SceneConstants,

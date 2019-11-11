@@ -25,6 +25,7 @@ namespace Framework::Utility {
         std::string name;
         int normalMapID;
         int emissiveMapID;
+        int metalRoughID;
         AlphaMode alphaMode;
     };
     /**
@@ -88,6 +89,5 @@ namespace Framework::Utility {
     private:
         std::unique_ptr<Microsoft::glTF::GLBResourceReader> mResourceReader;
         Microsoft::glTF::Document mDocument;
-        std::string mModelName;
     };
 } //Framework::Utility

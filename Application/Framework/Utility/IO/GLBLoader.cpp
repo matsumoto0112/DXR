@@ -40,6 +40,8 @@ namespace Framework::Utility {
         mResourceReader = std::make_unique<GLBResourceReader>(std::move(streamReader), std::move(glbStream));
         auto manifest = mResourceReader->GetJson();
         mDocument = Deserialize(manifest);
+
+        MY_DEBUG_LOG("%s loaded \n", filepath.filename().generic_string().c_str());
     }
 
     GLBLoader::~GLBLoader() { }
@@ -57,6 +59,7 @@ namespace Framework::Utility {
             const int size = width * height * tex.textureSizePerPixel;
             std::vector<BYTE> textureByte;
             int src, dst;
+            //アルファ値がないテクスチャデータならアルファデータを追加する
             if (bpp == 3) {
                 textureByte.resize(size);
                 for (src = 0, dst = 0; src < width * height * bpp; src++, dst++) {
@@ -82,6 +85,14 @@ namespace Framework::Utility {
     }
 
     std::vector<Material> GLBLoader::getMaterialDatas() const {
+        auto toAlphaMode = [](Microsoft::glTF::AlphaMode mode) {
+            switch (mode) {
+                case ALPHA_UNKNOWN:
+                case ALPHA_OPAQUE: return AlphaMode::Opaque;
+                case ALPHA_BLEND:return AlphaMode::Blend;
+                default:return AlphaMode::Mask;
+            }
+        };
         std::vector<Material> result;
         for (auto&& mat : mDocument.materials.Elements()) {
             Material material;
@@ -89,19 +100,8 @@ namespace Framework::Utility {
             //マップが存在しなければ-1にしておく
             material.normalMapID = (mat.normalTexture.textureId != "") ? std::stoi(mat.normalTexture.textureId) : -1;
             material.emissiveMapID = (mat.emissiveTexture.textureId != "") ? std::stoi(mat.emissiveTexture.textureId) : -1;
-            //gltfのアルファモードによる切り替え
-            switch (mat.alphaMode) {
-                case ALPHA_UNKNOWN:
-                case ALPHA_OPAQUE:
-                    material.alphaMode = AlphaMode::Opaque;
-                    break;
-                case ALPHA_BLEND:
-                    material.alphaMode = AlphaMode::Blend;
-                    break;
-                default:
-                    material.alphaMode = AlphaMode::Mask;
-                    break;
-            }
+            material.metalRoughID = (mat.metallicRoughness.metallicRoughnessTexture.textureId != "") ? std::stoi(mat.metallicRoughness.metallicRoughnessTexture.textureId) : -1;
+            material.alphaMode = toAlphaMode(mat.alphaMode);
             result.emplace_back(material);
         }
         return result;
@@ -115,9 +115,9 @@ namespace Framework::Utility {
                 IndexList data(data_uint8.size());
                 const size_t size = data.size() / 3;
                 for (int i = 0; i < size; i++) {
-                    data[i * 3 + 2] = static_cast<uint16_t>(data_uint8[i * 3 + 2]);
-                    data[i * 3 + 1] = static_cast<uint16_t>(data_uint8[i * 3 + 1]);
-                    data[i * 3 + 0] = static_cast<uint16_t>(data_uint8[i * 3 + 0]);
+                    data[i * 3 + 0] = static_cast<UINT16>(data_uint8[i * 3 + 0]);
+                    data[i * 3 + 1] = static_cast<UINT16>(data_uint8[i * 3 + 1]);
+                    data[i * 3 + 2] = static_cast<UINT16>(data_uint8[i * 3 + 2]);
                 }
                 result.emplace_back(data);
             }
