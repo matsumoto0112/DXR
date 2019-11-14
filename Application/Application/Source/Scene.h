@@ -6,6 +6,7 @@
 #include "Utility/GPUTimer.h"
 #include "Utility/Time.h"
 #include "Define.h"
+#include "Input/InputManager.h"
 #include "Application/Assets/Shader/Raytracing/Util/GlobalCompat.h"
 
 static constexpr UINT TEXTURE_NUM = 1000;
@@ -35,7 +36,7 @@ public:
     /**
     * @brief コンストラクタ
     */
-    Scene(Framework::DX::DeviceResource* device, UINT width, UINT height);
+    Scene(Framework::DX::DeviceResource* device, Framework::Input::InputManager* inputManager, UINT width, UINT height);
     /**
     * @brief デストラクタ
     */
@@ -49,6 +50,7 @@ public:
     void render();
 private:
     Framework::DX::DeviceResource* mDeviceResource;
+    Framework::Input::InputManager* mInputManager;
     std::unique_ptr<Framework::DX::DXRDevice> mDXRDevice;
     std::array<AccelerationBuffer, BottomLevelASType::Count> mBLASBuffers;
     AccelerationBuffer mTLASBuffer;

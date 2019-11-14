@@ -33,7 +33,7 @@ namespace {
 
     static const std::unordered_map<BottomLevelASType::MyEnum, std::wstring> MODEL_NAMES =
     {
-        {BottomLevelASType::UFO , L"igloo.glb" },
+        {BottomLevelASType::UFO , L"floor.glb" },
         {BottomLevelASType::Floor , L"floor.glb" },
     };
 
@@ -131,10 +131,13 @@ namespace {
     D3D12_GPU_DESCRIPTOR_HANDLE mDefaultNormalMapTexture;
     D3D12_GPU_DESCRIPTOR_HANDLE mDefaultMetalRoughTexture;
     D3D12_GPU_DESCRIPTOR_HANDLE mDefaultEmissiveTexture;
+
+    std::shared_ptr<Framework::ImGUI::Text> mRotSphereText;
 }
 
-Scene::Scene(Framework::DX::DeviceResource* device, UINT width, UINT height)
+Scene::Scene(Framework::DX::DeviceResource* device, Framework::Input::InputManager* inputManager, UINT width, UINT height)
     :mDeviceResource(device),
+    mInputManager(inputManager),
     mDXRDevice(std::make_unique<DXRDevice>(mDeviceResource)),
     mWidth(width),
     mHeight(height) {
@@ -178,6 +181,9 @@ Scene::Scene(Framework::DX::DeviceResource* device, UINT width, UINT height)
     CAMERA_POSITION_PARAMS("LZ", mLightPosition.z, -100.0f, 100.0f);
 
     mTextures.resize(TEXTURE_NUM);
+
+    mRotSphereText = std::make_shared<Framework::ImGUI::Text>("Rot");
+    mDebugWindow->addItem(mRotSphereText);
 }
 
 Scene::~Scene() { }
@@ -528,7 +534,7 @@ void Scene::create() {
                 mVertexOffsets[LocalRootSignature::HitGroupIndex::UFO] = (UINT)vertices.size();
 
                 auto materialList = loader.getMaterialDatas();
-                Material material;
+                Material material = {};
                 if (!materialList.empty()) material = loader.getMaterialDatas()[0];
                 std::vector<TextureData> textureDatas = loader.getImageDatas();
                 loadTextures(material, textureDatas, ModelTextureType::UFO_Albedo, texOffset);
@@ -819,7 +825,9 @@ void Scene::update() {
     mSceneCB->lightDiffuse = mLightDiffuse;
     mSceneCB->lightAmbient = mLightAmbient;
 
-    mQuadRotate += 1.0f;
+    if (mInputManager->getKeyboard()->getKey(Framework::Input::KeyCode::LShift)) {
+        mQuadRotate += 1.0f;
+    }
 }
 
 void Scene::render() {
@@ -841,9 +849,14 @@ void Scene::render() {
     std::vector<D3D12_RAYTRACING_INSTANCE_DESC> instanceDesc(TLAS_NUM);
     UINT offset = 0;
     for (UINT n = 0; n < TRIANGLE_COUNT; n++) {
-        XMMATRIX transform = XMMatrixScaling(0.01f, 0.01f, 0.01f) *
-            XMMatrixRotationRollPitchYaw(0, 0, 0) *
+        Rad rotX = mQuadRotate.toRadians() * 0.37f;
+        Rad rotY = mQuadRotate.toRadians() * 1.45f;
+        Rad rotZ = mQuadRotate.toRadians() * 0.73f;
+        XMMATRIX transform = XMMatrixRotationRollPitchYaw(rotX.getRad(), rotY.getRad(), rotZ.getRad()) *
             XMMatrixTranslation((float)n * 5, 0, 0);
+        std::stringstream ss;
+        ss << "(" << rotX.toDegree().getDeg() << "," << rotY.toDegree().getDeg() << "," << rotZ.toDegree().getDeg() << ")\n";
+        mRotSphereText->setText(ss.str());
         instanceDesc[n + offset].InstanceID = 0;
         instanceDesc[n + offset].InstanceMask = 0xff;
         instanceDesc[n + offset].Flags = D3D12_RAYTRACING_INSTANCE_FLAGS::D3D12_RAYTRACING_INSTANCE_FLAG_NONE;

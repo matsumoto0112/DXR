@@ -20,7 +20,7 @@ public:
     void onInit() override {
         Game::onInit();
 
-        mScene = std::make_unique<Scene>(mDeviceResource.get(), mWidth, mHeight);
+        mScene = std::make_unique<Scene>(mDeviceResource.get(), mInputManager.get(), mWidth, mHeight);
         mScene->create();
     }
     void onUpdate() override {

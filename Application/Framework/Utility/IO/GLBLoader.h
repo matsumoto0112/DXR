@@ -27,6 +27,9 @@ namespace Framework::Utility {
         int emissiveMapID;
         int metalRoughID;
         AlphaMode alphaMode;
+
+        Material()
+            :name(""), normalMapID(-1), emissiveMapID(-1), metalRoughID(-1), alphaMode(AlphaMode::Opaque) { }
     };
     /**
     * @brief テクスチャデータ
