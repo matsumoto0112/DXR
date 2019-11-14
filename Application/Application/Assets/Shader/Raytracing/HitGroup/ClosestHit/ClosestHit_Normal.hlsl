@@ -26,14 +26,18 @@ void ClosestHit_Normal(inout RayPayload payload, in MyAttr attr) {
     float2 uv = GetUV(attr);
     float3 N = normalize(Normal(attr));
 
-    float4 color = float4(0, 0, 0, 0);
+    float4 color = g_sceneCB.lightAmbient;
     float3 L = normalize(g_sceneCB.lightPosition.xyz - hitPosition);
     float dotNL = saturate(dot(N, L));
     float4 diffuse = SampleTexture(albedo, samLinear, uv) * dotNL;
+    float4 emit = SampleTexture(emissive, samLinear, uv);
 
     color += diffuse;
+    color += emit;
 
-     color.a = 1.0;
+    color.a = 1.0;
+
+    color = saturate(color);
     payload.color = color;
 }
 
