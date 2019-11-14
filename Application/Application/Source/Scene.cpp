@@ -525,6 +525,7 @@ void Scene::create() {
                 auto vertices = toLinearVertices(loader.getPositionsPerSubMeshes(),
                     loader.getNormalsPerSubMeshes(), loader.getUVsPerSubMeshes(),
                     loader.getTangentsPerSubMeshes());
+
                 createBuffer(mDeviceResource->getDevice(), &mIndexBuffer[BottomLevelASType::UFO].resource, indices.data(), indices.size() * sizeof(indices[0]), L"IndexBuffer");
                 createBuffer(mDeviceResource->getDevice(), &mVertexBuffer[BottomLevelASType::UFO].resource, vertices.data(), vertices.size() * sizeof(vertices[0]), L"VertexBuffer");
 
@@ -577,9 +578,12 @@ void Scene::create() {
                 mIndexOffsets[LocalRootSignature::HitGroupIndex::Floor] = (UINT)indices.size();
                 mVertexOffsets[LocalRootSignature::HitGroupIndex::Floor] = (UINT)vertices.size();
 
-                Material mat = loader.getMaterialDatas()[0];
+                auto materialList = loader.getMaterialDatas();
+                Material material = {};
+                if (!materialList.empty()) material = loader.getMaterialDatas()[0];
                 std::vector<TextureData> textureDatas = loader.getImageDatas();
-                loadTextures(mat, textureDatas, ModelTextureType::Plane_Albedo, texOffset);
+                loadTextures(material, textureDatas, ModelTextureType::Plane_Albedo, texOffset);
+
             }
         }
         //BLASETLAS‚Ì\’z
@@ -864,6 +868,7 @@ void Scene::render() {
         instanceDesc[n + offset].AccelerationStructure = mBLASBuffers[BottomLevelASType::UFO].buffer->GetGPUVirtualAddress();
         XMStoreFloat3x4(reinterpret_cast<XMFLOAT3X4*>(instanceDesc[n + offset].Transform), transform);
     }
+
     offset += TRIANGLE_COUNT;
     for (UINT n = 0; n < QUAD_COUNT; n++) {
         XMMATRIX transform = XMMatrixScaling(1, 1, 1) * XMMatrixRotationRollPitchYaw(0, mQuadRotate.toRadians().getRad(), 0) * XMMatrixTranslation((float)n * 5 + 20, 3, 0);

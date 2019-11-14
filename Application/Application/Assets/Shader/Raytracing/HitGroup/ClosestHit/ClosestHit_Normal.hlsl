@@ -25,10 +25,12 @@ inline float3 Normal(in MyAttr attr) {
 
     //float3 normal = mul(GetNormal(attr), (float3x3)ObjectToWorld3x4());
     float3 normal = normalize(mul(GetNormal(attr), (float3x3)ObjectToWorld4x3()));
-    //float4 tangent = GetTangent(attr);
+    float4 tangent4 = GetTangent(attr);
+    float3 tangent = normalize(mul(tangent4.xyz, (float3x3)ObjectToWorld4x3())) * tangent4.w;
+
     //float3 normalMap = SampleTexture(normal, samLinear, uv).rgb;
 
-    float3 N = normal;
+    float3 N = tangent;
 
     return N;
 }
