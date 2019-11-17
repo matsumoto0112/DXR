@@ -149,11 +149,13 @@ namespace Framework::DX {
         MY_THROW_IF_FAILED(mDevice->CreateCommandQueue(&queueDesc, IID_PPV_ARGS(&mCommandQueue)));
 
         //レンダーターゲットのディスクリプタヒープを作成する
-        mRTVHeap->create(mDevice.Get(), HeapType::RTV, HeapFlag::None, BACK_BUFFER_COUNT, L"RenderTargetHeap");
+        Desc::DescriptorTableDesc rtvHeapDesc = { L"RenderTargetHeap",BACK_BUFFER_COUNT,Desc::HeapType::RTV,Desc::HeapFlag::None };
+        mRTVHeap->create(mDevice.Get(), rtvHeapDesc);
 
         //デプス・ステンシルを使用するならディスクリプタヒープを作成する
         if (mDepthBufferFormat != DXGI_FORMAT::DXGI_FORMAT_UNKNOWN) {
-            mDSVHeap->create(mDevice.Get(), HeapType::DSV, HeapFlag::None, 1, L"DepthStencilHeap");
+            Desc::DescriptorTableDesc dsvHeapDesc = { L"DepthStencilHeap",1,Desc::HeapType::DSV,Desc::HeapFlag::None };
+            mDSVHeap->create(mDevice.Get(), dsvHeapDesc);
         }
 
         //バックバッファの枚数分アロケータを作成する

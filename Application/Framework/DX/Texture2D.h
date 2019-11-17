@@ -1,17 +1,9 @@
 #pragma once
 #include <vector>
 #include <Windows.h>
+#include "Desc/TextureDesc.h"
 
 namespace Framework::DX {
-    /**
-    * @brief テクスチャデータ
-    */
-    struct TextureData {
-        std::vector<BYTE> pixels;
-        UINT width;
-        UINT height;
-    };
-
     /**
     * @class Texture2D
     * @brief 2Dテクスチャクラス
@@ -21,7 +13,7 @@ namespace Framework::DX {
         /**
         * @brief コンストラクタ
         */
-        Texture2D(const TextureData& texture);
+        Texture2D(const Desc::TextureDesc& desc);
         /**
         * @brief デストラクタ
         */

@@ -24,7 +24,13 @@ namespace Framework::DX {
         * @brief デバイスの再生成
         */
         void recreate();
+        /**
+        * @brief デバイスの取得
+        */
         ID3D12Device5* getDXRDevice() const { return mDXRDevice.Get(); }
+        /**
+        * @brief コマンドリストの取得
+        */
         ID3D12GraphicsCommandList5* getDXRCommandList() const { return mDXRCommandList.Get(); }
     private:
         DeviceResource* mDeviceResource;

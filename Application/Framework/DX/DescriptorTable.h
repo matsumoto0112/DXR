@@ -1,29 +1,10 @@
 #pragma once
 #include <d3d12.h>
+#include "Desc/DescriptorTableDesc.h"
 #include "Libs/d3dx12.h"
 #include "Utility/Typedef.h"
 
 namespace Framework::DX {
-    /**
-    * @enum HeapType
-    * @brief ヒープの種類定義
-    */
-    enum class HeapType {
-        CBV_SRV_UAV,
-        Sampler,
-        RTV,
-        DSV,
-    };
-
-    /**
-    * @enum HeapFlag
-    * @brief ヒープのフラグ定義
-    */
-    enum class HeapFlag {
-        None,
-        ShaderVisible,
-    };
-
     /**
     * @class DescriptorTable
     * @brief ディスクリプタヒープテーブル
@@ -40,13 +21,9 @@ namespace Framework::DX {
         ~DescriptorTable();
         /**
         * @brief ヒープの作成
-        * @param device デバイス
-        * @param heapType ヒープの種類
-        * @param heapFlag ヒープフラグ
-        * @param descriptorNum 割り当てるヒープの数
-        * @param name ヒープ名
+        * @param desc デーブルディスク
         */
-        void create(ID3D12Device* device, HeapType heapType, HeapFlag heapFlag, UINT descriptorNum, LPCWSTR name = nullptr);
+        void create(ID3D12Device* device, const Desc::DescriptorTableDesc& desc);
         /**
         * @brief ヒープのリセット
         */
@@ -55,9 +32,12 @@ namespace Framework::DX {
         * @brief ディスクリプタヒープの取得
         */
         inline ID3D12DescriptorHeap* getHeap() const { return mHeap.Get(); }
+        /**
+        * @brief CPUハンドルの取得
+        */
         CD3DX12_CPU_DESCRIPTOR_HANDLE getCPUHandle(UINT index);
         /**
-        * @brief
+        * @brief GPUハンドルの取得
         */
         CD3DX12_GPU_DESCRIPTOR_HANDLE getGPUHandle(UINT index);
     private:

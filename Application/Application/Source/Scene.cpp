@@ -339,7 +339,9 @@ void Scene::create() {
     }
     //ƒq[ƒv‚ÌŠm•Û
     {
-        mDescriptorTable->create(mDeviceResource->getDevice(), HeapType::CBV_SRV_UAV, HeapFlag::ShaderVisible, 10000, L"DescriptorTable");
+        using namespace Framework::Desc;
+        DescriptorTableDesc desc = { L"DescriptorTable",10000,HeapType::CBV_SRV_UAV,HeapFlag::ShaderVisible };
+        mDescriptorTable->create(mDeviceResource->getDevice(), desc);
     }
 
     std::array<UINT, LocalRootSignature::HitGroupIndex::Count > mIndexOffsets;

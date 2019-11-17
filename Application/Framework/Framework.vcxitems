@@ -17,6 +17,8 @@
   <ItemGroup>
     <ClInclude Include="$(MSBuildThisFileDirectory)Camera\Perspective.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)Camera\Transform.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)Desc\DescriptorTableDesc.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)Desc\TextureDesc.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)DX\ConstantBuffer.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)DX\DeviceResource.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)DX\DescriptorTable.h" />
