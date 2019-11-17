@@ -50,7 +50,6 @@ namespace Framework::Utility {
         static constexpr UINT SIZE_PER_PIXEL = 4;
         std::vector<Desc::TextureDesc> result;
         for (auto&& image : mDocument.images.Elements()) {
-            std::string n = image.name;
             Desc::TextureDesc tex = {};
             tex.format = Desc::TextureFormat::R8G8B8A8;
             std::vector<BYTE> texRowData = mResourceReader->ReadBinaryData(mDocument, image);
@@ -75,6 +74,7 @@ namespace Framework::Utility {
                 textureByte = std::vector<BYTE>(texByte, texByte + size);
             }
 
+            tex.name = image.name == "" ? L"image" : toWString(image.name);
             tex.pixels = textureByte;
             tex.width = width;
             tex.height = height;

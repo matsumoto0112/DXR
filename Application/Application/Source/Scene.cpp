@@ -372,7 +372,7 @@ void Scene::create() {
 
             //デフォルトのテクスチャ読み込み
             {
-                auto createUnitTexture = [](const Color4& color) {
+                auto createUnitTexture = [](const Color4& color, const std::wstring& name) {
                     Framework::Desc::TextureDesc desc;
                     desc.format = Framework::Desc::TextureFormat::R8G8B8A8;
                     desc.width = 1;
@@ -382,31 +382,32 @@ void Scene::create() {
                     desc.pixels[1] = static_cast<BYTE>(color.g * 255.0f);
                     desc.pixels[2] = static_cast<BYTE>(color.b * 255.0f);
                     desc.pixels[3] = static_cast<BYTE>(color.a * 255.0f);
+                    desc.name = name;
                     return desc;
                 };
                 {
-                    auto texture = std::make_shared<Texture2D>(device, createUnitTexture(Color4(1, 1, 1, 1)));
+                    auto texture = std::make_shared<Texture2D>(device, createUnitTexture(Color4(1, 1, 1, 1), L"DefaultAlbedo"));
                     mDescriptorTable->allocate(texture.get());
                     texture->createSRV(device);
                     mTextures[ModelTextureType::Default_Albedo] = (texture);
                     mTextureIDs[ModelTextureType::Default_Albedo] = ModelTextureType::Default_Albedo;
                 }
                 {
-                    auto texture = std::make_shared<Texture2D>(device, createUnitTexture(Color4(0.5f, 0.5f, 1.0f, 1.0f)));
+                    auto texture = std::make_shared<Texture2D>(device, createUnitTexture(Color4(0.5f, 0.5f, 1.0f, 1.0f), L"DefaultNormal"));
                     mDescriptorTable->allocate(texture.get());
                     texture->createSRV(device);
                     mTextures[ModelTextureType::Default_NormalMap] = (texture);
                     mTextureIDs[ModelTextureType::Default_NormalMap] = ModelTextureType::Default_NormalMap;
                 }
                 {
-                    auto texture = std::make_shared<Texture2D>(device, createUnitTexture(Color4(0, 0, 0, 1)));
+                    auto texture = std::make_shared<Texture2D>(device, createUnitTexture(Color4(0, 0, 0, 1), L"DefaultMetallicRoughness"));
                     mDescriptorTable->allocate(texture.get());
                     texture->createSRV(device);
                     mTextures[ModelTextureType::Default_MetalRough] = (texture);
                     mTextureIDs[ModelTextureType::Default_MetalRough] = ModelTextureType::Default_MetalRough;
                 }
                 {
-                    auto texture = std::make_shared<Texture2D>(device, createUnitTexture(Color4(0, 0, 0, 1)));
+                    auto texture = std::make_shared<Texture2D>(device, createUnitTexture(Color4(0, 0, 0, 1), L"DefaultEmissive"));
                     mDescriptorTable->allocate(texture.get());
                     texture->createSRV(device);
                     mTextures[ModelTextureType::Default_Emissive] = (texture);
@@ -626,8 +627,6 @@ void Scene::create() {
                 srvDesc.Buffer.Flags = D3D12_BUFFER_SRV_FLAGS::D3D12_BUFFER_SRV_FLAG_RAW;
                 srvDesc.Buffer.StructureByteStride = 0;
                 mDescriptorTable->allocate(&mResourcesIndexBuffer);
-                //mResourcesIndexBuffer.cpuHandle = mDescriptorTable->getCPUHandle(DescriptorIndex::IndexBuffer);
-                //mResourcesIndexBuffer.gpuHandle = mDescriptorTable->getGPUHandle(DescriptorIndex::IndexBuffer);
                 device->CreateShaderResourceView(mResourcesIndexBuffer.mResource.Get(), &srvDesc, mResourcesIndexBuffer.mCPUHandle);
             }
             //頂点バッファのリソースビュー作成
@@ -641,8 +640,6 @@ void Scene::create() {
                 srvDesc.Buffer.Flags = D3D12_BUFFER_SRV_FLAGS::D3D12_BUFFER_SRV_FLAG_NONE;
                 srvDesc.Buffer.StructureByteStride = sizeof(resourceVertices[0]);
                 mDescriptorTable->allocate(&mResourcesVertexBuffer);
-                //mResourcesVertexBuffer.cpuHandle = mDescriptorTable->getCPUHandle(DescriptorIndex::VertexBuffer);
-                //mResourcesVertexBuffer.gpuHandle = mDescriptorTable->getGPUHandle(DescriptorIndex::VertexBuffer);
                 device->CreateShaderResourceView(mResourcesVertexBuffer.mResource.Get(), &srvDesc, mResourcesVertexBuffer.mCPUHandle);
             }
         }
