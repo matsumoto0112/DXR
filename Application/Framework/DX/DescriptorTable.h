@@ -14,7 +14,7 @@ namespace Framework::DX {
         /**
         * @brief コンストラクタ
         */
-        DescriptorTable();
+        DescriptorTable(ID3D12Device* device, const Desc::DescriptorTableDesc& desc);
         /**
         * @brief デストラクタ
         */
@@ -40,7 +40,7 @@ namespace Framework::DX {
         * @brief GPUハンドルの取得
         */
         CD3DX12_GPU_DESCRIPTOR_HANDLE getGPUHandle(UINT index);
-    private:
+    protected:
         ComPtr<ID3D12DescriptorHeap> mHeap; //!< ディスクリプタヒープ
         UINT mDescriptorSize; //!< ディスクリプタのサイズ
     };

@@ -120,6 +120,8 @@ namespace {
         UFO_MetalRough,
         UFO_Emissive,
 
+        Quad_Albedo,
+
         Plane_Albedo,
         Plane_Normal,
         Plane_MetalRough,
@@ -144,7 +146,8 @@ Scene::Scene(Framework::DX::DeviceResource* device, Framework::Input::InputManag
     mDebugWindow = std::make_unique<Framework::ImGUI::Window>("Debug");
     mFPSText = std::make_shared<Framework::ImGUI::Text>("FPS:");
     mDebugWindow->addItem(mFPSText);
-    mDescriptorTable = std::make_unique<DescriptorTable>();
+    Framework::Desc::DescriptorTableDesc desc = { L"ResourceTable",10000,Framework::Desc::HeapType::CBV_SRV_UAV,Framework::Desc::HeapFlag::ShaderVisible };
+    mDescriptorTable = std::make_unique<CountingDescriptorTable>(device->getDevice(), desc);
     mCameraPosition = Vec3(0, 0, -10);
     mLightPosition = Vec3(0, 100, -100);
     mLightDiffuse = Color4(1.0f, 1.0f, 1.0f, 1.0f);
@@ -367,134 +370,74 @@ void Scene::create() {
             auto modelPath = path / "Resources" / "Model";
             auto texPath = path / "Resources" / "Texture";
 
-            auto createTextureResource = [&](const TextureData& texture, Buffer* texBuffer, UINT heapIndex) {
-                //テクスチャリソースを作成する
-                CD3DX12_RESOURCE_DESC texDesc = CD3DX12_RESOURCE_DESC::Tex2D(
-                    DXGI_FORMAT::DXGI_FORMAT_R8G8B8A8_UNORM, texture.width, texture.height, 1);
-                D3D12_HEAP_PROPERTIES heapProp = {};
-                heapProp.Type = D3D12_HEAP_TYPE::D3D12_HEAP_TYPE_CUSTOM;
-                heapProp.CPUPageProperty = D3D12_CPU_PAGE_PROPERTY::D3D12_CPU_PAGE_PROPERTY_WRITE_BACK;
-                heapProp.MemoryPoolPreference = D3D12_MEMORY_POOL::D3D12_MEMORY_POOL_L0;
-                heapProp.VisibleNodeMask = 1;
-                heapProp.CreationNodeMask = 1;
-
-                MY_THROW_IF_FAILED(device->CreateCommittedResource(
-                    &heapProp,
-                    D3D12_HEAP_FLAGS::D3D12_HEAP_FLAG_NONE,
-                    &texDesc,
-                    D3D12_RESOURCE_STATES::D3D12_RESOURCE_STATE_GENERIC_READ,
-                    nullptr,
-                    IID_PPV_ARGS(&texBuffer->resource)));
-
-                //テクスチャデータを書き込む
-                D3D12_BOX box = { 0,0,0,texture.width ,texture.height,1 };
-                UINT row = texture.width * 4;
-                UINT slice = row * texture.height;
-                MY_THROW_IF_FAILED(texBuffer->resource->WriteToSubresource(
-                    0,
-                    &box,
-                    texture.data.data(), row, slice));
-
-                //シェーダーリソースビューを作成する
-                D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
-                srvDesc.ViewDimension = D3D12_SRV_DIMENSION::D3D12_SRV_DIMENSION_TEXTURE2D;
-                srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
-                srvDesc.Format = texDesc.Format;
-                srvDesc.Texture2D.MipLevels = 1;
-                srvDesc.Texture2D.MostDetailedMip = 0;
-                srvDesc.Texture2D.PlaneSlice = 0;
-                srvDesc.Texture2D.ResourceMinLODClamp = 0.0f;
-
-                texBuffer->gpuHandle = mDescriptorTable->getGPUHandle(heapIndex);
-                texBuffer->cpuHandle = mDescriptorTable->getCPUHandle(heapIndex);
-                device->CreateShaderResourceView(texBuffer->resource.Get(), &srvDesc, texBuffer->cpuHandle);
-            };
-
-            UINT texOffset = 0;
             //デフォルトのテクスチャ読み込み
             {
+                auto createUnitTexture = [](const Color4& color) {
+                    Framework::Desc::TextureDesc desc;
+                    desc.format = Framework::Desc::TextureFormat::R8G8B8A8;
+                    desc.width = 1;
+                    desc.height = 1;
+                    desc.pixels.resize(desc.width * desc.height * 4);
+                    desc.pixels[0] = static_cast<BYTE>(color.r * 255.0f);
+                    desc.pixels[1] = static_cast<BYTE>(color.g * 255.0f);
+                    desc.pixels[2] = static_cast<BYTE>(color.b * 255.0f);
+                    desc.pixels[3] = static_cast<BYTE>(color.a * 255.0f);
+                    return desc;
+                };
                 {
-                    TextureData albedo;
-                    albedo.textureSizePerPixel = 4;
-                    albedo.width = 1;
-                    albedo.height = 1;
-                    albedo.data.resize(albedo.width * albedo.height * 4);
-                    for (UINT i = 0; i < albedo.width * albedo.height; i++) {
-                        albedo.data[i * albedo.width + 0] = 0xff;
-                        albedo.data[i * albedo.width + 1] = 0xff;
-                        albedo.data[i * albedo.width + 2] = 0xff;
-                        albedo.data[i * albedo.width + 3] = 0xff;
-                    }
-                    createTextureResource(albedo, &mTextures[texOffset], DescriptorIndex::TextureStart + texOffset);
-                    mTextureIDs[ModelTextureType::Default_Albedo] = texOffset++;
+                    auto texture = std::make_shared<Texture2D>(device, createUnitTexture(Color4(1, 1, 1, 1)));
+                    mDescriptorTable->allocate(texture.get());
+                    texture->createSRV(device);
+                    mTextures[ModelTextureType::Default_Albedo] = (texture);
+                    mTextureIDs[ModelTextureType::Default_Albedo] = ModelTextureType::Default_Albedo;
                 }
                 {
-                    TextureData normal;
-                    normal.textureSizePerPixel = 4;
-                    normal.width = 1;
-                    normal.height = 1;
-                    normal.data.resize(normal.width * normal.height * 4);
-                    for (UINT i = 0; i < normal.width * normal.height; i++) {
-                        normal.data[i * normal.width + 0] = 0x7f;
-                        normal.data[i * normal.width + 1] = 0x7f;
-                        normal.data[i * normal.width + 2] = 0xff;
-                        normal.data[i * normal.width + 3] = 0xff;
-                    }
-                    createTextureResource(normal, &mTextures[texOffset], DescriptorIndex::TextureStart + texOffset);
-                    mTextureIDs[ModelTextureType::Default_NormalMap] = texOffset++;
+                    auto texture = std::make_shared<Texture2D>(device, createUnitTexture(Color4(0.5f, 0.5f, 1.0f, 1.0f)));
+                    mDescriptorTable->allocate(texture.get());
+                    texture->createSRV(device);
+                    mTextures[ModelTextureType::Default_NormalMap] = (texture);
+                    mTextureIDs[ModelTextureType::Default_NormalMap] = ModelTextureType::Default_NormalMap;
                 }
                 {
-                    TextureData metalRough;
-                    metalRough.textureSizePerPixel = 4;
-                    metalRough.width = 1;
-                    metalRough.height = 1;
-                    metalRough.data.resize(metalRough.width * metalRough.height * 4);
-                    for (UINT i = 0; i < metalRough.width * metalRough.height; i++) {
-                        metalRough.data[i * metalRough.width + 0] = 0;
-                        metalRough.data[i * metalRough.width + 1] = 0;
-                        metalRough.data[i * metalRough.width + 2] = 0;
-                        metalRough.data[i * metalRough.width + 3] = 0xff;
-                    }
-                    createTextureResource(metalRough, &mTextures[texOffset], DescriptorIndex::TextureStart + texOffset);
-                    mTextureIDs[ModelTextureType::Default_MetalRough] = texOffset++;
+                    auto texture = std::make_shared<Texture2D>(device, createUnitTexture(Color4(0, 0, 0, 1)));
+                    mDescriptorTable->allocate(texture.get());
+                    texture->createSRV(device);
+                    mTextures[ModelTextureType::Default_MetalRough] = (texture);
+                    mTextureIDs[ModelTextureType::Default_MetalRough] = ModelTextureType::Default_MetalRough;
                 }
                 {
-                    TextureData emissive;
-                    emissive.textureSizePerPixel = 4;
-                    emissive.width = 1;
-                    emissive.height = 1;
-                    emissive.data.resize(emissive.width * emissive.height * 4);
-                    for (UINT i = 0; i < emissive.width * emissive.height; i++) {
-                        emissive.data[i * emissive.width + 0] = 0;
-                        emissive.data[i * emissive.width + 1] = 0;
-                        emissive.data[i * emissive.width + 2] = 0;
-                        emissive.data[i * emissive.width + 3] = 0xff;
-                    }
-                    createTextureResource(emissive, &mTextures[texOffset], DescriptorIndex::TextureStart + texOffset);
-                    mTextureIDs[ModelTextureType::Default_Emissive] = texOffset++;
+                    auto texture = std::make_shared<Texture2D>(device, createUnitTexture(Color4(0, 0, 0, 1)));
+                    mDescriptorTable->allocate(texture.get());
+                    texture->createSRV(device);
+                    mTextures[ModelTextureType::Default_Emissive] = (texture);
+                    mTextureIDs[ModelTextureType::Default_Emissive] = ModelTextureType::Default_Emissive;
                 }
             }
 
-            auto loadTextures = [&](const Material& material, const std::vector<TextureData>& textureDatas, ModelTextureType idOffset, UINT& texOffset) {
+            auto loadTextures = [&](const Material& material, const std::vector<Framework::Desc::TextureDesc>& textureDatas, ModelTextureType idOffset) {
                 ModelTextureType nextID = idOffset;
                 if (textureDatas.empty()) {
                     mTextureIDs[nextID] = mTextureIDs[ModelTextureType::Default_Albedo];
                 }
                 else {
-                    TextureData albedo = textureDatas[0];
-                    createTextureResource(albedo, &mTextures[texOffset], DescriptorIndex::TextureStart + texOffset);
-                    mTextureIDs[nextID] = texOffset;
-                    texOffset++;
+                    auto albedo = textureDatas[0];
+                    auto texture = std::make_shared<Texture2D>(device, albedo);
+                    mDescriptorTable->allocate(texture.get());
+                    texture->createSRV(device);
+                    mTextures[nextID] = (texture);
+                    mTextureIDs[nextID] = nextID;
                 }
                 nextID = ModelTextureType(nextID + 1);
                 if (material.normalMapID == -1) {
                     mTextureIDs[nextID] = mTextureIDs[ModelTextureType::Default_NormalMap];
                 }
                 else {
-                    TextureData normal = textureDatas[material.normalMapID];
-                    createTextureResource(normal, &mTextures[texOffset], DescriptorIndex::TextureStart + texOffset);
-                    mTextureIDs[nextID] = texOffset;
-                    texOffset++;
+                    auto normal = textureDatas[material.normalMapID];
+                    auto texture = std::make_shared<Texture2D>(device, normal);
+                    mDescriptorTable->allocate(texture.get());
+                    texture->createSRV(device);
+                    mTextures[nextID] = (texture);
+                    mTextureIDs[nextID] = nextID;
                 }
 
                 nextID = ModelTextureType(nextID + 1);
@@ -502,10 +445,12 @@ void Scene::create() {
                     mTextureIDs[nextID] = mTextureIDs[ModelTextureType::Default_MetalRough];
                 }
                 else {
-                    TextureData metalRough = textureDatas[material.metalRoughID];
-                    createTextureResource(metalRough, &mTextures[texOffset], DescriptorIndex::TextureStart + texOffset);
-                    mTextureIDs[nextID] = texOffset;
-                    texOffset++;
+                    auto metalRough = textureDatas[material.metalRoughID];
+                    auto texture = std::make_shared<Texture2D>(device, metalRough);
+                    mDescriptorTable->allocate(texture.get());
+                    texture->createSRV(device);
+                    mTextures[nextID] = (texture);
+                    mTextureIDs[nextID] = nextID;
                 }
 
                 nextID = ModelTextureType(nextID + 1);
@@ -513,10 +458,12 @@ void Scene::create() {
                     mTextureIDs[nextID] = mTextureIDs[ModelTextureType::Default_Emissive];
                 }
                 else {
-                    TextureData emissive = textureDatas[material.emissiveMapID];
-                    createTextureResource(emissive, &mTextures[texOffset], DescriptorIndex::TextureStart + texOffset);
-                    mTextureIDs[nextID] = texOffset;
-                    texOffset++;
+                    auto emissive = textureDatas[material.emissiveMapID];
+                    auto texture = std::make_shared<Texture2D>(device, emissive);
+                    mDescriptorTable->allocate(texture.get());
+                    texture->createSRV(device);
+                    mTextures[nextID] = (texture);
+                    mTextureIDs[nextID] = nextID;
                 }
             };
 
@@ -539,8 +486,8 @@ void Scene::create() {
                 auto materialList = loader.getMaterialDatas();
                 Material material = {};
                 if (!materialList.empty()) material = loader.getMaterialDatas()[0];
-                std::vector<TextureData> textureDatas = loader.getImageDatas();
-                loadTextures(material, textureDatas, ModelTextureType::UFO_Albedo, texOffset);
+                auto descs = loader.getImageDatas();
+                loadTextures(material, descs, ModelTextureType::UFO_Albedo);
             }
             //四角形のバッファ作成
             {
@@ -561,10 +508,11 @@ void Scene::create() {
                 mVertexOffsets[LocalRootSignature::HitGroupIndex::Quad] = (UINT)vertices.size();
 
                 Framework::Utility::TextureLoader texLoader;
-                TextureData texture;
-                texture.data = texLoader.load(texPath / "back2.png", &texture.width, &texture.height);
-                createTextureResource(texture, &mTextures[texOffset], DescriptorIndex::TextureStart + texOffset);
-                texOffset++;
+                Framework::Desc::TextureDesc desc = texLoader.load(texPath / "back2.png");
+                auto texture = std::make_shared<Texture2D>(device, desc);
+                mDescriptorTable->allocate(texture.get());
+                texture->createSRV(device);
+                mTextures[ModelTextureType::Quad_Albedo] = (texture);
             }
 
             //床のバッファ作成
@@ -583,8 +531,8 @@ void Scene::create() {
                 auto materialList = loader.getMaterialDatas();
                 Material material = {};
                 if (!materialList.empty()) material = loader.getMaterialDatas()[0];
-                std::vector<TextureData> textureDatas = loader.getImageDatas();
-                loadTextures(material, textureDatas, ModelTextureType::Plane_Albedo, texOffset);
+                auto descs = loader.getImageDatas();
+                loadTextures(material, descs, ModelTextureType::Plane_Albedo);
 
             }
         }
@@ -664,8 +612,8 @@ void Scene::create() {
             mDeviceResource->waitForGPU();
 
             //バッファのシェーダーリソースビュー作成
-            createBuffer(device, &mResourcesIndexBuffer.resource, resourceIndices.data(), resourceIndices.size() * sizeof(resourceIndices[0]), L"ResourceIndex");
-            createBuffer(device, &mResourcesVertexBuffer.resource, resourceVertices.data(), resourceVertices.size() * sizeof(resourceVertices[0]), L"ResourceVertex");
+            createBuffer(device, &mResourcesIndexBuffer.mResource, resourceIndices.data(), resourceIndices.size() * sizeof(resourceIndices[0]), L"ResourceIndex");
+            createBuffer(device, &mResourcesVertexBuffer.mResource, resourceVertices.data(), resourceVertices.size() * sizeof(resourceVertices[0]), L"ResourceVertex");
 
             //インデックスバッファのリソースビュー作成
             {
@@ -677,9 +625,10 @@ void Scene::create() {
                 srvDesc.Format = DXGI_FORMAT::DXGI_FORMAT_R32_TYPELESS;
                 srvDesc.Buffer.Flags = D3D12_BUFFER_SRV_FLAGS::D3D12_BUFFER_SRV_FLAG_RAW;
                 srvDesc.Buffer.StructureByteStride = 0;
-                mResourcesIndexBuffer.cpuHandle = mDescriptorTable->getCPUHandle(DescriptorIndex::IndexBuffer);
-                mResourcesIndexBuffer.gpuHandle = mDescriptorTable->getGPUHandle(DescriptorIndex::IndexBuffer);
-                device->CreateShaderResourceView(mResourcesIndexBuffer.resource.Get(), &srvDesc, mResourcesIndexBuffer.cpuHandle);
+                mDescriptorTable->allocate(&mResourcesIndexBuffer);
+                //mResourcesIndexBuffer.cpuHandle = mDescriptorTable->getCPUHandle(DescriptorIndex::IndexBuffer);
+                //mResourcesIndexBuffer.gpuHandle = mDescriptorTable->getGPUHandle(DescriptorIndex::IndexBuffer);
+                device->CreateShaderResourceView(mResourcesIndexBuffer.mResource.Get(), &srvDesc, mResourcesIndexBuffer.mCPUHandle);
             }
             //頂点バッファのリソースビュー作成
             {
@@ -691,9 +640,10 @@ void Scene::create() {
                 srvDesc.Format = DXGI_FORMAT::DXGI_FORMAT_UNKNOWN;
                 srvDesc.Buffer.Flags = D3D12_BUFFER_SRV_FLAGS::D3D12_BUFFER_SRV_FLAG_NONE;
                 srvDesc.Buffer.StructureByteStride = sizeof(resourceVertices[0]);
-                mResourcesVertexBuffer.cpuHandle = mDescriptorTable->getCPUHandle(DescriptorIndex::VertexBuffer);
-                mResourcesVertexBuffer.gpuHandle = mDescriptorTable->getGPUHandle(DescriptorIndex::VertexBuffer);
-                device->CreateShaderResourceView(mResourcesVertexBuffer.resource.Get(), &srvDesc, mResourcesVertexBuffer.cpuHandle);
+                mDescriptorTable->allocate(&mResourcesVertexBuffer);
+                //mResourcesVertexBuffer.cpuHandle = mDescriptorTable->getCPUHandle(DescriptorIndex::VertexBuffer);
+                //mResourcesVertexBuffer.gpuHandle = mDescriptorTable->getGPUHandle(DescriptorIndex::VertexBuffer);
+                device->CreateShaderResourceView(mResourcesVertexBuffer.mResource.Get(), &srvDesc, mResourcesVertexBuffer.mCPUHandle);
             }
         }
     }
@@ -747,27 +697,27 @@ void Scene::create() {
             {
                 rootArguments.cb.indexOffset = std::get<0>(getOffset(LocalRootSignature::HitGroupIndex::UFO));
                 rootArguments.cb.vertexOffset = std::get<1>(getOffset(LocalRootSignature::HitGroupIndex::UFO));
-                rootArguments.albedo = mTextures[mTextureIDs[ModelTextureType::UFO_Albedo]].gpuHandle;
-                rootArguments.normal = mTextures[mTextureIDs[ModelTextureType::UFO_Normal]].gpuHandle;
-                rootArguments.metalRough = mTextures[mTextureIDs[ModelTextureType::UFO_MetalRough]].gpuHandle;
-                rootArguments.emissive = mTextures[mTextureIDs[ModelTextureType::UFO_Emissive]].gpuHandle;
+                rootArguments.albedo = mTextures[mTextureIDs[ModelTextureType::UFO_Albedo]]->getGPUHandle();
+                rootArguments.normal = mTextures[mTextureIDs[ModelTextureType::UFO_Normal]]->getGPUHandle();
+                rootArguments.metalRough = mTextures[mTextureIDs[ModelTextureType::UFO_MetalRough]]->getGPUHandle();
+                rootArguments.emissive = mTextures[mTextureIDs[ModelTextureType::UFO_Emissive]]->getGPUHandle();
                 table.push_back(ShaderRecord(hitGroup_SphereShaderID, shaderIDSize, &rootArguments, sizeof(RootArgument)));
             }
             //Quad
             {
                 rootArguments.cb.indexOffset = std::get<0>(getOffset(LocalRootSignature::HitGroupIndex::Quad));
                 rootArguments.cb.vertexOffset = std::get<1>(getOffset(LocalRootSignature::HitGroupIndex::Quad));
-                rootArguments.albedo = mTextures[1].gpuHandle;
+                rootArguments.albedo = mTextures[mTextureIDs[ModelTextureType::Default_Albedo]]->getGPUHandle();
                 table.push_back(ShaderRecord(hitGroup_QuadShaderID, shaderIDSize, &rootArguments, sizeof(RootArgument)));
             }
             //Floor
             {
                 rootArguments.cb.indexOffset = std::get<0>(getOffset(LocalRootSignature::HitGroupIndex::Floor));
                 rootArguments.cb.vertexOffset = std::get<1>(getOffset(LocalRootSignature::HitGroupIndex::Floor));
-                rootArguments.albedo = mTextures[mTextureIDs[ModelTextureType::Plane_Albedo]].gpuHandle;
-                rootArguments.normal = mTextures[mTextureIDs[ModelTextureType::Plane_Normal]].gpuHandle;
-                rootArguments.metalRough = mTextures[mTextureIDs[ModelTextureType::Plane_MetalRough]].gpuHandle;
-                rootArguments.emissive = mTextures[mTextureIDs[ModelTextureType::Plane_Emissive]].gpuHandle;
+                rootArguments.albedo = mTextures[mTextureIDs[ModelTextureType::Plane_Albedo]]->getGPUHandle();
+                rootArguments.normal = mTextures[mTextureIDs[ModelTextureType::Plane_Normal]]->getGPUHandle();
+                rootArguments.metalRough = mTextures[mTextureIDs[ModelTextureType::Plane_MetalRough]]->getGPUHandle();
+                rootArguments.emissive = mTextures[mTextureIDs[ModelTextureType::Plane_Emissive]]->getGPUHandle();
                 table.push_back(ShaderRecord(hitGroup_FloorShaderID, shaderIDSize, &rootArguments, sizeof(RootArgument)));
             }
             mHitGroupStride = table.getShaderRecordSize();
@@ -789,14 +739,15 @@ void Scene::create() {
             &uavResourceDesc,
             D3D12_RESOURCE_STATES::D3D12_RESOURCE_STATE_UNORDERED_ACCESS,
             nullptr,
-            IID_PPV_ARGS(&mRaytracingOutput.resource)));
-        mRaytracingOutput.resource->SetName(L"RaytracingOutput");
+            IID_PPV_ARGS(&mRaytracingOutput.mResource)));
+        mRaytracingOutput.mResource->SetName(L"RaytracingOutput");
 
-        mRaytracingOutput.cpuHandle = mDescriptorTable->getCPUHandle(DescriptorIndex::RaytracingOutput);
+        mDescriptorTable->allocate(&mRaytracingOutput);
+        //mRaytracingOutput.cpuHandle = mDescriptorTable->getCPUHandle(DescriptorIndex::RaytracingOutput);
+        //mRaytracingOutput.gpuHandle = mDescriptorTable->getGPUHandle(DescriptorIndex::RaytracingOutput);
         D3D12_UNORDERED_ACCESS_VIEW_DESC uavDesc = {};
         uavDesc.ViewDimension = D3D12_UAV_DIMENSION::D3D12_UAV_DIMENSION_TEXTURE2D;
-        device->CreateUnorderedAccessView(mRaytracingOutput.resource.Get(), nullptr, &uavDesc, mRaytracingOutput.cpuHandle);
-        mRaytracingOutput.gpuHandle = mDescriptorTable->getGPUHandle(DescriptorIndex::RaytracingOutput);
+        device->CreateUnorderedAccessView(mRaytracingOutput.mResource.Get(), nullptr, &uavDesc, mRaytracingOutput.mCPUHandle);
     }
     //コンスタントバッファの初期化
     {
@@ -908,11 +859,11 @@ void Scene::render() {
 
     ID3D12DescriptorHeap* heaps[] = { mDescriptorTable->getHeap() };
     commandList->SetDescriptorHeaps(_countof(heaps), heaps);
-    commandList->SetComputeRootDescriptorTable(GlobalRootSignature::Slot::RenderTarget, mRaytracingOutput.gpuHandle);
+    commandList->SetComputeRootDescriptorTable(GlobalRootSignature::Slot::RenderTarget, mRaytracingOutput.mGPUHandle);
     commandList->SetComputeRootShaderResourceView(GlobalRootSignature::Slot::AccelerationStructure, mTLASBuffer.buffer->GetGPUVirtualAddress());
     commandList->SetComputeRootConstantBufferView(GlobalRootSignature::Slot::SceneConstant, mSceneCB.gpuVirtualAddress());
-    commandList->SetComputeRootDescriptorTable(GlobalRootSignature::Slot::IndexBuffer, mResourcesIndexBuffer.gpuHandle);
-    commandList->SetComputeRootDescriptorTable(GlobalRootSignature::Slot::VertexBuffer, mResourcesVertexBuffer.gpuHandle);
+    commandList->SetComputeRootDescriptorTable(GlobalRootSignature::Slot::IndexBuffer, mResourcesIndexBuffer.mGPUHandle);
+    commandList->SetComputeRootDescriptorTable(GlobalRootSignature::Slot::VertexBuffer, mResourcesVertexBuffer.mGPUHandle);
 
     D3D12_DISPATCH_RAYS_DESC dispatchDesc = {};
     dispatchDesc.RayGenerationShaderRecord.StartAddress = mRayGenTable->GetGPUVirtualAddress();
@@ -938,16 +889,16 @@ void Scene::render() {
     preCopyBarriers[0] = CD3DX12_RESOURCE_BARRIER::Transition(mDeviceResource->getRenderTarget(),
         D3D12_RESOURCE_STATES::D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATES::D3D12_RESOURCE_STATE_COPY_DEST);
     //レイトレのレンダーターゲット
-    preCopyBarriers[1] = CD3DX12_RESOURCE_BARRIER::Transition(mRaytracingOutput.resource.Get(),
+    preCopyBarriers[1] = CD3DX12_RESOURCE_BARRIER::Transition(mRaytracingOutput.mResource.Get(),
         D3D12_RESOURCE_STATES::D3D12_RESOURCE_STATE_UNORDERED_ACCESS, D3D12_RESOURCE_STATES::D3D12_RESOURCE_STATE_COPY_SOURCE);
     commandList->ResourceBarrier(_countof(preCopyBarriers), preCopyBarriers);
 
-    commandList->CopyResource(mDeviceResource->getRenderTarget(), mRaytracingOutput.resource.Get());
+    commandList->CopyResource(mDeviceResource->getRenderTarget(), mRaytracingOutput.mResource.Get());
 
     D3D12_RESOURCE_BARRIER postCopyBarriers[2];
     postCopyBarriers[0] = CD3DX12_RESOURCE_BARRIER::Transition(mDeviceResource->getRenderTarget(),
         D3D12_RESOURCE_STATES::D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATES::D3D12_RESOURCE_STATE_RENDER_TARGET);
-    postCopyBarriers[1] = CD3DX12_RESOURCE_BARRIER::Transition(mRaytracingOutput.resource.Get(),
+    postCopyBarriers[1] = CD3DX12_RESOURCE_BARRIER::Transition(mRaytracingOutput.mResource.Get(),
         D3D12_RESOURCE_STATES::D3D12_RESOURCE_STATE_COPY_SOURCE, D3D12_RESOURCE_STATES::D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
     commandList->ResourceBarrier(_countof(postCopyBarriers), postCopyBarriers);
 

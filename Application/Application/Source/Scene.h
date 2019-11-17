@@ -1,5 +1,6 @@
 #pragma once
 #include "DX/ConstantBuffer.h"
+#include "DX/CountingDescriptorTable.h"
 #include "DX/DeviceResource.h"
 #include "DX/Raytracing/DXRDevice.h"
 #include "DX/Util/Buffer.h"
@@ -7,6 +8,7 @@
 #include "Utility/Time.h"
 #include "Define.h"
 #include "Input/InputManager.h"
+#include "DX/Resource/Texture2D.h"
 #include "Application/Assets/Shader/Raytracing/Util/GlobalCompat.h"
 
 static constexpr UINT TEXTURE_NUM = 1000;
@@ -65,11 +67,11 @@ private:
     ComPtr<ID3D12RootSignature> mMissLocalRootSignature; //!< Missシェーダー用ローカルルートシグネチャ
     std::array<ComPtr<ID3D12RootSignature>, LocalRootSignature::HitGroup::Count> mHitGroupLocalRootSignature;
     ComPtr<ID3D12StateObject> mDXRStateObject; //!< レイトレーシングパイプラインステート
-    std::unique_ptr<Framework::DX::DescriptorTable> mDescriptorTable;
-    Framework::DX::Buffer mResourcesIndexBuffer; //!< リソースのインデックスバッファ
-    Framework::DX::Buffer mResourcesVertexBuffer; //!< リソースの頂点バッファ
-    Framework::DX::Buffer mRaytracingOutput;
-    std::vector<Framework::DX::Buffer> mTextures;
+    std::unique_ptr<Framework::DX::CountingDescriptorTable> mDescriptorTable;
+    Framework::DX::IBuffer mResourcesIndexBuffer; //!< リソースのインデックスバッファ
+    Framework::DX::IBuffer mResourcesVertexBuffer; //!< リソースの頂点バッファ
+    Framework::DX::IBuffer mRaytracingOutput;
+    std::vector<std::shared_ptr<Framework::DX::Texture2D>> mTextures;
 private:
     UINT mWidth;
     UINT mHeight;

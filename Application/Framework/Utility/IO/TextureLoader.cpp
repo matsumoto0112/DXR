@@ -18,8 +18,8 @@ namespace Framework::Utility {
 
     TextureLoader::~TextureLoader() { }
 
-    std::vector<BYTE> TextureLoader::load(const std::wstring& filepath, UINT* width, UINT* height) {
-        //パスからデコーダーを作成
+    Desc::TextureDesc TextureLoader::load(const std::wstring& filepath) {
+           //パスからデコーダーを作成
         HRESULT hr = mFactory->CreateDecoderFromFilename(
             filepath.c_str(), nullptr, GENERIC_READ, WICDecodeMetadataCacheOnDemand, &mDecoder);
         MY_THROW_IF_FAILED_LOG(hr, "テクスチャの読み込みに失敗しました。");
@@ -28,16 +28,16 @@ namespace Framework::Utility {
         hr = mDecoder->GetFrame(0, &mFrame);
         MY_THROW_IF_FAILED(hr);
 
-        UINT w, h;
-        mFrame->GetSize(&w, &h);
+        Desc::TextureDesc desc = {};
+        mFrame->GetSize(&desc.width, &desc.height);
         //ピクセル形式を取得
         WICPixelFormatGUID pixelFormat;
         hr = mFrame->GetPixelFormat(&pixelFormat);
         MY_THROW_IF_FAILED(hr);
 
-        int stride = w * 4;
-        int bufferSize = stride * h;
-        std::vector<BYTE> buffer(bufferSize);
+        int stride = desc.width * 4;
+        int bufferSize = stride * desc.height;
+        desc.pixels.resize(bufferSize);
         //ピクセル形式が32bitRGBAでなかったら変換する
         if (pixelFormat != GUID_WICPixelFormat32bppRGBA) {
             hr = mFactory->CreateFormatConverter(&mConverter);
@@ -47,16 +47,14 @@ namespace Framework::Utility {
                 WICBitmapDitherTypeErrorDiffusion, nullptr, 0, WICBitmapPaletteTypeCustom);
             MY_THROW_IF_FAILED(hr);
 
-            hr = mConverter->CopyPixels(0, stride, bufferSize, buffer.data());
+            hr = mConverter->CopyPixels(0, stride, bufferSize, desc.pixels.data());
             MY_THROW_IF_FAILED(hr);
         }
         else {
-            hr = mFrame->CopyPixels(nullptr, stride, bufferSize, buffer.data());
+            hr = mFrame->CopyPixels(nullptr, stride, bufferSize, desc.pixels.data());
             MY_THROW_IF_FAILED(hr);
         }
 
-        *width = w;
-        *height = h;
-        return buffer;
+        return desc;
     }
 } //Framework::Utility

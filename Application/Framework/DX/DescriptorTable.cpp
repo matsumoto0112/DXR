@@ -24,8 +24,10 @@ namespace {
 
 namespace Framework::DX {
     //コンストラクタ
-    DescriptorTable::DescriptorTable()
-        :mHeap(nullptr), mDescriptorSize(0) { }
+    DescriptorTable::DescriptorTable(ID3D12Device* device, const Desc::DescriptorTableDesc& desc)
+        :mHeap(nullptr), mDescriptorSize(0) {
+        create(device, desc);
+    }
     //デストラクタ
     DescriptorTable::~DescriptorTable() { }
     //ヒープの作成

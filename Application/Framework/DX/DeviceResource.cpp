@@ -37,8 +37,6 @@ namespace Framework::DX {
         mAdapterID(0),
         mAdapterDescription(),
         mFenceEvent{},
-        mRTVHeap(std::make_unique<DescriptorTable>()),
-        mDSVHeap(std::make_unique<DescriptorTable>()),
         mScreenViewport{},
         mScissorRect{},
         mBackBufferFormat(backBufferFormat),
@@ -150,12 +148,12 @@ namespace Framework::DX {
 
         //レンダーターゲットのディスクリプタヒープを作成する
         Desc::DescriptorTableDesc rtvHeapDesc = { L"RenderTargetHeap",BACK_BUFFER_COUNT,Desc::HeapType::RTV,Desc::HeapFlag::None };
-        mRTVHeap->create(mDevice.Get(), rtvHeapDesc);
+        mRTVHeap = std::make_unique<DescriptorTable>(mDevice.Get(), rtvHeapDesc);
 
         //デプス・ステンシルを使用するならディスクリプタヒープを作成する
         if (mDepthBufferFormat != DXGI_FORMAT::DXGI_FORMAT_UNKNOWN) {
             Desc::DescriptorTableDesc dsvHeapDesc = { L"DepthStencilHeap",1,Desc::HeapType::DSV,Desc::HeapFlag::None };
-            mDSVHeap->create(mDevice.Get(), dsvHeapDesc);
+            mDSVHeap = std::make_unique<DescriptorTable>(mDevice.Get(), dsvHeapDesc);
         }
 
         //バックバッファの枚数分アロケータを作成する

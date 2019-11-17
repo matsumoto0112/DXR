@@ -5,6 +5,7 @@
 #include <GLTFSDK/GLTF.h>
 #include <GLTFSDK/GLBResourceReader.h>
 #include <GLTFSDK/Deserialize.h>
+#include "Desc/TextureDesc.h"
 #include "Framework/Math/Vector2.h"
 #include "Framework/Math/Vector3.h"
 #include "Framework/Math/Vector4.h"
@@ -31,15 +32,6 @@ namespace Framework::Utility {
         Material()
             :name(""), normalMapID(-1), emissiveMapID(-1), metalRoughID(-1), alphaMode(AlphaMode::Opaque) { }
     };
-    /**
-    * @brief テクスチャデータ
-    */
-    struct TextureData {
-        std::vector<BYTE> data; //!< テクスチャの中身
-        UINT width; //!< テクスチャの幅
-        UINT height; //!< テクスチャの高さ
-        UINT textureSizePerPixel; //!< ピクセル単位のバイトの大きさ
-    };
 
     using IndexList = std::vector<UINT16>;
     using PositionList = std::vector<Math::Vector3>;
@@ -64,7 +56,7 @@ namespace Framework::Utility {
         /**
         * @brief 画像データを取得する
         */
-        std::vector<TextureData> getImageDatas() const;
+        std::vector<Desc::TextureDesc> getImageDatas() const;
         /**
         * @brief マテリアルデータを取得する
         */

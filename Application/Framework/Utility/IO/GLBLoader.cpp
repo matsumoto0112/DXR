@@ -46,17 +46,18 @@ namespace Framework::Utility {
 
     GLBLoader::~GLBLoader() { }
 
-    std::vector<TextureData> GLBLoader::getImageDatas() const {
-        std::vector<TextureData> result;
+    std::vector<Desc::TextureDesc> GLBLoader::getImageDatas() const {
+        static constexpr UINT SIZE_PER_PIXEL = 4;
+        std::vector<Desc::TextureDesc> result;
         for (auto&& image : mDocument.images.Elements()) {
             std::string n = image.name;
-            TextureData tex;
-            tex.textureSizePerPixel = 4;
+            Desc::TextureDesc tex = {};
+            tex.format = Desc::TextureFormat::R8G8B8A8;
             std::vector<BYTE> texRowData = mResourceReader->ReadBinaryData(mDocument, image);
             int width, height, bpp;
 
             BYTE* texByte = stbi_load_from_memory(reinterpret_cast<const stbi_uc*>(texRowData.data()), static_cast<int>(texRowData.size()), &width, &height, &bpp, 0);
-            const int size = width * height * tex.textureSizePerPixel;
+            const int size = width * height * SIZE_PER_PIXEL;
             std::vector<BYTE> textureByte;
             int src, dst;
             //アルファ値がないテクスチャデータならアルファデータを追加する
@@ -74,7 +75,7 @@ namespace Framework::Utility {
                 textureByte = std::vector<BYTE>(texByte, texByte + size);
             }
 
-            tex.data = textureByte;
+            tex.pixels = textureByte;
             tex.width = width;
             tex.height = height;
             result.emplace_back(tex);
