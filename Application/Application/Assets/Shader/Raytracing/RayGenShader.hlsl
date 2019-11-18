@@ -12,6 +12,8 @@ void RayGenShader() {
 
     //”ò‚Î‚µ‚½æ‚ÌF‚ğæ“¾
     float4 color = RayCast(ray, 0);
+
+    //color = pow(color, 1.0 / 2.2);
     g_renderTarget[DispatchRaysIndex().xy] = color;
 }
 

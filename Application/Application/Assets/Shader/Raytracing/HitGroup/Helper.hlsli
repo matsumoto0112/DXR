@@ -7,7 +7,7 @@
 #include "../Util/Helper.hlsli"
 #include "Local.hlsli"
 
-inline bool ShadowRayCast(in Ray ray,in uint currentRecursionNum) {
+inline bool ShadowRayCast(in Ray ray, in uint currentRecursionNum) {
     //Å‘åÄ‹A‰ñ”‚ð’´‚¦‚Ä‚¢‚½‚ç‰½‚à‚µ‚È‚¢
     if (currentRecursionNum >= MAX_RAY_RECURSION_DEPTH) {
         return false;
@@ -19,8 +19,8 @@ inline bool ShadowRayCast(in Ray ray,in uint currentRecursionNum) {
     RayDesc rayDesc;
     rayDesc.Origin = ray.origin;
     rayDesc.Direction = ray.direction;
-    rayDesc.TMin = 0.01;
-    rayDesc.TMax = 10000.0;
+    rayDesc.TMin = T_MIN;;
+    rayDesc.TMax = T_MAX;
     TraceRay(
         g_scene,
         RAY_FLAG_SKIP_CLOSEST_HIT_SHADER,

@@ -11,6 +11,8 @@
 #include "Global.hlsli"
 
 static const float PI = 3.141592654f;
+static const float T_MIN = 0.0001;
+static const float T_MAX = 10000.0;
 
 /**
 * @brief ƒŒƒC
@@ -83,8 +85,8 @@ inline float4 RayCast(in Ray ray, in uint currentRecursionNum) {
     RayDesc rayDesc;
     rayDesc.Origin = ray.origin;
     rayDesc.Direction = ray.direction;
-    rayDesc.TMin = 0.01;
-    rayDesc.TMax = 10000.0;
+    rayDesc.TMin = T_MIN;
+    rayDesc.TMax = T_MAX;
 
     RayPayload payload = { float4(0,0,0,0),currentRecursionNum + 1 };
 

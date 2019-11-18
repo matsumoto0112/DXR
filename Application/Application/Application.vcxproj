@@ -82,6 +82,7 @@
     <ClInclude Include="Assets\Shader\Raytracing\Util\HitGroupCompat.h" />
     <ClInclude Include="Assets\Shader\Raytracing\Util\GlobalCompat.h" />
     <ClInclude Include="Assets\Shader\Raytracing\Util\MissCompat.h" />
+    <ClInclude Include="Assets\Shader\Raytracing\Util\PBR.hlsli" />
     <ClInclude Include="Source\Define.h" />
     <ClInclude Include="Source\Scene.h" />
     <ClInclude Include="Source\stdafx.h" />
