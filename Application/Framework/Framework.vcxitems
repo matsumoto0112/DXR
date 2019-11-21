@@ -19,6 +19,7 @@
     <ClInclude Include="$(MSBuildThisFileDirectory)Camera\Transform.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)Desc\DescriptorTableDesc.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)Desc\TextureDesc.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)Device\GameDevice.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)DX\ConstantBuffer.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)DX\CountingDescriptorTable.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)DX\DeviceResource.h" />
@@ -31,7 +32,6 @@
     <ClInclude Include="$(MSBuildThisFileDirectory)DX\Resource\Texture2D.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)DX\Util\DXHelper.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)DX\Raytracing\DXRDevice.h" />
-    <ClInclude Include="$(MSBuildThisFileDirectory)DX\Util\Buffer.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)DX\Util\GPUUploadBuffer.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)Game.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)Device\ISystemEventNotify.h" />

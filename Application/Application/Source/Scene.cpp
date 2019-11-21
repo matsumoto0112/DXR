@@ -360,8 +360,8 @@ void Scene::create() {
     {
         ID3D12Device* device = mDeviceResource->getDevice();
     //BLAS構築用のバッファ
-        std::array<Buffer, BottomLevelASType::Count> mIndexBuffer;
-        std::array<Buffer, BottomLevelASType::Count> mVertexBuffer;
+        std::array< IBuffer, BottomLevelASType::Count> mIndexBuffer;
+        std::array<IBuffer, BottomLevelASType::Count> mVertexBuffer;
 
         std::vector<Framework::DX::Vertex> resourceVertices;
         std::vector<Index> resourceIndices;
@@ -478,8 +478,8 @@ void Scene::create() {
                     loader.getNormalsPerSubMeshes(), loader.getUVsPerSubMeshes(),
                     loader.getTangentsPerSubMeshes());
 
-                createBuffer(mDeviceResource->getDevice(), &mIndexBuffer[BottomLevelASType::UFO].resource, indices.data(), indices.size() * sizeof(indices[0]), L"IndexBuffer");
-                createBuffer(mDeviceResource->getDevice(), &mVertexBuffer[BottomLevelASType::UFO].resource, vertices.data(), vertices.size() * sizeof(vertices[0]), L"VertexBuffer");
+                createBuffer(mDeviceResource->getDevice(), &mIndexBuffer[BottomLevelASType::UFO].mResource, indices.data(), indices.size() * sizeof(indices[0]), L"IndexBuffer");
+                createBuffer(mDeviceResource->getDevice(), &mVertexBuffer[BottomLevelASType::UFO].mResource, vertices.data(), vertices.size() * sizeof(vertices[0]), L"VertexBuffer");
 
                 resourceIndices.insert(resourceIndices.end(), indices.begin(), indices.end());
                 resourceVertices.insert(resourceVertices.end(), vertices.begin(), vertices.end());
@@ -495,7 +495,7 @@ void Scene::create() {
             //四角形のバッファ作成
             {
                 std::vector<Index> indices = { 0,1,2,0,2,3 };
-                createBuffer(mDeviceResource->getDevice(), &mIndexBuffer[BottomLevelASType::Quad].resource, indices.data(), indices.size() * sizeof(indices[0]), L"IndexBuffer");
+                createBuffer(mDeviceResource->getDevice(), &mIndexBuffer[BottomLevelASType::Quad].mResource, indices.data(), indices.size() * sizeof(indices[0]), L"IndexBuffer");
                 std::vector<Framework::DX::Vertex> vertices =
                 {
                     { Vec3(-1,1,0),Vec3(0,0,-1),Vec2(0,0) },
@@ -503,7 +503,7 @@ void Scene::create() {
                     { Vec3(1,-1,0) ,Vec3(0,0,-1),Vec2(1,1) },
                     { Vec3(-1,-1,0),Vec3(0,0,-1),Vec2(0,1)  },
                 };
-                createBuffer(mDeviceResource->getDevice(), &mVertexBuffer[BottomLevelASType::Quad].resource, vertices.data(), vertices.size() * sizeof(vertices[0]), L"VertexBuffer");
+                createBuffer(mDeviceResource->getDevice(), &mVertexBuffer[BottomLevelASType::Quad].mResource, vertices.data(), vertices.size() * sizeof(vertices[0]), L"VertexBuffer");
 
                 resourceIndices.insert(resourceIndices.end(), indices.begin(), indices.end());
                 resourceVertices.insert(resourceVertices.end(), vertices.begin(), vertices.end());
@@ -523,8 +523,8 @@ void Scene::create() {
                 Framework::Utility::GLBLoader loader(modelPath / MODEL_NAMES.at(BottomLevelASType::Floor));
                 auto indices = toLinearList(loader.getIndicesPerSubMeshes());
                 auto vertices = toLinearVertices(loader.getPositionsPerSubMeshes(), loader.getNormalsPerSubMeshes(), loader.getUVsPerSubMeshes());
-                createBuffer(mDeviceResource->getDevice(), &mIndexBuffer[BottomLevelASType::Floor].resource, indices.data(), indices.size() * sizeof(indices[0]), L"IndexBuffer");
-                createBuffer(mDeviceResource->getDevice(), &mVertexBuffer[BottomLevelASType::Floor].resource, vertices.data(), vertices.size() * sizeof(vertices[0]), L"VertexBuffer");
+                createBuffer(mDeviceResource->getDevice(), &mIndexBuffer[BottomLevelASType::Floor].mResource, indices.data(), indices.size() * sizeof(indices[0]), L"IndexBuffer");
+                createBuffer(mDeviceResource->getDevice(), &mVertexBuffer[BottomLevelASType::Floor].mResource, vertices.data(), vertices.size() * sizeof(vertices[0]), L"VertexBuffer");
 
                 resourceIndices.insert(resourceIndices.end(), indices.begin(), indices.end());
                 resourceVertices.insert(resourceVertices.end(), vertices.begin(), vertices.end());
@@ -553,13 +553,13 @@ void Scene::create() {
             for (int i = 0; i < BottomLevelASType::Count; i++) {
                 D3D12_RAYTRACING_GEOMETRY_DESC geometryDesc = {};
                 geometryDesc.Type = D3D12_RAYTRACING_GEOMETRY_TYPE::D3D12_RAYTRACING_GEOMETRY_TYPE_TRIANGLES;
-                geometryDesc.Triangles.IndexBuffer = mIndexBuffer[i].resource->GetGPUVirtualAddress();
-                geometryDesc.Triangles.IndexCount = static_cast<UINT>(mIndexBuffer[i].resource->GetDesc().Width) / sizeof(Index);
+                geometryDesc.Triangles.IndexBuffer = mIndexBuffer[i].mResource->GetGPUVirtualAddress();
+                geometryDesc.Triangles.IndexCount = static_cast<UINT>(mIndexBuffer[i].mResource->GetDesc().Width) / sizeof(Index);
                 geometryDesc.Triangles.IndexFormat = DXGI_FORMAT::DXGI_FORMAT_R16_UINT;
                 geometryDesc.Triangles.Transform3x4 = 0;
-                geometryDesc.Triangles.VertexBuffer.StartAddress = mVertexBuffer[i].resource->GetGPUVirtualAddress();
+                geometryDesc.Triangles.VertexBuffer.StartAddress = mVertexBuffer[i].mResource->GetGPUVirtualAddress();
                 geometryDesc.Triangles.VertexBuffer.StrideInBytes = sizeof(Framework::DX::Vertex);
-                geometryDesc.Triangles.VertexCount = static_cast<UINT>(mVertexBuffer[i].resource->GetDesc().Width) / sizeof(Framework::DX::Vertex);
+                geometryDesc.Triangles.VertexCount = static_cast<UINT>(mVertexBuffer[i].mResource->GetDesc().Width) / sizeof(Framework::DX::Vertex);
                 geometryDesc.Triangles.VertexFormat = DXGI_FORMAT::DXGI_FORMAT_R32G32B32_FLOAT;
                 geometryDesc.Flags = D3D12_RAYTRACING_GEOMETRY_FLAGS::D3D12_RAYTRACING_GEOMETRY_FLAG_OPAQUE;
 

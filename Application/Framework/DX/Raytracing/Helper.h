@@ -6,6 +6,9 @@
 #include "DX/Util/GPUUploadBuffer.h"
 
 namespace Framework::DX {
+    /**
+    * @brief シェーダーレコードクラス
+    */
     class ShaderRecord {
     public:
         ShaderRecord(void* id, UINT size)
@@ -32,6 +35,9 @@ namespace Framework::DX {
         PointerWithSize localRootArgument;
     };
 
+    /**
+    * @brief シェーダーテーブルクラス
+    */
     class ShaderTable : public GPUUploadBuffer {
         uint8_t* mMapped;
         UINT mRecordSize;
@@ -57,7 +63,6 @@ namespace Framework::DX {
         UINT getShaderRecordSize()const { return mRecordSize; }
     };
 
-    // Pretty-print a state object tree.
     inline void PrintStateObjectDesc(const D3D12_STATE_OBJECT_DESC* desc) {
         std::wstringstream wstr;
         wstr << L"\n";

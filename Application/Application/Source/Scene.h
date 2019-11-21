@@ -3,7 +3,6 @@
 #include "DX/CountingDescriptorTable.h"
 #include "DX/DeviceResource.h"
 #include "DX/Raytracing/DXRDevice.h"
-#include "DX/Util/Buffer.h"
 #include "Utility/GPUTimer.h"
 #include "Utility/Time.h"
 #include "Define.h"
