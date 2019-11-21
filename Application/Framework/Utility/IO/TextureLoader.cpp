@@ -1,4 +1,5 @@
 #include "TextureLoader.h"
+#include <unordered_map>
 #ifndef STB_IMAGE_IMPLEMENTATION
 #define STB_IMAGE_IMPLEMENTATION
 #endif // !STB_IMAGE_IMPLEMENTATION
@@ -6,28 +7,32 @@
 
 #include "Framework/Utility/Debug.h"
 
+namespace {
+    inline std::vector<BYTE> toRGBAFormat(int width, int height, int bpp, const BYTE* data) {
+        const size_t size = width * height * 4;
+        if (bpp == 4) return std::vector<BYTE>(data, data + size);
+        std::vector<BYTE> result(size);
+        int src, dst;
+        for (src = 0, dst = 0; src < width * height * 3; src++, dst++) {
+            result[dst] = data[src];
+            if (src % 3 == 2) {
+                dst++;
+                result[dst] = 0xff;
+            }
+        }
+        return result;
+    }
+}
+
 namespace Framework::Utility::TextureLoader {
     Desc::TextureDesc load(const std::filesystem::path& filepath) {
         int w, h, bpp;
         BYTE* data = stbi_load(toString(filepath.c_str()).c_str(), &w, &h, &bpp, 0);
 
-        size_t size = w * h * 4;
+        size_t size = w * h * bpp;
         Desc::TextureDesc desc = { };
-        int src, dst;
-        //アルファ値がないテクスチャデータならアルファデータを追加する
-        if (bpp == 3) {
-            desc.pixels.resize(size);
-            for (src = 0, dst = 0; src < w * h * bpp; src++, dst++) {
-                desc.pixels[dst] = data[src];
-                if (src % 3 == 2) {
-                    dst++;
-                    desc.pixels[dst] = 0xff;
-                }
-            }
-        }
-        else {
-            desc.pixels = std::vector<BYTE>(data, data + size);
-        }
+
+        desc.pixels = toRGBAFormat(w, h, bpp, data);
 
         desc.width = w;
         desc.height = h;
@@ -43,25 +48,8 @@ namespace Framework::Utility::TextureLoader {
         int width, height, bpp;
 
         BYTE* texByte = stbi_load_from_memory(reinterpret_cast<const stbi_uc*>(data.data()), static_cast<int>(data.size()), &width, &height, &bpp, 0);
-        const int size = width * height * 4;
-        std::vector<BYTE> textureByte;
-        int src, dst;
-        //アルファ値がないテクスチャデータならアルファデータを追加する
-        if (bpp == 3) {
-            textureByte.resize(size);
-            for (src = 0, dst = 0; src < width * height * bpp; src++, dst++) {
-                textureByte[dst] = texByte[src];
-                if (src % 3 == 2) {
-                    dst++;
-                    textureByte[dst] = 0xff;
-                }
-            }
-        }
-        else {
-            textureByte = std::vector<BYTE>(texByte, texByte + size);
-        }
 
-        desc.pixels = textureByte;
+        desc.pixels = toRGBAFormat(width, height, bpp, texByte);
         desc.width = width;
         desc.height = height;
 
