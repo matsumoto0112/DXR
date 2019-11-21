@@ -1,10 +1,7 @@
 #include "GLBLoader.h"
 #include <fstream>
-#ifndef STB_IMAGE_IMPLEMENTATION
-#define STB_IMAGE_IMPLEMENTATION
-#endif // !STB_IMAGE_IMPLEMENTATION
-#include "Libs/stb/stb_image.h"
 #include "Utility/Debug.h"
+#include "Utility/IO/TextureLoader.h"
 #include "Utility/StringUtil.h"
 
 using namespace Microsoft::glTF;
@@ -50,37 +47,11 @@ namespace Framework::Utility {
         static constexpr UINT SIZE_PER_PIXEL = 4;
         std::vector<Desc::TextureDesc> result;
         for (auto&& image : mDocument.images.Elements()) {
-            Desc::TextureDesc tex = {};
-            tex.format = Desc::TextureFormat::R8G8B8A8;
             std::vector<BYTE> texRowData = mResourceReader->ReadBinaryData(mDocument, image);
-            int width, height, bpp;
 
-            BYTE* texByte = stbi_load_from_memory(reinterpret_cast<const stbi_uc*>(texRowData.data()), static_cast<int>(texRowData.size()), &width, &height, &bpp, 0);
-            const int size = width * height * SIZE_PER_PIXEL;
-            std::vector<BYTE> textureByte;
-            int src, dst;
-            //アルファ値がないテクスチャデータならアルファデータを追加する
-            if (bpp == 3) {
-                textureByte.resize(size);
-                for (src = 0, dst = 0; src < width * height * bpp; src++, dst++) {
-                    textureByte[dst] = texByte[src];
-                    if (src % 3 == 2) {
-                        dst++;
-                        textureByte[dst] = 0xff;
-                    }
-                }
-            }
-            else {
-                textureByte = std::vector<BYTE>(texByte, texByte + size);
-            }
-
+            Desc::TextureDesc tex = TextureLoader::loadFromMemory(texRowData);
             tex.name = image.name == "" ? L"image" : toWString(image.name);
-            tex.pixels = textureByte;
-            tex.width = width;
-            tex.height = height;
             result.emplace_back(tex);
-
-            stbi_image_free(texByte);
         }
         return result;
     }

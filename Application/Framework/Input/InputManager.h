@@ -1,7 +1,8 @@
 #pragma once
 #include <memory>
-#include "Keyboard.h"
-#include "Mouse.h"
+#include "Input/Keyboard.h"
+#include "Input/Mouse.h"
+#include "Utility/Typedef.h"
 
 namespace Framework::Input {
     /**
@@ -32,7 +33,7 @@ namespace Framework::Input {
         */
         inline Mouse* getMouse() const { return mMouse.get(); }
     private:
-        std::unique_ptr<Keyboard> mKeyboard; //!< キーボード
-        std::unique_ptr<Mouse> mMouse; //!< マウス
+        UniquePtr<Keyboard> mKeyboard; //!< キーボード
+        UniquePtr<Mouse> mMouse; //!< マウス
     };
-} //Framework::Input 
+} //Framework::Input

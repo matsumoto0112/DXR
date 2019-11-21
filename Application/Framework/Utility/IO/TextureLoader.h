@@ -1,36 +1,22 @@
 #pragma once
-
-#include <wincodec.h>
-#include <memory>
 #include <vector>
-#include <string>
+#include <Windows.h>
+#include <filesystem>
 #include "Desc/TextureDesc.h"
 
 namespace Framework::Utility {
-/**
-* @class TextureLoader
-* @brief テクスチャ読み込み機
-*/
-    class TextureLoader {
-    public:
+    /**
+    * @namespace TextureLoader
+    * @brief テクスチャ読み込み
+    */
+    namespace TextureLoader {
         /**
-        * @brief コンストラクタ
+        * @brief テクスチャの読み込み
         */
-        TextureLoader();
+        Desc::TextureDesc load(const std::filesystem::path& path);
         /**
-        * @brief デストラクタ
+        * @brief メモリからテクスチャを読み込む
         */
-        ~TextureLoader();
-        /**
-        * @brief テクスチャ読み込み
-        * @param filepath ファイルへのパス
-        */
-        Desc::TextureDesc load(const std::wstring& filepath);
-    private:
-        IWICBitmapDecoder* mDecoder; //!< デコーダー
-        IWICBitmapFrameDecode* mFrame; //!< フレームデコード
-        IWICFormatConverter* mConverter; //!< フォーマット変換器
-        IWICImagingFactory* mFactory; //!< イメージ生成器
-    };
-
+        Desc::TextureDesc loadFromMemory(const std::vector<BYTE>& data);
+    } //TextureLoader
 } //Framework::Utility

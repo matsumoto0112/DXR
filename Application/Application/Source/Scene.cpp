@@ -510,12 +510,12 @@ void Scene::create() {
                 mIndexOffsets[LocalRootSignature::HitGroupIndex::Quad] = (UINT)indices.size();
                 mVertexOffsets[LocalRootSignature::HitGroupIndex::Quad] = (UINT)vertices.size();
 
-                Framework::Utility::TextureLoader texLoader;
-                Framework::Desc::TextureDesc desc = texLoader.load(texPath / "back2.png");
+                Framework::Desc::TextureDesc desc = Framework::Utility::TextureLoader::load(texPath / "back2.png");
                 auto texture = std::make_shared<Texture2D>(device, desc);
                 mDescriptorTable->allocate(texture.get());
                 texture->createSRV(device);
                 mTextures[ModelTextureType::Quad_Albedo] = (texture);
+                mTextureIDs[ModelTextureType::Quad_Albedo] = ModelTextureType::Quad_Albedo;
             }
 
             //床のバッファ作成
@@ -706,7 +706,7 @@ void Scene::create() {
             {
                 rootArguments.cb.indexOffset = std::get<0>(getOffset(LocalRootSignature::HitGroupIndex::Quad));
                 rootArguments.cb.vertexOffset = std::get<1>(getOffset(LocalRootSignature::HitGroupIndex::Quad));
-                rootArguments.albedo = mTextures[mTextureIDs[ModelTextureType::Default_Albedo]]->getGPUHandle();
+                rootArguments.albedo = mTextures[mTextureIDs[ModelTextureType::Quad_Albedo]]->getGPUHandle();
                 table.push_back(ShaderRecord(hitGroup_QuadShaderID, shaderIDSize, &rootArguments, sizeof(RootArgument)));
             }
             //Floor

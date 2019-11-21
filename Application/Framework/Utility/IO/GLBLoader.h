@@ -6,9 +6,10 @@
 #include <GLTFSDK/GLBResourceReader.h>
 #include <GLTFSDK/Deserialize.h>
 #include "Desc/TextureDesc.h"
-#include "Framework/Math/Vector2.h"
-#include "Framework/Math/Vector3.h"
-#include "Framework/Math/Vector4.h"
+#include "Math/Vector2.h"
+#include "Math/Vector3.h"
+#include "Math/Vector4.h"
+#include "Utility/Typedef.h"
 
 namespace Framework::Utility {
     /**
@@ -82,7 +83,7 @@ namespace Framework::Utility {
         */
         std::vector<UVList> getUVsPerSubMeshes() const;
     private:
-        std::unique_ptr<Microsoft::glTF::GLBResourceReader> mResourceReader;
+        UniquePtr<Microsoft::glTF::GLBResourceReader> mResourceReader;
         Microsoft::glTF::Document mDocument;
     };
 } //Framework::Utility
