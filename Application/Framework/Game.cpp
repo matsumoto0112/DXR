@@ -69,7 +69,7 @@ namespace Framework {
         mDeviceResource->createWindowDependentResources();
 
         mInputManager = std::make_unique<Input::InputManager>(mWindow->getHWnd());
-        ImGuiManager::getInstance()->init(mWindow->getHWnd(), mDeviceResource->getDevice(), mDeviceResource->getBackBufferFormat());
+        mImGuiManager = std::make_unique<ImGuiManager>(mWindow->getHWnd(), mDeviceResource->getDevice(), mDeviceResource->getBackBufferFormat());
     }
     //更新
     void Game::onUpdate() {
@@ -78,7 +78,7 @@ namespace Framework {
     //描画開始
     void Game::renderStart() {
         mDeviceResource->prepare();
-        Framework::ImGuiManager::getInstance()->beginFrame();
+        mImGuiManager->beginFrame();
 
         //レンダーターゲットのクリア
         ID3D12GraphicsCommandList* list = mDeviceResource->getCommandList();
@@ -90,7 +90,7 @@ namespace Framework {
     }
     //描画終了
     void Game::renderEnd() {
-        Framework::ImGuiManager::getInstance()->endFrame(mDeviceResource->getCommandList());
+        mImGuiManager->endFrame(mDeviceResource->getCommandList());
 
         mDeviceResource->present();
     }

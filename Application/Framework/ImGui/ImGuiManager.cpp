@@ -2,18 +2,8 @@
 
 namespace Framework {
     //コンストラクタ
-    ImGuiManager::ImGuiManager()
-        :mHeap(nullptr) { }
-
-    //デストラクタ
-    ImGuiManager::~ImGuiManager() {
-        ImGui_ImplDX12_Shutdown();
-        ImGui_ImplWin32_Shutdown();
-        ImGui::DestroyContext();
-    }
-
-    //初期化
-    void ImGuiManager::init(HWND hWnd, ID3D12Device* device, DXGI_FORMAT format) {
+    ImGuiManager::ImGuiManager(HWND hWnd, ID3D12Device* device, DXGI_FORMAT format)
+        :mHeap(nullptr) {
         IMGUI_CHECKVERSION();
         ImGui::CreateContext();
         ImGuiIO& io = ImGui::GetIO(); (void)io;
@@ -29,6 +19,13 @@ namespace Framework {
         ImGui_ImplDX12_Init(device, 3, format,
             mHeap->GetCPUDescriptorHandleForHeapStart(),
             mHeap->GetGPUDescriptorHandleForHeapStart());
+    }
+
+    //デストラクタ
+    ImGuiManager::~ImGuiManager() {
+        ImGui_ImplDX12_Shutdown();
+        ImGui_ImplWin32_Shutdown();
+        ImGui::DestroyContext();
     }
 
     void ImGuiManager::beginFrame() {

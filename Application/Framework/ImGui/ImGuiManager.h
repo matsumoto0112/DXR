@@ -10,20 +10,16 @@ namespace Framework {
     * @class ImGui
     * @brief ImGui管理クラス
     */
-    class ImGuiManager : public Utility::Singleton<ImGuiManager> {
+    class ImGuiManager {
     public:
         /**
         * @brief コンストラクタ
         */
-        ImGuiManager();
+        ImGuiManager(HWND hWnd, ID3D12Device* device, DXGI_FORMAT format);
         /**
         * @brief デストラクタ
         */
         ~ImGuiManager();
-        /**
-        @brief ImGuiの初期化
-        */
-        void init(HWND hWnd, ID3D12Device* device, DXGI_FORMAT format);
         /**
         * @brief フレーム開始時に呼ぶ
         */
@@ -35,4 +31,4 @@ namespace Framework {
     private:
         ComPtr<ID3D12DescriptorHeap> mHeap; //!< ImGui用ヒープ
     };
-} //Framework 
+} //Framework
