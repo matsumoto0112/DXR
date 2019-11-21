@@ -135,6 +135,8 @@ namespace {
     D3D12_GPU_DESCRIPTOR_HANDLE mDefaultEmissiveTexture;
 
     std::shared_ptr<Framework::ImGUI::Text> mRotSphereText;
+
+    ComPtr<ID3D12Resource> mInstanceDescs;
 }
 
 Scene::Scene(Framework::DX::DeviceResource* device, Framework::Input::InputManager* inputManager, UINT width, UINT height)
@@ -785,17 +787,6 @@ void Scene::update() {
 }
 
 void Scene::render() {
-    mDeviceResource->prepare();
-    Framework::ImGuiManager::getInstance()->beginFrame();
-
-    //レンダーターゲットのクリア
-    ID3D12GraphicsCommandList* list = mDeviceResource->getCommandList();
-    D3D12_CPU_DESCRIPTOR_HANDLE rtv[] = { mDeviceResource->getRenderTargetView() };
-
-    list->OMSetRenderTargets(1, rtv, FALSE, &mDeviceResource->getDepthStencilView());
-    static float color[4] = { 0,0,0,0 };
-    list->ClearRenderTargetView(mDeviceResource->getRenderTargetView(), color, 0, nullptr);
-
     ID3D12Device* device = mDeviceResource->getDevice();
     ID3D12GraphicsCommandList5* dxrCommandList = mDXRDevice->getDXRCommandList();
 
@@ -840,9 +831,8 @@ void Scene::render() {
         XMStoreFloat3x4(reinterpret_cast<XMFLOAT3X4*>(instanceDesc[n + offset].Transform), transform);
     }
 
-    ComPtr<ID3D12Resource> instanceDescs;
-    createBuffer(device, instanceDescs.GetAddressOf(), instanceDesc.data(), instanceDesc.size() * sizeof(D3D12_RAYTRACING_INSTANCE_DESC), L"InstanceDescs");
-    topLevelBuildDesc.Inputs.InstanceDescs = instanceDescs->GetGPUVirtualAddress();
+    createBuffer(device, mInstanceDescs.ReleaseAndGetAddressOf(), instanceDesc.data(), instanceDesc.size() * sizeof(D3D12_RAYTRACING_INSTANCE_DESC), L"InstanceDescs");
+    topLevelBuildDesc.Inputs.InstanceDescs = mInstanceDescs->GetGPUVirtualAddress();
 
     //TLASの構築終了まで待機する用のバリア
     dxrCommandList->BuildRaytracingAccelerationStructure(&topLevelBuildDesc, 0, nullptr);
@@ -900,8 +890,4 @@ void Scene::render() {
     commandList->ResourceBarrier(_countof(postCopyBarriers), postCopyBarriers);
 
     mDebugWindow->draw();
-
-    Framework::ImGuiManager::getInstance()->endFrame(mDeviceResource->getCommandList());
-
-    mDeviceResource->present();
 }
