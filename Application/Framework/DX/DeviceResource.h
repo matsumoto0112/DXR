@@ -231,8 +231,8 @@ namespace Framework::DX {
         ComPtr<ID3D12Fence> mFence; //!< フェンス
         std::array<UINT64, BACK_BUFFER_COUNT> mFenceValues; //!< フェンスの値
         Microsoft::WRL::Wrappers::Event mFenceEvent; //!< フェンスイベント
-        std::unique_ptr<DescriptorTable> mRTVHeap; //!< レンダーターゲットのディスクリプタヒープ
-        std::unique_ptr<DescriptorTable> mDSVHeap; //!< デプス・ステンシルのディスクリプタヒープ
+        UniquePtr<DescriptorTable> mRTVHeap; //!< レンダーターゲットのディスクリプタヒープ
+        UniquePtr<DescriptorTable> mDSVHeap; //!< デプス・ステンシルのディスクリプタヒープ
         D3D12_VIEWPORT mScreenViewport; //!< ビューポート
         D3D12_RECT mScissorRect; //!< シザー矩形
         DXGI_FORMAT mBackBufferFormat; //!< バックバッファのフォーマット

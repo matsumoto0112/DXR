@@ -1,5 +1,6 @@
 #pragma once
 #include "ImGui/Item/IItem.h"
+#include "Utility/Typedef.h"
 
 namespace Framework::ImGUI {
     /**
@@ -28,6 +29,6 @@ namespace Framework::ImGUI {
         void draw();
     private:
         std::string mName; //!< ウィンドウ名
-        std::vector<std::shared_ptr<IItem>> mItems; //!< ウィンドウにぶら下がるアイテム群
+        std::vector<SharedPtr<IItem>> mItems; //!< ウィンドウにぶら下がるアイテム群
     };
 } //Framework::ImGUI
