@@ -9,6 +9,7 @@
 #include "Input/InputManager.h"
 #include "DX/Resource/Texture2D.h"
 #include "Application/Assets/Shader/Raytracing/Util/GlobalCompat.h"
+#include "Device/ISystemEventNotify.h"
 
 static constexpr UINT TEXTURE_NUM = 1000;
 namespace DescriptorIndex {
@@ -32,7 +33,7 @@ struct AccelerationBuffer {
 * @class Scene
 * @brief
 */
-class Scene {
+class Scene : public Framework::Device::ISystemEventNotify {
 public:
     /**
     * @brief コンストラクタ
@@ -84,4 +85,12 @@ private:
 private:
     std::unique_ptr<Framework::ImGUI::Window> mDebugWindow;
     std::shared_ptr<Framework::ImGUI::Text> mFPSText;
+
+    // ISystemEventNotify を介して継承されました
+    virtual void onFrameEvent() override;
+    virtual void toggleFullScreenWindow() override;
+    virtual void updateForSizeChange(UINT clientWidth, UINT cliendHeight) override;
+    virtual void setWindowBounds(const RECT & rect) override;
+    virtual void onSizeChanged(UINT width, UINT height, bool minimized) override;
+    virtual void onWindowMoved(int x, int y) override;
 };

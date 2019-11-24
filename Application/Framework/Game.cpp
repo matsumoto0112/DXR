@@ -1,4 +1,5 @@
 #include "Game.h"
+#include "Device/GameDevice.h"
 #include "ImGui/ImGuiManager.h"
 #include "Utility/Debug.h"
 #include "Window/Procedure/CreateProc.h"
@@ -13,7 +14,7 @@
 namespace Framework {
     //コンストラクタ
     Game::Game(UINT width, UINT height, const std::wstring& title)
-        :mWidth(width), mHeight(height), mTitle(title), mWindow(nullptr) {
+        :mWidth(width), mHeight(height), mTitle(title) {
         Window::Procedures::addProc(new Window::CreateProc());
         Window::Procedures::addProc(new Window::DestroyProc());
         Window::Procedures::addProc(new Window::PaintProc());
@@ -27,11 +28,19 @@ namespace Framework {
     //実行
     int Game::run(HINSTANCE hInstance, int nCmdShow) {
         try {
-            mWindow = std::make_unique<Window::Window>(mWidth, mHeight, mTitle, hInstance, this);
+            //Device::GameDevice::getInstance();
+            Device::GameDevice::getInstance()->init(mWidth, mHeight, mTitle,
+                hInstance,
+                DXGI_FORMAT::DXGI_FORMAT_R8G8B8A8_UNORM,
+                DXGI_FORMAT::DXGI_FORMAT_D32_FLOAT,
+                DX::DeviceResource::REQUIRE_TEARING_SUPPORT);
+            Device::GameDevice::getInstance()->setNotify(this);
+            //mWindow = std::make_unique<Window::Window>(mWidth, mHeight, mTitle, hInstance, this);
 
             this->onInit();
             //初期化後にウィンドウを表示
-            mWindow->show(nCmdShow);
+            //mWindow->show(nCmdShow);
+            Device::GameDevice::getInstance()->run(nCmdShow);
 
             MSG msg = {};
             //メインループ
@@ -57,68 +66,74 @@ namespace Framework {
 
     //初期化
     void Game::onInit() {
-        mDeviceResource = std::make_unique<DX::DeviceResource>(
-            DXGI_FORMAT::DXGI_FORMAT_R8G8B8A8_UNORM,
-            DXGI_FORMAT::DXGI_FORMAT_D32_FLOAT,
-            DX::DeviceResource::REQUIRE_TEARING_SUPPORT);
+        //mDeviceResource = std::make_unique<DX::DeviceResource>(
+        //    DXGI_FORMAT::DXGI_FORMAT_R8G8B8A8_UNORM,
+        //    DXGI_FORMAT::DXGI_FORMAT_D32_FLOAT,
+        //    DX::DeviceResource::REQUIRE_TEARING_SUPPORT);
 
-        mDeviceResource->setWindow(mWindow.get(), mWidth, mHeight);
-        mDeviceResource->initializeDXGIAdapter();
+        //mDeviceResource->setWindow(mWindow.get(), mWidth, mHeight);
+        //mDeviceResource->initializeDXGIAdapter();
 
-        mDeviceResource->createDeviceResources();
-        mDeviceResource->createWindowDependentResources();
+        //mDeviceResource->createDeviceResources();
+        //mDeviceResource->createWindowDependentResources();
 
-        mInputManager = std::make_unique<Input::InputManager>(mWindow->getHWnd());
-        mImGuiManager = std::make_unique<ImGuiManager>(mWindow->getHWnd(), mDeviceResource->getDevice(), mDeviceResource->getBackBufferFormat());
+        //mInputManager = std::make_unique<Input::InputManager>(mWindow->getHWnd());
+        //mImGuiManager = std::make_unique<ImGuiManager>(mWindow->getHWnd(), mDeviceResource->getDevice(), mDeviceResource->getBackBufferFormat());
     }
     //更新
     void Game::onUpdate() {
-        mInputManager->update();
+        //mInputManager->update();
     }
+    void Game::onRender() { }
     //描画開始
     void Game::renderStart() {
-        mDeviceResource->prepare();
-        mImGuiManager->beginFrame();
+        //mDeviceResource->prepare();
+        //mImGuiManager->beginFrame();
 
         //レンダーターゲットのクリア
-        ID3D12GraphicsCommandList* list = mDeviceResource->getCommandList();
-        D3D12_CPU_DESCRIPTOR_HANDLE rtv[] = { mDeviceResource->getRenderTargetView() };
+        ID3D12GraphicsCommandList* list = Device::GameDevice::getInstance()->getDeviceResource()->getCommandList();
+        D3D12_CPU_DESCRIPTOR_HANDLE rtv[] = { Device::GameDevice::getInstance()->getDeviceResource()->getRenderTargetView() };
 
-        list->OMSetRenderTargets(1, rtv, FALSE, &mDeviceResource->getDepthStencilView());
+        list->OMSetRenderTargets(1, rtv, FALSE, &Device::GameDevice::getInstance()->getDeviceResource()->getDepthStencilView());
         static float color[4] = { 0,0,0,0 };
-        list->ClearRenderTargetView(mDeviceResource->getRenderTargetView(), color, 0, nullptr);
+        list->ClearRenderTargetView(Device::GameDevice::getInstance()->getDeviceResource()->getRenderTargetView(), color, 0, nullptr);
     }
     //描画終了
     void Game::renderEnd() {
-        mImGuiManager->endFrame(mDeviceResource->getCommandList());
+        //mImGuiManager->endFrame(mDeviceResource->getCommandList());
 
-        mDeviceResource->present();
+        //mDeviceResource->present();
     }
     //終了時
     void Game::onDestroy() {
-        mDeviceResource->waitForGPU();
+        //mDeviceResource->waitForGPU();
     }
-    //フルスクリーン切り替え
-    void Game::toggleFullScreenWindow() {
-        if (!mDeviceResource->isTearingSupported())return;
-        mWindow->toggleFullScreenWindow(mDeviceResource->getSwapChain());
+    void Game::onFrameEvent() {
+        onUpdate();
+        onRender();
     }
-    //ウィンドウサイズの変更
-    void Game::updateForSizeChange(UINT clientWidth, UINT clientHeight) {
-        mWidth = clientWidth;
-        mHeight = clientHeight;
-        mAspectRatio = static_cast<float>(clientWidth) / static_cast<float>(clientHeight);
-    }
-    //ウィンドウの矩形のセット
-    void Game::setWindowBounds(const RECT& rect) {
-        mWindowBounds = rect;
-    }
-    //ウィンドウサイズの変更イベント
-    void Game::onSizeChanged(UINT width, UINT height, bool minimized) {
-        mDeviceResource->windowSizeChanged(width, height, minimized);
-        updateForSizeChange(width, height);
-    }
-    //ウィンドウの移動
-    void Game::onWindowMoved(int, int) { }
+
+    ////フルスクリーン切り替え
+    //void Game::toggleFullScreenWindow() {
+    //    if (!mDeviceResource->isTearingSupported())return;
+    //    mWindow->toggleFullScreenWindow(mDeviceResource->getSwapChain());
+    //}
+    ////ウィンドウサイズの変更
+    //void Game::updateForSizeChange(UINT clientWidth, UINT clientHeight) {
+    //    mWidth = clientWidth;
+    //    mHeight = clientHeight;
+    //    mAspectRatio = static_cast<float>(clientWidth) / static_cast<float>(clientHeight);
+    //}
+    ////ウィンドウの矩形のセット
+    //void Game::setWindowBounds(const RECT& rect) {
+    //    mWindowBounds = rect;
+    //}
+    ////ウィンドウサイズの変更イベント
+    //void Game::onSizeChanged(UINT width, UINT height, bool minimized) {
+    //    mDeviceResource->windowSizeChanged(width, height, minimized);
+    //    updateForSizeChange(width, height);
+    //}
+    ////ウィンドウの移動
+    //void Game::onWindowMoved(int, int) { }
 
 } //Framework

@@ -20,6 +20,7 @@
     <ClInclude Include="$(MSBuildThisFileDirectory)Desc\DescriptorTableDesc.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)Desc\TextureDesc.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)Device\GameDevice.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)Device\Test.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)DX\ConstantBuffer.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)DX\CountingDescriptorTable.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)DX\DeviceResource.h" />
@@ -91,6 +92,8 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="$(MSBuildThisFileDirectory)Camera\Perspective.cpp" />
+    <ClCompile Include="$(MSBuildThisFileDirectory)Device\GameDevice.cpp" />
+    <ClCompile Include="$(MSBuildThisFileDirectory)Device\Test.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)DX\CountingDescriptorTable.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)DX\DescriptorTable.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)DX\DeviceResource.cpp" />

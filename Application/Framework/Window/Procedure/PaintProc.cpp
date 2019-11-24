@@ -11,8 +11,7 @@ namespace Framework::Window {
         Device::ISystemEventNotify* notify = reinterpret_cast<Device::ISystemEventNotify*>(GetWindowLongPtr(hWnd, GWLP_USERDATA));
         if (!notify) return 0L;
 
-        notify->onUpdate();
-        notify->onRender();
+        notify->onFrameEvent();
         return 0L;
     }
 

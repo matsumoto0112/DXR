@@ -1,4 +1,5 @@
 #pragma once
+#include <Windows.h>
 
 namespace Framework::Device {
     /**
@@ -11,22 +12,7 @@ namespace Framework::Device {
         * @brief デストラクタ
         */
         virtual ~ISystemEventNotify() = default;
-        /**
-        * @brief 初期化
-        */
-        virtual void onInit() = 0;
-        /**
-        * @brief 更新
-        */
-        virtual void onUpdate() = 0;
-        /**
-        * @brief 描画
-        */
-        virtual void onRender() = 0;
-        /**
-        * @brief 破棄
-        */
-        virtual void onDestroy() = 0;
+        virtual void onFrameEvent() = 0;
         /**
         * @brief フルスクリーンモードの切り替え
         */

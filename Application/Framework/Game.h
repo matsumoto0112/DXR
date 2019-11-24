@@ -13,7 +13,7 @@ namespace Framework {
     * @class Game
     * @brief discription
     */
-    class Game :public Device::ISystemEventNotify {
+    class Game : public Device::ISystemEventNotify {
     public:
         /**
         * @brief コンストラクタ
@@ -30,11 +30,15 @@ namespace Framework {
         /**
         * @brief 初期化
         */
-        virtual void onInit() override;
+        virtual void onInit();
         /**
         * @brief 更新
         */
-        virtual void onUpdate() override;
+        virtual void onUpdate();
+        /**
+        * @brief 描画
+        */
+        virtual void onRender();
         /**
         * @brief 描画開始
         */
@@ -46,36 +50,32 @@ namespace Framework {
         /**
         * @brief 破棄時
         */
-        virtual void onDestroy() override;
+        virtual void onDestroy();
+
+        virtual void onFrameEvent() override;
         /**
         * @brief フルスクリーン切り替え
         */
-        virtual void toggleFullScreenWindow() override;
+        virtual void toggleFullScreenWindow() override { }
         /**
         * @brief ウィンドウサイズを更新する
         */
-        virtual void updateForSizeChange(UINT clientWidth, UINT cliendHeight) override;
+        virtual void updateForSizeChange(UINT clientWidth, UINT cliendHeight) override { }
         /**
         * @brief ウィンドウの大きさをセットする
         */
-        virtual void setWindowBounds(const RECT & rect) override;
+        virtual void setWindowBounds(const RECT & rect) override { }
         /**
         * @brief ウィンドウサイズの切り替えイベント
         */
-        virtual void onSizeChanged(UINT width, UINT height, bool minimized) override;
+        virtual void onSizeChanged(UINT width, UINT height, bool minimized) override { }
         /**
         * @brief ウィンドウの移動
         */
-        virtual void onWindowMoved(int x, int y) override;
+        virtual void onWindowMoved(int x, int y) override { }
     protected:
         UINT mWidth; //!< ウィンドウ幅
         UINT mHeight; //!< ウィンドウ高さ
-        float mAspectRatio; //!< アスペクト比
-        RECT mWindowBounds; //!< ウィンドウの矩形
         std::wstring mTitle; //!< ウィンドウタイトル
-        std::unique_ptr<Window::Window> mWindow; //!< ウィンドウ
-        std::unique_ptr<DX::DeviceResource> mDeviceResource; //!< デバイスリソース
-        std::unique_ptr<Input::InputManager> mInputManager; //!< 入力管理
-        std::unique_ptr<ImGuiManager> mImGuiManager;
     };
 } //Framework

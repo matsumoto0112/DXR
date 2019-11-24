@@ -891,3 +891,15 @@ void Scene::render() {
 
     mDebugWindow->draw();
 }
+
+void Scene::onFrameEvent() { }
+
+void Scene::toggleFullScreenWindow() { }
+
+void Scene::updateForSizeChange(UINT clientWidth, UINT cliendHeight) { }
+
+void Scene::setWindowBounds(const RECT & rect) { }
+
+void Scene::onSizeChanged(UINT width, UINT height, bool minimized) { }
+
+void Scene::onWindowMoved(int x, int y) { }

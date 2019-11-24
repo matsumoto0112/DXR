@@ -1,6 +1,8 @@
 #include "Framework/Game.h"
+#include "Device/GameDevice.h"
 #include "Utility/Debug.h"
 #include "Scene.h"
+#include "Device/Test.h"
 
 /**
 * @class MainApp
@@ -20,7 +22,9 @@ public:
     void onInit() override {
         Game::onInit();
 
-        mScene = std::make_unique<Scene>(mDeviceResource.get(), mInputManager.get(), mWidth, mHeight);
+        //mScene = std::make_unique<Scene>(mDeviceResource.get(), mInputManager.get(), mWidth, mHeight);
+        mScene = std::make_unique<Scene>(Framework::Device::GameDevice::getInstance()->getDeviceResource(),
+            Framework::Device::GameDevice::getInstance()->getInputManager(), mWidth, mHeight);
         mScene->create();
     }
     void onUpdate() override {
@@ -44,7 +48,6 @@ private:
 //ÉÅÉCÉìä÷êî
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE, LPSTR, int nCmdShow) {
     _CrtSetDbgFlag(_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF);
-
     MainApp app(1280, 720, L"Game");
     return app.run(hInstance, nCmdShow);
 }
