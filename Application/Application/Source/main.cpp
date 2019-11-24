@@ -2,7 +2,6 @@
 #include "Device/GameDevice.h"
 #include "Utility/Debug.h"
 #include "Scene.h"
-#include "Device/Test.h"
 
 /**
 * @class MainApp
