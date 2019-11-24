@@ -194,6 +194,161 @@ Scene::Scene(Framework::DX::DeviceResource* device, Framework::Input::InputManag
 Scene::~Scene() { }
 
 void Scene::create() {
+    createDeviceDependentResources();
+    createWindowDependentResources();
+    //コンスタントバッファの初期化
+    {
+        ID3D12Device* device = mDeviceResource->getDevice();
+        UINT backBufferCount = mDeviceResource->getBackBufferCount();
+        mSceneCB.create(device, backBufferCount, L"SceneConstantBuffer");
+    }
+}
+
+void Scene::reset() {
+    mDXRDevice->reset();
+    mGpuTimer.reset();
+    mGpuTimer.releaseDevice();
+}
+
+void Scene::update() {
+    mTime.update();
+    mFPSText->setText(format("FPS:%0.3f", mTime.getFPS()));
+
+    mSceneCB->cameraPosition = Vec4(mCameraPosition, 1.0f);
+    const float aspect = static_cast<float>(mWidth) / static_cast<float>(mHeight);
+
+    Mat4 view =
+        Mat4::createRotation(mCameraRotation) *
+        Mat4::createTranslate(mCameraPosition);
+    view = view.inverse();
+    Mat4 proj =
+        Mat4::createProjection(Deg(45.0f), aspect, 0.1f, 100.0f);
+    Mat4 vp = view * proj;
+    mSceneCB->projectionToWorld = vp.inverse();
+    mSceneCB->lightPosition = Vec4(mLightPosition, 1.0f);
+    mSceneCB->lightDiffuse = mLightDiffuse;
+    mSceneCB->lightAmbient = mLightAmbient;
+
+    if (mInputManager->getKeyboard()->getKey(Framework::Input::KeyCode::LShift)) {
+        mQuadRotate += 1.0f;
+    }
+}
+
+void Scene::render() {
+    ID3D12Device* device = mDeviceResource->getDevice();
+    ID3D12GraphicsCommandList5* dxrCommandList = mDXRDevice->getDXRCommandList();
+
+    //TLASのデータ更新
+    std::vector<D3D12_RAYTRACING_INSTANCE_DESC> instanceDesc(TLAS_NUM);
+    UINT offset = 0;
+    for (UINT n = 0; n < TRIANGLE_COUNT; n++) {
+        Rad rotX = mQuadRotate.toRadians() * 0.37f;
+        Rad rotY = mQuadRotate.toRadians() * 1.45f;
+        Rad rotZ = mQuadRotate.toRadians() * 0.73f;
+        XMMATRIX transform = XMMatrixRotationRollPitchYaw(rotX.getRad(), rotY.getRad(), rotZ.getRad()) *
+            XMMatrixTranslation((float)n * 5, 0, 0);
+        std::stringstream ss;
+        ss << "(" << rotX.toDegree().getDeg() << "," << rotY.toDegree().getDeg() << "," << rotZ.toDegree().getDeg() << ")\n";
+        mRotSphereText->setText(ss.str());
+        instanceDesc[n + offset].InstanceID = 0;
+        instanceDesc[n + offset].InstanceMask = 0xff;
+        instanceDesc[n + offset].Flags = D3D12_RAYTRACING_INSTANCE_FLAGS::D3D12_RAYTRACING_INSTANCE_FLAG_NONE;
+        instanceDesc[n + offset].InstanceContributionToHitGroupIndex = LocalRootSignature::HitGroupIndex::UFO;
+        instanceDesc[n + offset].AccelerationStructure = mBLASBuffers[BottomLevelASType::UFO].buffer->GetGPUVirtualAddress();
+        XMStoreFloat3x4(reinterpret_cast<XMFLOAT3X4*>(instanceDesc[n + offset].Transform), transform);
+    }
+
+    offset += TRIANGLE_COUNT;
+    for (UINT n = 0; n < QUAD_COUNT; n++) {
+        XMMATRIX transform = XMMatrixScaling(1, 1, 1) * XMMatrixRotationRollPitchYaw(0, mQuadRotate.toRadians().getRad(), 0) * XMMatrixTranslation((float)n * 5 + 20, 3, 0);
+        instanceDesc[n + offset].InstanceID = 0;
+        instanceDesc[n + offset].InstanceMask = 0xff;
+        instanceDesc[n + offset].Flags = D3D12_RAYTRACING_INSTANCE_FLAGS::D3D12_RAYTRACING_INSTANCE_FLAG_NONE;
+        instanceDesc[n + offset].InstanceContributionToHitGroupIndex = LocalRootSignature::HitGroupIndex::Quad;
+        instanceDesc[n + offset].AccelerationStructure = mBLASBuffers[BottomLevelASType::Quad].buffer->GetGPUVirtualAddress();
+        XMStoreFloat3x4(reinterpret_cast<XMFLOAT3X4*>(instanceDesc[n + offset].Transform), transform);
+    }
+    offset += QUAD_COUNT;
+    for (UINT n = 0; n < FLOOR_COUNT; n++) {
+        XMMATRIX transform = XMMatrixScaling(100, 1, 100) * XMMatrixTranslation(0, -5, 0);
+        instanceDesc[n + offset].InstanceID = 0;
+        instanceDesc[n + offset].InstanceMask = 0xff;
+        instanceDesc[n + offset].Flags = D3D12_RAYTRACING_INSTANCE_FLAGS::D3D12_RAYTRACING_INSTANCE_FLAG_NONE;
+        instanceDesc[n + offset].InstanceContributionToHitGroupIndex = LocalRootSignature::HitGroupIndex::Floor;
+        instanceDesc[n + offset].AccelerationStructure = mBLASBuffers[BottomLevelASType::Floor].buffer->GetGPUVirtualAddress();
+        XMStoreFloat3x4(reinterpret_cast<XMFLOAT3X4*>(instanceDesc[n + offset].Transform), transform);
+    }
+
+    createBuffer(device, mInstanceDescs.ReleaseAndGetAddressOf(), instanceDesc.data(), instanceDesc.size() * sizeof(D3D12_RAYTRACING_INSTANCE_DESC), L"InstanceDescs");
+    topLevelBuildDesc.Inputs.InstanceDescs = mInstanceDescs->GetGPUVirtualAddress();
+
+    //TLASの構築終了まで待機する用のバリア
+    dxrCommandList->BuildRaytracingAccelerationStructure(&topLevelBuildDesc, 0, nullptr);
+    mDeviceResource->getCommandList()->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::UAV(mTLASBuffer.buffer.Get()));
+
+    //描画開始
+    ID3D12GraphicsCommandList* commandList = mDeviceResource->getCommandList();
+    UINT frameIndex = mDeviceResource->getCurrentFrameIndex();
+    commandList->SetComputeRootSignature(mGlobalRootSignature.Get());
+    mSceneCB.copyStatingToGPU(frameIndex);
+
+    ID3D12DescriptorHeap* heaps[] = { mDescriptorTable->getHeap() };
+    commandList->SetDescriptorHeaps(_countof(heaps), heaps);
+    commandList->SetComputeRootDescriptorTable(GlobalRootSignature::Slot::RenderTarget, mRaytracingOutput.mGPUHandle);
+    commandList->SetComputeRootShaderResourceView(GlobalRootSignature::Slot::AccelerationStructure, mTLASBuffer.buffer->GetGPUVirtualAddress());
+    commandList->SetComputeRootConstantBufferView(GlobalRootSignature::Slot::SceneConstant, mSceneCB.gpuVirtualAddress());
+    commandList->SetComputeRootDescriptorTable(GlobalRootSignature::Slot::IndexBuffer, mResourcesIndexBuffer.mGPUHandle);
+    commandList->SetComputeRootDescriptorTable(GlobalRootSignature::Slot::VertexBuffer, mResourcesVertexBuffer.mGPUHandle);
+
+    D3D12_DISPATCH_RAYS_DESC dispatchDesc = {};
+    dispatchDesc.RayGenerationShaderRecord.StartAddress = mRayGenTable->GetGPUVirtualAddress();
+    dispatchDesc.RayGenerationShaderRecord.SizeInBytes = mRayGenTable->GetDesc().Width;
+
+    dispatchDesc.MissShaderTable.StartAddress = mMissTable->GetGPUVirtualAddress();
+    dispatchDesc.MissShaderTable.SizeInBytes = mMissTable->GetDesc().Width;
+    dispatchDesc.MissShaderTable.StrideInBytes = mMissStride;
+
+    dispatchDesc.HitGroupTable.StartAddress = mHitGroupTable->GetGPUVirtualAddress();
+    dispatchDesc.HitGroupTable.SizeInBytes = mHitGroupTable->GetDesc().Width;
+    dispatchDesc.HitGroupTable.StrideInBytes = mHitGroupStride;
+
+    dispatchDesc.Width = mWidth;
+    dispatchDesc.Height = mHeight;
+    dispatchDesc.Depth = 1;
+
+    mDXRDevice->getDXRCommandList()->SetPipelineState1(mDXRStateObject.Get());
+    mDXRDevice->getDXRCommandList()->DispatchRays(&dispatchDesc);
+
+    D3D12_RESOURCE_BARRIER preCopyBarriers[2];
+    //バックバッファのバリア
+    preCopyBarriers[0] = CD3DX12_RESOURCE_BARRIER::Transition(mDeviceResource->getRenderTarget(),
+        D3D12_RESOURCE_STATES::D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATES::D3D12_RESOURCE_STATE_COPY_DEST);
+    //レイトレのレンダーターゲット
+    preCopyBarriers[1] = CD3DX12_RESOURCE_BARRIER::Transition(mRaytracingOutput.mResource.Get(),
+        D3D12_RESOURCE_STATES::D3D12_RESOURCE_STATE_UNORDERED_ACCESS, D3D12_RESOURCE_STATES::D3D12_RESOURCE_STATE_COPY_SOURCE);
+    commandList->ResourceBarrier(_countof(preCopyBarriers), preCopyBarriers);
+
+    commandList->CopyResource(mDeviceResource->getRenderTarget(), mRaytracingOutput.mResource.Get());
+
+    D3D12_RESOURCE_BARRIER postCopyBarriers[2];
+    postCopyBarriers[0] = CD3DX12_RESOURCE_BARRIER::Transition(mDeviceResource->getRenderTarget(),
+        D3D12_RESOURCE_STATES::D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATES::D3D12_RESOURCE_STATE_RENDER_TARGET);
+    postCopyBarriers[1] = CD3DX12_RESOURCE_BARRIER::Transition(mRaytracingOutput.mResource.Get(),
+        D3D12_RESOURCE_STATES::D3D12_RESOURCE_STATE_COPY_SOURCE, D3D12_RESOURCE_STATES::D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
+    commandList->ResourceBarrier(_countof(postCopyBarriers), postCopyBarriers);
+
+    mDebugWindow->draw();
+}
+
+void Scene::onWindowSizeChanged(UINT width, UINT height) {
+    mWidth = width;
+    mHeight = height;
+
+    releaseWindowDependentResources();
+    createWindowDependentResources();
+}
+
+void Scene::createDeviceDependentResources() {
     //最初にDXR用インターフェースを作成する
     mDXRDevice->recreate();
     //おまけ的なものを先に作る
@@ -359,7 +514,7 @@ void Scene::create() {
     //ジオメトリを生成する
     {
         ID3D12Device* device = mDeviceResource->getDevice();
-    //BLAS構築用のバッファ
+        //BLAS構築用のバッファ
         std::array< IBuffer, BottomLevelASType::Count> mIndexBuffer;
         std::array<IBuffer, BottomLevelASType::Count> mVertexBuffer;
 
@@ -470,7 +625,7 @@ void Scene::create() {
                 }
             };
 
-           //UFOのバッファ作成
+            //UFOのバッファ作成
             {
                 Framework::Utility::GLBLoader loader(modelPath / MODEL_NAMES.at(BottomLevelASType::UFO));
                 auto indices = toLinearList(loader.getIndicesPerSubMeshes());
@@ -499,9 +654,9 @@ void Scene::create() {
                 std::vector<Framework::DX::Vertex> vertices =
                 {
                     { Vec3(-1,1,0),Vec3(0,0,-1),Vec2(0,0) },
-                    { Vec3(1,1,0),Vec3(0,0,-1),Vec2(1,0)  },
-                    { Vec3(1,-1,0) ,Vec3(0,0,-1),Vec2(1,1) },
-                    { Vec3(-1,-1,0),Vec3(0,0,-1),Vec2(0,1)  },
+                { Vec3(1,1,0),Vec3(0,0,-1),Vec2(1,0)  },
+                { Vec3(1,-1,0) ,Vec3(0,0,-1),Vec2(1,1) },
+                { Vec3(-1,-1,0),Vec3(0,0,-1),Vec2(0,1)  },
                 };
                 createBuffer(mDeviceResource->getDevice(), &mVertexBuffer[BottomLevelASType::Quad].mResource, vertices.data(), vertices.size() * sizeof(vertices[0]), L"VertexBuffer");
 
@@ -723,183 +878,35 @@ void Scene::create() {
             mHitGroupTable = table.getResource();
         }
     }
+}
+
+void Scene::releaseDeviceDependentResources() { }
+
+void Scene::createWindowDependentResources() {
     //出力先のレンダーターゲット作成
-    {
-        ID3D12Device* device = mDeviceResource->getDevice();
-        DXGI_FORMAT backBufferFormat = mDeviceResource->getBackBufferFormat();
-
-        auto uavResourceDesc = CD3DX12_RESOURCE_DESC::Tex2D(backBufferFormat,
-            mWidth, mHeight, 1, 1, 1, 0, D3D12_RESOURCE_FLAGS::D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS);
-
-        auto heapProps = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE::D3D12_HEAP_TYPE_DEFAULT);
-        MY_THROW_IF_FAILED(device->CreateCommittedResource(
-            &heapProps,
-            D3D12_HEAP_FLAGS::D3D12_HEAP_FLAG_NONE,
-            &uavResourceDesc,
-            D3D12_RESOURCE_STATES::D3D12_RESOURCE_STATE_UNORDERED_ACCESS,
-            nullptr,
-            IID_PPV_ARGS(&mRaytracingOutput.mResource)));
-        mRaytracingOutput.mResource->SetName(L"RaytracingOutput");
-
-        mDescriptorTable->allocate(&mRaytracingOutput);
-        //mRaytracingOutput.cpuHandle = mDescriptorTable->getCPUHandle(DescriptorIndex::RaytracingOutput);
-        //mRaytracingOutput.gpuHandle = mDescriptorTable->getGPUHandle(DescriptorIndex::RaytracingOutput);
-        D3D12_UNORDERED_ACCESS_VIEW_DESC uavDesc = {};
-        uavDesc.ViewDimension = D3D12_UAV_DIMENSION::D3D12_UAV_DIMENSION_TEXTURE2D;
-        device->CreateUnorderedAccessView(mRaytracingOutput.mResource.Get(), nullptr, &uavDesc, mRaytracingOutput.mCPUHandle);
-    }
-    //コンスタントバッファの初期化
-    {
-        ID3D12Device* device = mDeviceResource->getDevice();
-        UINT backBufferCount = mDeviceResource->getBackBufferCount();
-        mSceneCB.create(device, backBufferCount, L"SceneConstantBuffer");
-    }
-}
-
-void Scene::reset() {
-    mDXRDevice->reset();
-    mGpuTimer.reset();
-    mGpuTimer.releaseDevice();
-}
-
-void Scene::update() {
-    mTime.update();
-    mFPSText->setText(format("FPS:%0.3f", mTime.getFPS()));
-
-    mSceneCB->cameraPosition = Vec4(mCameraPosition, 1.0f);
-    const float aspect = static_cast<float>(mWidth) / static_cast<float>(mHeight);
-
-    Mat4 view =
-        Mat4::createRotation(mCameraRotation) *
-        Mat4::createTranslate(mCameraPosition);
-    view = view.inverse();
-    Mat4 proj =
-        Mat4::createProjection(Deg(45.0f), aspect, 0.1f, 100.0f);
-    Mat4 vp = view * proj;
-    mSceneCB->projectionToWorld = vp.inverse();
-    mSceneCB->lightPosition = Vec4(mLightPosition, 1.0f);
-    mSceneCB->lightDiffuse = mLightDiffuse;
-    mSceneCB->lightAmbient = mLightAmbient;
-
-    if (mInputManager->getKeyboard()->getKey(Framework::Input::KeyCode::LShift)) {
-        mQuadRotate += 1.0f;
-    }
-}
-
-void Scene::render() {
     ID3D12Device* device = mDeviceResource->getDevice();
-    ID3D12GraphicsCommandList5* dxrCommandList = mDXRDevice->getDXRCommandList();
+    DXGI_FORMAT backBufferFormat = mDeviceResource->getBackBufferFormat();
 
-    //TLASのデータ更新
-    std::vector<D3D12_RAYTRACING_INSTANCE_DESC> instanceDesc(TLAS_NUM);
-    UINT offset = 0;
-    for (UINT n = 0; n < TRIANGLE_COUNT; n++) {
-        Rad rotX = mQuadRotate.toRadians() * 0.37f;
-        Rad rotY = mQuadRotate.toRadians() * 1.45f;
-        Rad rotZ = mQuadRotate.toRadians() * 0.73f;
-        XMMATRIX transform = XMMatrixRotationRollPitchYaw(rotX.getRad(), rotY.getRad(), rotZ.getRad()) *
-            XMMatrixTranslation((float)n * 5, 0, 0);
-        std::stringstream ss;
-        ss << "(" << rotX.toDegree().getDeg() << "," << rotY.toDegree().getDeg() << "," << rotZ.toDegree().getDeg() << ")\n";
-        mRotSphereText->setText(ss.str());
-        instanceDesc[n + offset].InstanceID = 0;
-        instanceDesc[n + offset].InstanceMask = 0xff;
-        instanceDesc[n + offset].Flags = D3D12_RAYTRACING_INSTANCE_FLAGS::D3D12_RAYTRACING_INSTANCE_FLAG_NONE;
-        instanceDesc[n + offset].InstanceContributionToHitGroupIndex = LocalRootSignature::HitGroupIndex::UFO;
-        instanceDesc[n + offset].AccelerationStructure = mBLASBuffers[BottomLevelASType::UFO].buffer->GetGPUVirtualAddress();
-        XMStoreFloat3x4(reinterpret_cast<XMFLOAT3X4*>(instanceDesc[n + offset].Transform), transform);
-    }
+    auto uavResourceDesc = CD3DX12_RESOURCE_DESC::Tex2D(backBufferFormat,
+        mWidth, mHeight, 1, 1, 1, 0, D3D12_RESOURCE_FLAGS::D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS);
 
-    offset += TRIANGLE_COUNT;
-    for (UINT n = 0; n < QUAD_COUNT; n++) {
-        XMMATRIX transform = XMMatrixScaling(1, 1, 1) * XMMatrixRotationRollPitchYaw(0, mQuadRotate.toRadians().getRad(), 0) * XMMatrixTranslation((float)n * 5 + 20, 3, 0);
-        instanceDesc[n + offset].InstanceID = 0;
-        instanceDesc[n + offset].InstanceMask = 0xff;
-        instanceDesc[n + offset].Flags = D3D12_RAYTRACING_INSTANCE_FLAGS::D3D12_RAYTRACING_INSTANCE_FLAG_NONE;
-        instanceDesc[n + offset].InstanceContributionToHitGroupIndex = LocalRootSignature::HitGroupIndex::Quad;
-        instanceDesc[n + offset].AccelerationStructure = mBLASBuffers[BottomLevelASType::Quad].buffer->GetGPUVirtualAddress();
-        XMStoreFloat3x4(reinterpret_cast<XMFLOAT3X4*>(instanceDesc[n + offset].Transform), transform);
-    }
-    offset += QUAD_COUNT;
-    for (UINT n = 0; n < FLOOR_COUNT; n++) {
-        XMMATRIX transform = XMMatrixScaling(100, 1, 100) * XMMatrixTranslation(0, -5, 0);
-        instanceDesc[n + offset].InstanceID = 0;
-        instanceDesc[n + offset].InstanceMask = 0xff;
-        instanceDesc[n + offset].Flags = D3D12_RAYTRACING_INSTANCE_FLAGS::D3D12_RAYTRACING_INSTANCE_FLAG_NONE;
-        instanceDesc[n + offset].InstanceContributionToHitGroupIndex = LocalRootSignature::HitGroupIndex::Floor;
-        instanceDesc[n + offset].AccelerationStructure = mBLASBuffers[BottomLevelASType::Floor].buffer->GetGPUVirtualAddress();
-        XMStoreFloat3x4(reinterpret_cast<XMFLOAT3X4*>(instanceDesc[n + offset].Transform), transform);
-    }
+    auto heapProps = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE::D3D12_HEAP_TYPE_DEFAULT);
+    MY_THROW_IF_FAILED(device->CreateCommittedResource(
+        &heapProps,
+        D3D12_HEAP_FLAGS::D3D12_HEAP_FLAG_NONE,
+        &uavResourceDesc,
+        D3D12_RESOURCE_STATES::D3D12_RESOURCE_STATE_UNORDERED_ACCESS,
+        nullptr,
+        IID_PPV_ARGS(&mRaytracingOutput.mResource)));
+    mRaytracingOutput.mResource->SetName(L"RaytracingOutput");
 
-    createBuffer(device, mInstanceDescs.ReleaseAndGetAddressOf(), instanceDesc.data(), instanceDesc.size() * sizeof(D3D12_RAYTRACING_INSTANCE_DESC), L"InstanceDescs");
-    topLevelBuildDesc.Inputs.InstanceDescs = mInstanceDescs->GetGPUVirtualAddress();
+    mDescriptorTable->allocate(&mRaytracingOutput);
 
-    //TLASの構築終了まで待機する用のバリア
-    dxrCommandList->BuildRaytracingAccelerationStructure(&topLevelBuildDesc, 0, nullptr);
-    mDeviceResource->getCommandList()->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::UAV(mTLASBuffer.buffer.Get()));
-
-    //描画開始
-    ID3D12GraphicsCommandList* commandList = mDeviceResource->getCommandList();
-    UINT frameIndex = mDeviceResource->getCurrentFrameIndex();
-    commandList->SetComputeRootSignature(mGlobalRootSignature.Get());
-    mSceneCB.copyStatingToGPU(frameIndex);
-
-    ID3D12DescriptorHeap* heaps[] = { mDescriptorTable->getHeap() };
-    commandList->SetDescriptorHeaps(_countof(heaps), heaps);
-    commandList->SetComputeRootDescriptorTable(GlobalRootSignature::Slot::RenderTarget, mRaytracingOutput.mGPUHandle);
-    commandList->SetComputeRootShaderResourceView(GlobalRootSignature::Slot::AccelerationStructure, mTLASBuffer.buffer->GetGPUVirtualAddress());
-    commandList->SetComputeRootConstantBufferView(GlobalRootSignature::Slot::SceneConstant, mSceneCB.gpuVirtualAddress());
-    commandList->SetComputeRootDescriptorTable(GlobalRootSignature::Slot::IndexBuffer, mResourcesIndexBuffer.mGPUHandle);
-    commandList->SetComputeRootDescriptorTable(GlobalRootSignature::Slot::VertexBuffer, mResourcesVertexBuffer.mGPUHandle);
-
-    D3D12_DISPATCH_RAYS_DESC dispatchDesc = {};
-    dispatchDesc.RayGenerationShaderRecord.StartAddress = mRayGenTable->GetGPUVirtualAddress();
-    dispatchDesc.RayGenerationShaderRecord.SizeInBytes = mRayGenTable->GetDesc().Width;
-
-    dispatchDesc.MissShaderTable.StartAddress = mMissTable->GetGPUVirtualAddress();
-    dispatchDesc.MissShaderTable.SizeInBytes = mMissTable->GetDesc().Width;
-    dispatchDesc.MissShaderTable.StrideInBytes = mMissStride;
-
-    dispatchDesc.HitGroupTable.StartAddress = mHitGroupTable->GetGPUVirtualAddress();
-    dispatchDesc.HitGroupTable.SizeInBytes = mHitGroupTable->GetDesc().Width;
-    dispatchDesc.HitGroupTable.StrideInBytes = mHitGroupStride;
-
-    dispatchDesc.Width = mWidth;
-    dispatchDesc.Height = mHeight;
-    dispatchDesc.Depth = 1;
-
-    mDXRDevice->getDXRCommandList()->SetPipelineState1(mDXRStateObject.Get());
-    mDXRDevice->getDXRCommandList()->DispatchRays(&dispatchDesc);
-
-    D3D12_RESOURCE_BARRIER preCopyBarriers[2];
-    //バックバッファのバリア
-    preCopyBarriers[0] = CD3DX12_RESOURCE_BARRIER::Transition(mDeviceResource->getRenderTarget(),
-        D3D12_RESOURCE_STATES::D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATES::D3D12_RESOURCE_STATE_COPY_DEST);
-    //レイトレのレンダーターゲット
-    preCopyBarriers[1] = CD3DX12_RESOURCE_BARRIER::Transition(mRaytracingOutput.mResource.Get(),
-        D3D12_RESOURCE_STATES::D3D12_RESOURCE_STATE_UNORDERED_ACCESS, D3D12_RESOURCE_STATES::D3D12_RESOURCE_STATE_COPY_SOURCE);
-    commandList->ResourceBarrier(_countof(preCopyBarriers), preCopyBarriers);
-
-    commandList->CopyResource(mDeviceResource->getRenderTarget(), mRaytracingOutput.mResource.Get());
-
-    D3D12_RESOURCE_BARRIER postCopyBarriers[2];
-    postCopyBarriers[0] = CD3DX12_RESOURCE_BARRIER::Transition(mDeviceResource->getRenderTarget(),
-        D3D12_RESOURCE_STATES::D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATES::D3D12_RESOURCE_STATE_RENDER_TARGET);
-    postCopyBarriers[1] = CD3DX12_RESOURCE_BARRIER::Transition(mRaytracingOutput.mResource.Get(),
-        D3D12_RESOURCE_STATES::D3D12_RESOURCE_STATE_COPY_SOURCE, D3D12_RESOURCE_STATES::D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
-    commandList->ResourceBarrier(_countof(postCopyBarriers), postCopyBarriers);
-
-    mDebugWindow->draw();
+    D3D12_UNORDERED_ACCESS_VIEW_DESC uavDesc = {};
+    uavDesc.ViewDimension = D3D12_UAV_DIMENSION::D3D12_UAV_DIMENSION_TEXTURE2D;
+    device->CreateUnorderedAccessView(mRaytracingOutput.mResource.Get(), nullptr, &uavDesc, mRaytracingOutput.mCPUHandle);
 }
 
-void Scene::onFrameEvent() { }
-
-void Scene::toggleFullScreenWindow() { }
-
-void Scene::updateForSizeChange(UINT clientWidth, UINT cliendHeight) { }
-
-void Scene::setWindowBounds(const RECT & rect) { }
-
-void Scene::onSizeChanged(UINT width, UINT height, bool minimized) { }
-
-void Scene::onWindowMoved(int x, int y) { }
+void Scene::releaseWindowDependentResources() {
+    mRaytracingOutput.mResource.Reset();
+}

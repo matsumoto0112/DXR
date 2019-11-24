@@ -23,8 +23,8 @@ namespace Framework::Device {
         Input::InputManager* getInputManager() const { return mInputManager.get(); }
         virtual void onFrameEvent() override;
         virtual void toggleFullScreenWindow() override;
-        virtual void updateForSizeChange(UINT clientWidth, UINT cliendHeight) override;
-        virtual void setWindowBounds(const RECT & rect) override;
+        virtual void updateForSizeChange(UINT clientWidth, UINT clientHeight) override;
+        virtual void setWindowBounds(const RECT& rect) override;
         virtual void onSizeChanged(UINT width, UINT height, bool minimized) override;
         virtual void onWindowMoved(int x, int y) override;
     protected:

@@ -44,6 +44,38 @@ public:
     void onDestroy()override {
         Game::onDestroy();
     }
+    /**
+    * @brief フルスクリーン切り替え
+    */
+    virtual void toggleFullScreenWindow() override {
+        Game::toggleFullScreenWindow();
+    }
+    /**
+    * @brief ウィンドウサイズを更新する
+    */
+    virtual void updateForSizeChange(UINT clientWidth, UINT clientHeight) override {
+        Game::updateForSizeChange(clientWidth, clientHeight);
+        mScene->onWindowSizeChanged(clientWidth, clientHeight);
+    }
+    /**
+    * @brief ウィンドウの大きさをセットする
+    */
+    virtual void setWindowBounds(const RECT& rect) override {
+        Game::setWindowBounds(rect);
+    }
+    /**
+    * @brief ウィンドウサイズの切り替えイベント
+    */
+    virtual void onSizeChanged(UINT width, UINT height, bool minimized) override {
+        Game::onSizeChanged(width, height, minimized);
+    }
+    /**
+    * @brief ウィンドウの移動
+    */
+    virtual void onWindowMoved(int x, int y) override {
+        Game::onWindowMoved(x, y);
+    }
+
 private:
     std::unique_ptr<Scene> mScene;
 };

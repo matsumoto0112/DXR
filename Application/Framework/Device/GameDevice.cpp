@@ -59,13 +59,20 @@ namespace Framework::Device {
         mWindow->toggleFullScreenWindow(mDeviceResource->getSwapChain());
         mNotify->toggleFullScreenWindow();
     }
-    void GameDevice::updateForSizeChange(UINT clientWidth, UINT cliendHeight) { }
-    void GameDevice::setWindowBounds(const RECT& rect) { }
+    void GameDevice::updateForSizeChange(UINT clientWidth, UINT clientHeight) {
+        mNotify->updateForSizeChange(clientWidth, clientHeight);
+    }
+    void GameDevice::setWindowBounds(const RECT& rect) {
+        mNotify->setWindowBounds(rect);
+    }
     void GameDevice::onSizeChanged(UINT width, UINT height, bool minimized) {
         mDeviceResource->windowSizeChanged(width, height, minimized);
         updateForSizeChange(width, height);
+        mNotify->onSizeChanged(width, height, minimized);
     }
-    void GameDevice::onWindowMoved(int x, int y) { }
+    void GameDevice::onWindowMoved(int x, int y) {
+        mNotify->onWindowMoved(x, y);
+    }
     void GameDevice::beginFrame() {
         mDeviceResource->prepare();
         mInputManager->update();

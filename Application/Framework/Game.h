@@ -52,15 +52,21 @@ namespace Framework {
         /**
         * @brief ウィンドウサイズを更新する
         */
-        virtual void updateForSizeChange(UINT clientWidth, UINT cliendHeight) override { }
+        virtual void updateForSizeChange(UINT clientWidth, UINT clientHeight) override {
+            mWidth = clientWidth;
+            mHeight = clientHeight;
+        }
         /**
         * @brief ウィンドウの大きさをセットする
         */
-        virtual void setWindowBounds(const RECT & rect) override { }
+        virtual void setWindowBounds(const RECT&) override { }
         /**
         * @brief ウィンドウサイズの切り替えイベント
         */
-        virtual void onSizeChanged(UINT width, UINT height, bool minimized) override { }
+        virtual void onSizeChanged(UINT width, UINT height, bool minimized) override {
+            mWidth = width;
+            mHeight = height;
+        }
         /**
         * @brief ウィンドウの移動
         */

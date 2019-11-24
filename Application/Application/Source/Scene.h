@@ -33,7 +33,7 @@ struct AccelerationBuffer {
 * @class Scene
 * @brief
 */
-class Scene : public Framework::Device::ISystemEventNotify {
+class Scene {
 public:
     /**
     * @brief コンストラクタ
@@ -50,6 +50,13 @@ public:
 
     void update();
     void render();
+
+    void onWindowSizeChanged(UINT width, UINT height);
+private:
+    void createDeviceDependentResources();
+    void releaseDeviceDependentResources();
+    void createWindowDependentResources();
+    void releaseWindowDependentResources();
 private:
     Framework::DX::DeviceResource* mDeviceResource;
     Framework::Input::InputManager* mInputManager;
@@ -85,12 +92,4 @@ private:
 private:
     std::unique_ptr<Framework::ImGUI::Window> mDebugWindow;
     std::shared_ptr<Framework::ImGUI::Text> mFPSText;
-
-    // ISystemEventNotify を介して継承されました
-    virtual void onFrameEvent() override;
-    virtual void toggleFullScreenWindow() override;
-    virtual void updateForSizeChange(UINT clientWidth, UINT cliendHeight) override;
-    virtual void setWindowBounds(const RECT & rect) override;
-    virtual void onSizeChanged(UINT width, UINT height, bool minimized) override;
-    virtual void onWindowMoved(int x, int y) override;
 };
