@@ -1,4 +1,5 @@
 #include "Scene.h"
+#include <DirectXMath.h>
 #include <numeric>
 #include "DX/GLBModel.h"
 #include "DX/Raytracing/Helper.h"
@@ -20,6 +21,7 @@
 
 using namespace Framework::DX;
 using namespace Framework::Utility;
+using namespace DirectX;
 
 namespace {
     static const std::wstring MISS_SHADER_NAME = L"Miss";
@@ -160,23 +162,23 @@ Scene::Scene(Framework::DX::DeviceResource* device,
     mLightDiffuse = Color4(1.0f, 1.0f, 1.0f, 1.0f);
     mLightAmbient = Color4(0.1f, 0.1f, 0.1f, 1.0f);
 
-#define CAMERA_POSITION_PARAMS(name, type, min, max)                           \
-    {                                                                          \
-        std::shared_ptr<Framework::ImGUI::FloatField> field                    \
-            = std::make_shared<Framework::ImGUI::FloatField>(name, type);      \
-        field->setCallBack([&](float val) { type = val; });                    \
-        field->setMinValue(min);                                               \
-        field->setMaxValue(max);                                               \
-        mDebugWindow->addItem(field);                                          \
+#define CAMERA_POSITION_PARAMS(name, type, min, max)                      \
+    {                                                                     \
+        std::shared_ptr<Framework::ImGUI::FloatField> field               \
+            = std::make_shared<Framework::ImGUI::FloatField>(name, type); \
+        field->setCallBack([&](float val) { type = val; });               \
+        field->setMinValue(min);                                          \
+        field->setMaxValue(max);                                          \
+        mDebugWindow->addItem(field);                                     \
     }
-#define CAMERA_ROTATION_PARAMS(name, type, min, max)                           \
-    {                                                                          \
-        std::shared_ptr<Framework::ImGUI::FloatField> field                    \
-            = std::make_shared<Framework::ImGUI::FloatField>(name, type);      \
-        field->setCallBack([&](float val) { type = (float)Rad(Deg(val)); });   \
-        field->setMinValue(min);                                               \
-        field->setMaxValue(max);                                               \
-        mDebugWindow->addItem(field);                                          \
+#define CAMERA_ROTATION_PARAMS(name, type, min, max)                         \
+    {                                                                        \
+        std::shared_ptr<Framework::ImGUI::FloatField> field                  \
+            = std::make_shared<Framework::ImGUI::FloatField>(name, type);    \
+        field->setCallBack([&](float val) { type = (float)Rad(Deg(val)); }); \
+        field->setMinValue(min);                                             \
+        field->setMaxValue(max);                                             \
+        mDebugWindow->addItem(field);                                        \
     }
     mDebugWindow->addItem(std::make_shared<Framework::ImGUI::Text>("Camera"));
     mDebugWindow->addItem(std::make_shared<Framework::ImGUI::Text>("Position"));
@@ -463,7 +465,7 @@ void Scene::createDeviceDependentResources() {
         {
             {
                 CD3DX12_ROOT_PARAMETER
-                    rootParams[LocalRootSignature::Miss::Count];
+                rootParams[LocalRootSignature::Miss::Count];
                 rootParams[0].InitAsConstants(
                     align(sizeof(MissConstant), sizeof(UINT32)), 1);
 
@@ -490,7 +492,7 @@ void Scene::createDeviceDependentResources() {
                     1, 6);
 
                 CD3DX12_ROOT_PARAMETER
-                    params[LocalRootSignature::HitGroup::Constants::Count];
+                params[LocalRootSignature::HitGroup::Constants::Count];
                 UINT contSize = align(sizeof(HitGroupConstant), sizeof(UINT32));
                 params[LocalRootSignature::HitGroup::Constants::Albedo]
                     .InitAsDescriptorTable(1, &range[0]);
@@ -930,7 +932,7 @@ void Scene::createDeviceDependentResources() {
                         D3D12_RAYTRACING_ACCELERATION_STRUCTURE_BUILD_FLAG_PREFER_FAST_TRACE;
 
                 D3D12_BUILD_RAYTRACING_ACCELERATION_STRUCTURE_DESC
-                    bottomLevelBuildDesc
+                bottomLevelBuildDesc
                     = {};
                 auto& bottomLevelInputs = bottomLevelBuildDesc.Inputs;
                 bottomLevelInputs.DescsLayout
@@ -943,7 +945,7 @@ void Scene::createDeviceDependentResources() {
                 bottomLevelInputs.pGeometryDescs = &geometryDesc;
 
                 D3D12_RAYTRACING_ACCELERATION_STRUCTURE_PREBUILD_INFO
-                    bottomLevelPreInfo
+                bottomLevelPreInfo
                     = {};
                 dxrDevice->GetRaytracingAccelerationStructurePrebuildInfo(
                     &bottomLevelInputs, &bottomLevelPreInfo);
@@ -990,7 +992,7 @@ void Scene::createDeviceDependentResources() {
                 D3D12_RAYTRACING_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL;
 
             D3D12_RAYTRACING_ACCELERATION_STRUCTURE_PREBUILD_INFO
-                topLevelPreInfo
+            topLevelPreInfo
                 = {};
             mDXRDevice->getDXRDevice()
                 ->GetRaytracingAccelerationStructurePrebuildInfo(

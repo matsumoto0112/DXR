@@ -1,18 +1,17 @@
 #pragma once
-#include <memory>
 #include <Windows.h>
+#include <memory>
 #include <string>
-#include "Device/ISystemEventNotify.h"
 #include "DX/DeviceResource.h"
+#include "Device/ISystemEventNotify.h"
+#include "ImGui/ImGuiManager.h"
 #include "Input/InputManager.h"
 #include "Window/Window.h"
-#include "ImGui/ImGuiManager.h"
 
 namespace Framework {
     /**
-    * @class Game
-    * @brief discription
-    */
+* @brief
+*/
     class Game : public Device::ISystemEventNotify {
     public:
         /**
@@ -48,7 +47,7 @@ namespace Framework {
         /**
         * @brief フルスクリーン切り替え
         */
-        virtual void toggleFullScreenWindow() override { }
+        virtual void toggleFullScreenWindow() override {}
         /**
         * @brief ウィンドウサイズを更新する
         */
@@ -59,7 +58,7 @@ namespace Framework {
         /**
         * @brief ウィンドウの大きさをセットする
         */
-        virtual void setWindowBounds(const RECT&) override { }
+        virtual void setWindowBounds(const RECT&) override {}
         /**
         * @brief ウィンドウサイズの切り替えイベント
         */
@@ -70,10 +69,11 @@ namespace Framework {
         /**
         * @brief ウィンドウの移動
         */
-        virtual void onWindowMoved(int x, int y) override { }
+        virtual void onWindowMoved(int x, int y) override {}
+
     protected:
         UINT mWidth; //!< ウィンドウ幅
         UINT mHeight; //!< ウィンドウ高さ
         std::wstring mTitle; //!< ウィンドウタイトル
     };
-} //Framework
+} // namespace Framework

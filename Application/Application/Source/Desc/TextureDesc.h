@@ -3,11 +3,16 @@
 #include <vector>
 
 namespace Framework::Desc {
+    /**
+    * @enum TextureFormat
+    * @brief テクスチャのフォーマット
+    */
     enum class TextureFormat {
         R8G8B8A8,
     };
 
     /**
+    * @struct TextureDesc
     * @brief テクスチャディスク
     */
     struct TextureDesc {
@@ -17,4 +22,4 @@ namespace Framework::Desc {
         UINT height; //!< 高さ
         TextureFormat format; //!< フォーマット
     };
-} //Framework::Desc
+} // namespace Framework::Desc

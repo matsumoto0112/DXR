@@ -127,7 +127,6 @@
     <ClInclude Include="Assets\Shader\Raytracing\Util\MissCompat.h" />
     <ClInclude Include="Assets\Shader\Raytracing\Util\PBR.hlsli" />
     <ClInclude Include="Source\Camera\Perspective.h" />
-    <ClInclude Include="Source\Camera\Transform.h" />
     <ClInclude Include="Source\Define.h" />
     <ClInclude Include="Source\Desc\DescriptorTableDesc.h" />
     <ClInclude Include="Source\Desc\TextureDesc.h" />

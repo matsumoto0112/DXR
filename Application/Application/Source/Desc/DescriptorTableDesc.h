@@ -1,6 +1,6 @@
 #pragma once
-#include <string>
 #include <Windows.h>
+#include <string>
 
 namespace Framework::Desc {
     /**
@@ -31,5 +31,4 @@ namespace Framework::Desc {
         HeapType type; //!< Ží—Þ
         HeapFlag flag; //!< ƒtƒ‰ƒO
     };
-} //Framework::Desc
-
+} // namespace Framework::Desc

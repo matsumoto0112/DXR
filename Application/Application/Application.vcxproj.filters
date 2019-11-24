@@ -47,8 +47,8 @@
     <ClCompile Include="Source\Window\Procedure\WindowMoved.cpp" />
     <ClCompile Include="Source\Window\Window.cpp" />
     <ClCompile Include="Source\Game.cpp" />
-    <ClCompile Include="Source\Camera\Perspective.cpp" />
     <ClCompile Include="Source\Device\GameDevice.cpp" />
+    <ClCompile Include="Source\Camera\Perspective.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Source\stdafx.h" />
@@ -127,12 +127,11 @@
     <ClInclude Include="Source\Window\Procedure\WindowMoved.h" />
     <ClInclude Include="Source\Window\Window.h" />
     <ClInclude Include="Source\Game.h" />
-    <ClInclude Include="Source\Camera\Perspective.h" />
-    <ClInclude Include="Source\Camera\Transform.h" />
     <ClInclude Include="Source\Desc\DescriptorTableDesc.h" />
     <ClInclude Include="Source\Desc\TextureDesc.h" />
     <ClInclude Include="Source\Device\GameDevice.h" />
     <ClInclude Include="Source\Device\ISystemEventNotify.h" />
+    <ClInclude Include="Source\Camera\Perspective.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />

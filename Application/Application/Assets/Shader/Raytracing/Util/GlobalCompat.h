@@ -19,8 +19,8 @@ typedef UINT16 Index;
 static const UINT MAX_RAY_RECURSION_DEPTH = 2; //! 最大再帰回数
 
 /**
- * @brief 頂点構造体
- */
+* @brief 頂点構造体
+*/
 struct Vertex {
     Vec3 position; //!< 座標
     Vec3 normal; //!< 法線
@@ -29,8 +29,8 @@ struct Vertex {
 };
 
 /**
- * @brief シーン全体の情報
- */
+* @brief シーン全体の情報
+*/
 struct SceneConstantBuffer {
     Mat4 projectionToWorld; //!< プロジェクション空間からワールド空間に変換
     Vec4 cameraPosition; //!< カメラのワールド座標
