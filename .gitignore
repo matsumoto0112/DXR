@@ -331,3 +331,5 @@ ASALocalRun/
 *.lnk
 
 *imgui.ini
+
+*Doxygen_Docs*
