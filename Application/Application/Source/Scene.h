@@ -1,15 +1,15 @@
 #pragma once
+#include "Assets/Shader/Raytracing/Util/GlobalCompat.h"
 #include "DX/ConstantBuffer.h"
 #include "DX/CountingDescriptorTable.h"
 #include "DX/DeviceResource.h"
 #include "DX/Raytracing/DXRDevice.h"
+#include "DX/Resource/Texture2D.h"
+#include "Define.h"
+#include "Device/ISystemEventNotify.h"
+#include "Input/InputManager.h"
 #include "Utility/GPUTimer.h"
 #include "Utility/Time.h"
-#include "Define.h"
-#include "Input/InputManager.h"
-#include "DX/Resource/Texture2D.h"
-#include "Application/Assets/Shader/Raytracing/Util/GlobalCompat.h"
-#include "Device/ISystemEventNotify.h"
 
 static constexpr UINT TEXTURE_NUM = 1000;
 namespace DescriptorIndex {
@@ -22,41 +22,29 @@ namespace DescriptorIndex {
 
         Count = TextureEnd + 1
     };
-} //DescriptorIndex
-
+}
 struct AccelerationBuffer {
     ComPtr<ID3D12Resource> buffer;
     ComPtr<ID3D12Resource> scratch;
 };
 
-/**
-* @class Scene
-* @brief
-*/
 class Scene {
 public:
-    /**
-    * @brief コンストラクタ
-    */
-    Scene(Framework::DX::DeviceResource* device, Framework::Input::InputManager* inputManager, UINT width, UINT height);
-    /**
-    * @brief デストラクタ
-    */
+    Scene(Framework::DX::DeviceResource* device,
+        Framework::Input::InputManager* inputManager, UINT width, UINT height);
     ~Scene();
-
     void create();
-
     void reset();
-
     void update();
     void render();
-
     void onWindowSizeChanged(UINT width, UINT height);
+
 private:
     void createDeviceDependentResources();
     void releaseDeviceDependentResources();
     void createWindowDependentResources();
     void releaseWindowDependentResources();
+
 private:
     Framework::DX::DeviceResource* mDeviceResource;
     Framework::Input::InputManager* mInputManager;
@@ -69,16 +57,19 @@ private:
     UINT mHitGroupStride;
     ComPtr<ID3D12Resource> mHitGroupTable;
     Framework::DX::ConstantBuffer<SceneConstantBuffer> mSceneCB;
+
 private:
-    ComPtr<ID3D12RootSignature> mGlobalRootSignature; //!< グローバルルートシグネチャ
-    ComPtr<ID3D12RootSignature> mMissLocalRootSignature; //!< Missシェーダー用ローカルルートシグネチャ
-    std::array<ComPtr<ID3D12RootSignature>, LocalRootSignature::HitGroup::Count> mHitGroupLocalRootSignature;
-    ComPtr<ID3D12StateObject> mDXRStateObject; //!< レイトレーシングパイプラインステート
+    ComPtr<ID3D12RootSignature> mGlobalRootSignature;
+    ComPtr<ID3D12RootSignature> mMissLocalRootSignature;
+    std::array<ComPtr<ID3D12RootSignature>, LocalRootSignature::HitGroup::Count>
+        mHitGroupLocalRootSignature;
+    ComPtr<ID3D12StateObject> mDXRStateObject;
     std::unique_ptr<Framework::DX::CountingDescriptorTable> mDescriptorTable;
-    Framework::DX::IBuffer mResourcesIndexBuffer; //!< リソースのインデックスバッファ
-    Framework::DX::IBuffer mResourcesVertexBuffer; //!< リソースの頂点バッファ
+    Framework::DX::IBuffer mResourcesIndexBuffer;
+    Framework::DX::IBuffer mResourcesVertexBuffer;
     Framework::DX::IBuffer mRaytracingOutput;
     std::vector<std::shared_ptr<Framework::DX::Texture2D>> mTextures;
+
 private:
     UINT mWidth;
     UINT mHeight;
@@ -89,6 +80,7 @@ private:
     Vec3 mLightPosition;
     Color mLightDiffuse;
     Color mLightAmbient;
+
 private:
     std::unique_ptr<Framework::ImGUI::Window> mDebugWindow;
     std::shared_ptr<Framework::ImGUI::Text> mFPSText;

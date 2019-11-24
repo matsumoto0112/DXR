@@ -6,13 +6,13 @@
 #else
 #include <DirectXMath.h>
 #include <Windows.h>
-#include "Application/Source/Typedef.h"
-using namespace DirectX;
+#include "Typedef.h"
 #endif
 
 /**
-* @brief ヒットグループのコンスタントバッファ
-*/
+ * @struct HitGroupConstant
+ * @brief ヒットグループ用のローカルコンスタントバッファ
+ */
 struct HitGroupConstant {
     UINT vertexOffset; //!< 頂点オフセット
     UINT indexOffset; //!< インデックスオフセット

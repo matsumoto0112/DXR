@@ -1,8 +1,3 @@
-/**
-* @file stdafx.h
-* @brief プリコンパイル済みヘッダー
-*/
-
 #pragma once
 #include "targetvar.h"
 
@@ -11,33 +6,32 @@
 #endif
 
 #define _CRTDBG_MAP_ALLOC
-#include <cstdlib>
 #include <crtdbg.h>
+#include <cstdlib>
 
 #define NOMINMAX
 #include <Windows.h>
-#include <vector>
 #include <string>
+#include <vector>
 
 #include <d3d12.h>
 #include <dxgi1_6.h>
-#include "Framework/Libs/d3dx12.h"
+#include "Libs/d3dx12.h"
 
 #ifdef _DEBUG
 #include <dxgidebug.h>
 #endif
 
-
 #include <GLTFSDK/GLTF.h>
 
-#include "Framework/Math/MathUtility.h"
-#include "Framework/Math/Matrix4x4.h"
-#include "Framework/Math/Vector2.h"
-#include "Framework/Math/Vector3.h"
-#include "Framework/Math/Vector4.h"
-#include "Framework/Math/VectorUtil.h"
-#include "Framework/Utility/Color4.h"
+#include "Math/MathUtility.h"
+#include "Math/Matrix4x4.h"
+#include "Math/Vector2.h"
+#include "Math/Vector3.h"
+#include "Math/Vector4.h"
+#include "Math/VectorUtil.h"
+#include "Utility/Color4.h"
 
-#include "Framework/ImGui/Item/ImGUI.h"
+#include "ImGui/Item/ImGUI.h"
 
-#include "Application/Source/Typedef.h"
+#include "Typedef.h"

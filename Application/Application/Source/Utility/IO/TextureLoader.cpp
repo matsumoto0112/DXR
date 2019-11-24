@@ -5,7 +5,7 @@
 #endif // !STB_IMAGE_IMPLEMENTATION
 #include "Libs/stb/stb_image.h"
 
-#include "Framework/Utility/Debug.h"
+#include "Utility/Debug.h"
 
 namespace {
     /**

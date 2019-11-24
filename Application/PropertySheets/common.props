@@ -5,6 +5,7 @@
   <PropertyGroup>
     <OutDir>$(SolutionDir)Temp\bin\$(PlatformTarget)\$(Configuration)\$(ProjectName)\</OutDir>
     <IntDir>$(SolutionDir)Temp\obj\$(PlatformTarget)\$(Configuration)\$(ProjectName)\</IntDir>
+    <PreBuildEventUseInBuild>true</PreBuildEventUseInBuild>
   </PropertyGroup>
   <ItemDefinitionGroup>
     <ClCompile>
@@ -20,7 +21,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>WIN32;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <LanguageStandard>stdcpp17</LanguageStandard>
-      <AdditionalIncludeDirectories>$(OutDir);$(SolutionDir)\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(OutDir);$(ProjectDir);$(ProjectDir)\Source/;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <AdditionalDependencies>d3d12.lib;dxgi.lib;%(AdditionalDependencies)</AdditionalDependencies>
@@ -34,6 +35,10 @@
     <PostBuildEvent>
       <Command>xcopy $(ProjectDir)\Resources $(OutDir)\Resources /I /Y /D /S</Command>
     </PostBuildEvent>
+    <PreBuildEvent>
+      <Command>
+      </Command>
+    </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup />
 </Project>
