@@ -10,65 +10,58 @@
 
 namespace Framework {
     /**
-* @brief
-*/
+     * @brief
+     */
     class Game : public Device::ISystemEventNotify {
     public:
         /**
-        * @brief コンストラクタ
-        */
+         * @brief コンストラクタ
+         */
         Game(UINT width, UINT height, const std::wstring& title);
         /**
-        * @brief デストラクタ
-        */
+         * @brief デストラクタ
+         */
         virtual ~Game();
         /**
-        * @brief アプリケーションの実行
-        */
+         * @brief アプリケーションの実行
+         */
         int run(HINSTANCE hInstance, int nCmdShow);
         /**
-        * @brief 初期化
-        */
+         * @brief 初期化
+         */
         virtual void onInit();
         /**
-        * @brief 更新
-        */
+         * @brief 更新
+         */
         virtual void onUpdate();
         /**
-        * @brief 描画
-        */
+         * @brief 描画
+         */
         virtual void onRender();
         /**
-        * @brief 破棄時
-        */
+         * @brief 破棄時
+         */
         virtual void onDestroy();
 
         virtual void onFrameEvent() override;
         /**
-        * @brief フルスクリーン切り替え
-        */
+         * @brief フルスクリーン切り替え
+         */
         virtual void toggleFullScreenWindow() override {}
         /**
-        * @brief ウィンドウサイズを更新する
-        */
-        virtual void updateForSizeChange(UINT clientWidth, UINT clientHeight) override {
-            mWidth = clientWidth;
-            mHeight = clientHeight;
-        }
-        /**
-        * @brief ウィンドウの大きさをセットする
-        */
+         * @brief ウィンドウの大きさをセットする
+         */
         virtual void setWindowBounds(const RECT&) override {}
         /**
-        * @brief ウィンドウサイズの切り替えイベント
-        */
+         * @brief ウィンドウサイズの切り替えイベント
+         */
         virtual void onSizeChanged(UINT width, UINT height, bool minimized) override {
             mWidth = width;
             mHeight = height;
         }
         /**
-        * @brief ウィンドウの移動
-        */
+         * @brief ウィンドウの移動
+         */
         virtual void onWindowMoved(int x, int y) override {}
 
     protected:

@@ -8,8 +8,7 @@ public:
     /**
      * @brief コンストラクタ
      */
-    MainApp(UINT width, UINT height, const std::wstring& title)
-        : Game(width, height, title) {}
+    MainApp(UINT width, UINT height, const std::wstring& title) : Game(width, height, title) {}
     /**
      * @brief
      */
@@ -22,8 +21,7 @@ public:
 
         mScene = std::make_unique<Scene>(
             Framework::Device::GameDevice::getInstance()->getDeviceResource(),
-            Framework::Device::GameDevice::getInstance()->getInputManager(),
-            mWidth, mHeight);
+            Framework::Device::GameDevice::getInstance()->getInputManager(), mWidth, mHeight);
         mScene->create();
     }
     /**
@@ -37,17 +35,13 @@ public:
      * @brief
      */
     void onRender() override {
-        auto deviceResource
-            = Framework::Device::GameDevice::getInstance()->getDeviceResource();
+        auto deviceResource = Framework::Device::GameDevice::getInstance()->getDeviceResource();
         ID3D12GraphicsCommandList* list = deviceResource->getCommandList();
-        D3D12_CPU_DESCRIPTOR_HANDLE rtv[]
-            = { deviceResource->getRenderTargetView() };
+        D3D12_CPU_DESCRIPTOR_HANDLE rtv[] = { deviceResource->getRenderTargetView() };
 
-        list->OMSetRenderTargets(
-            1, rtv, FALSE, &deviceResource->getDepthStencilView());
+        list->OMSetRenderTargets(1, rtv, FALSE, &deviceResource->getDepthStencilView());
         static float color[4] = { 0, 0, 0, 0 };
-        list->ClearRenderTargetView(
-            deviceResource->getRenderTargetView(), color, 0, nullptr);
+        list->ClearRenderTargetView(deviceResource->getRenderTargetView(), color, 0, nullptr);
 
         mScene->render();
     }
@@ -58,36 +52,22 @@ public:
     /**
      * @brief
      */
-    virtual void toggleFullScreenWindow() override {
-        Game::toggleFullScreenWindow();
-    }
+    virtual void toggleFullScreenWindow() override { Game::toggleFullScreenWindow(); }
     /**
      * @brief
      */
-    virtual void updateForSizeChange(
-        UINT clientWidth, UINT clientHeight) override {
-        Game::updateForSizeChange(clientWidth, clientHeight);
-        mScene->onWindowSizeChanged(clientWidth, clientHeight);
-    }
+    virtual void setWindowBounds(const RECT& rect) override { Game::setWindowBounds(rect); }
     /**
      * @brief
      */
-    virtual void setWindowBounds(const RECT& rect) override {
-        Game::setWindowBounds(rect);
-    }
-    /**
-     * @brief
-     */
-    virtual void onSizeChanged(
-        UINT width, UINT height, bool minimized) override {
+    virtual void onSizeChanged(UINT width, UINT height, bool minimized) override {
         Game::onSizeChanged(width, height, minimized);
+        mScene->onWindowSizeChanged(width, height);
     }
     /**
      * @brief
      */
-    virtual void onWindowMoved(int x, int y) override {
-        Game::onWindowMoved(x, y);
-    }
+    virtual void onWindowMoved(int x, int y) override { Game::onWindowMoved(x, y); }
 
 private:
     std::unique_ptr<Scene> mScene;

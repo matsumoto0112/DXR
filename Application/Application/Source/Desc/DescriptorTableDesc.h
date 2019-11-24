@@ -1,12 +1,17 @@
+/**
+ * @ file DescriptorTableDesch
+ * @brief ディスクリプタテーブルディスク
+ */
+
 #pragma once
 #include <Windows.h>
 #include <string>
 
 namespace Framework::Desc {
     /**
-    * @enum HeapType
-    * @brief ヒープの種類定義
-    */
+     * @enum HeapType
+     * @brief ヒープの種類定義
+     */
     enum class HeapType {
         CBV_SRV_UAV,
         Sampler,
@@ -15,16 +20,16 @@ namespace Framework::Desc {
     };
 
     /**
-    * @enum HeapFlag
-    * @brief ヒープのフラグ定義
-    */
+     * @enum HeapFlag
+     * @brief ヒープのフラグ定義
+     */
     enum class HeapFlag {
         None,
         ShaderVisible,
     };
     /**
-    * @brief デーブルディスク
-    */
+     * @brief デーブルディスク
+     */
     struct DescriptorTableDesc {
         std::wstring name; //!< テーブル名
         UINT descriptorNum; //!< 割り当てる数

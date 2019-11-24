@@ -30,8 +30,8 @@ namespace Framework::Camera {
          * @param farZ 遠クリップ点
          */
         Perspective(const Math::Vector3& position, const Math::Vector3& lookat,
-            const Math::Vector3& up, const Math::Radians& fov, float aspect,
-            float nearZ, float farZ);
+            const Math::Vector3& up, const Math::Radians& fov, float aspect, float nearZ,
+            float farZ);
         /**
          * @brief デストラクタ
          */
