@@ -1,7 +1,7 @@
 /**
-* @file targetvar.h
-* @brief WindowsSDKのバージョン指定
-*/
+ * @file targetvar.h
+ * @brief WindowsSDKのバージョン指定
+ */
 
 #pragma once
 

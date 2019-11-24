@@ -1,3 +1,8 @@
+/**
+ * @file HitGroupCompat.h
+ * @brief ヒットグループシェーダーの定義
+ */
+
 #ifndef SHADER_RAYTRACING_HITGROUP_HITGROUPCOMPAT_H
 #define SHADER_RAYTRACING_HITGROUP_HITGROUPCOMPAT_H
 

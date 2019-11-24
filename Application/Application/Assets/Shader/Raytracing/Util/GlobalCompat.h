@@ -1,3 +1,8 @@
+/**
+ * @file GlobalCompat.h
+ * @brief 全シェーダー、Cppファイルで使用する定義
+ */
+
 #ifndef SHADER_RAYTRACING_GLOBALCOMPAT_H
 #define SHADER_RAYTRACING_GLOBALCOMPAT_H
 
@@ -8,11 +13,10 @@
 #include <Windows.h>
 #include "DX/ModelCompat.h"
 #include "Typedef.h"
-using namespace DirectX;
 typedef UINT16 Index;
 #endif
 
-static const UINT MAX_RAY_RECURSION_DEPTH = 2;
+static const UINT MAX_RAY_RECURSION_DEPTH = 2; //! 最大再帰回数
 
 /**
  * @brief 頂点構造体
@@ -28,7 +32,7 @@ struct Vertex {
  * @brief シーン全体の情報
  */
 struct SceneConstantBuffer {
-    Mat4 projectionToWorld;
+    Mat4 projectionToWorld; //!< プロジェクション空間からワールド空間に変換
     Vec4 cameraPosition; //!< カメラのワールド座標
     Vec4 lightPosition; //!< ディレクショナルライトのワールド座標
     Color lightDiffuse; //!< ディレクショナルライトの色
@@ -40,7 +44,7 @@ struct SceneConstantBuffer {
  */
 struct RayPayload {
     Color color; //!< 色
-    UINT recursionCount; //!<
+    UINT recursionCount; //!< 再帰回数
 };
 
 /**
