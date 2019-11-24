@@ -1,13 +1,30 @@
 #include "GameDevice.h"
+#include "Window/Procedure/CreateProc.h"
+#include "Window/Procedure/DestroyProc.h"
+#include "Window/Procedure/PaintProc.h"
+#include "Window/Procedure/Procedures.h"
+#include "Window/Procedure/SysKeyDown.h"
+#include "Window/Procedure/SizeChanged.h"
+#include "Window/Procedure/ImGuiProc.h"
+#include "Window/Procedure/WindowMoved.h"
 
 namespace Framework::Device {
 
-    GameDevice::GameDevice() { }
+    GameDevice::GameDevice() {
+        Window::Procedures::addProc(new Window::CreateProc());
+        Window::Procedures::addProc(new Window::DestroyProc());
+        Window::Procedures::addProc(new Window::PaintProc());
+        Window::Procedures::addProc(new Window::SysKeyDown());
+        Window::Procedures::addProc(new Window::SizeChanged());
+        Window::Procedures::addProc(new Window::WindowMoved());
+        Window::Procedures::addProc(new Window::ImGuiProc());
+    }
     GameDevice::~GameDevice() { }
 
     void GameDevice::init(UINT width, UINT height, const std::wstring& title, HINSTANCE hInstance,
-        DXGI_FORMAT rtvFormat, DXGI_FORMAT dsvFormat,
+        DXGI_FORMAT rtvFormat, DXGI_FORMAT dsvFormat, ISystemEventNotify* notify,
         UINT flags) {
+        mNotify = notify;
         mWindow = std::make_unique<Window::Window>(width, height, title, hInstance, this);
 
         mDeviceResource = std::make_unique<DX::DeviceResource>(

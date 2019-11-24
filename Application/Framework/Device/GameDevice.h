@@ -15,8 +15,7 @@ namespace Framework::Device {
     class GameDevice : public Utility::Singleton<GameDevice>, public ISystemEventNotify {
     public:
         void init(UINT width, UINT height, const std::wstring& title, HINSTANCE hInstance,
-            DXGI_FORMAT rtvFormat, DXGI_FORMAT dsvFormat, UINT flags);
-        void setNotify(ISystemEventNotify* notify) { mNotify = notify; }
+            DXGI_FORMAT rtvFormat, DXGI_FORMAT dsvFormat, ISystemEventNotify* notify, UINT flags);
         void run(int nCmdShow);
         void finalize();
         Window::Window* getWindow() const { return mWindow.get(); }

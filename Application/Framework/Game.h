@@ -40,14 +40,6 @@ namespace Framework {
         */
         virtual void onRender();
         /**
-        * @brief •`‰æŠJn
-        */
-        void renderStart();
-        /**
-        * @brief •`‰æI—¹
-        */
-        void renderEnd();
-        /**
         * @brief ”jŠü
         */
         virtual void onDestroy();

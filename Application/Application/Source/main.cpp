@@ -21,7 +21,6 @@ public:
     void onInit() override {
         Game::onInit();
 
-        //mScene = std::make_unique<Scene>(mDeviceResource.get(), mInputManager.get(), mWidth, mHeight);
         mScene = std::make_unique<Scene>(Framework::Device::GameDevice::getInstance()->getDeviceResource(),
             Framework::Device::GameDevice::getInstance()->getInputManager(), mWidth, mHeight);
         mScene->create();
@@ -31,11 +30,16 @@ public:
         mScene->update();
     }
     void onRender() override {
-        Game::renderStart();
+        auto deviceResource = Framework::Device::GameDevice::getInstance()->getDeviceResource();
+        //レンダーターゲットのクリア
+        ID3D12GraphicsCommandList* list = deviceResource->getCommandList();
+        D3D12_CPU_DESCRIPTOR_HANDLE rtv[] = { deviceResource->getRenderTargetView() };
+
+        list->OMSetRenderTargets(1, rtv, FALSE, &deviceResource->getDepthStencilView());
+        static float color[4] = { 0,0,0,0 };
+        list->ClearRenderTargetView(deviceResource->getRenderTargetView(), color, 0, nullptr);
 
         mScene->render();
-
-        Game::renderEnd();
     }
     void onDestroy()override {
         Game::onDestroy();
