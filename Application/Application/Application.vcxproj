@@ -84,6 +84,7 @@
     <ClCompile Include="Source\DX\CountingDescriptorTable.cpp" />
     <ClCompile Include="Source\DX\DescriptorTable.cpp" />
     <ClCompile Include="Source\DX\DeviceResource.cpp" />
+    <ClCompile Include="Source\DX\Shader\RootSignature.cpp" />
     <ClCompile Include="Source\Game.cpp" />
     <ClCompile Include="Source\ImGui\ImGuiManager.cpp" />
     <ClCompile Include="Source\Input\InputManager.cpp" />
@@ -147,6 +148,7 @@
     <ClInclude Include="Source\DX\Raytracing\Shader\ShaderTable.h" />
     <ClInclude Include="Source\DX\Resource\IBuffer.h" />
     <ClInclude Include="Source\DX\Resource\Texture2D.h" />
+    <ClInclude Include="Source\DX\Shader\RootSignature.h" />
     <ClInclude Include="Source\Game.h" />
     <ClInclude Include="Source\ImGui\ImGuiInclude.h" />
     <ClInclude Include="Source\ImGui\ImGuiManager.h" />

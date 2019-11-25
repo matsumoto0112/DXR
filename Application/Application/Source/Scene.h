@@ -5,6 +5,7 @@
 #include "DX/DeviceResource.h"
 #include "DX/Raytracing/DXRDevice.h"
 #include "DX/Resource/Texture2D.h"
+#include "DX/Shader/RootSignature.h"
 #include "Define.h"
 #include "Device/ISystemEventNotify.h"
 #include "Input/InputManager.h"
@@ -59,10 +60,9 @@ private:
     Framework::DX::ConstantBuffer<SceneConstantBuffer> mSceneCB;
 
 private:
-    ComPtr<ID3D12RootSignature> mGlobalRootSignature;
-    ComPtr<ID3D12RootSignature> mMissLocalRootSignature;
-    std::array<ComPtr<ID3D12RootSignature>, LocalRootSignature::HitGroup::Count>
-        mHitGroupLocalRootSignature;
+    std::unique_ptr<Framework::DX::RootSignature> mGlobalRootSignature;
+    std::unique_ptr<Framework::DX::RootSignature> mMissLocalRootSignature;
+    std::unique_ptr<Framework::DX::RootSignature> mHitGroupLocalRootSignature;
     ComPtr<ID3D12StateObject> mDXRStateObject;
     std::unique_ptr<Framework::DX::CountingDescriptorTable> mDescriptorTable;
     Framework::DX::IBuffer mResourcesIndexBuffer;

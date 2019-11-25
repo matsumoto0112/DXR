@@ -317,7 +317,7 @@ void Scene::render() {
 
     ID3D12GraphicsCommandList* commandList = mDeviceResource->getCommandList();
     UINT frameIndex = mDeviceResource->getCurrentFrameIndex();
-    commandList->SetComputeRootSignature(mGlobalRootSignature.Get());
+    commandList->SetComputeRootSignature(mGlobalRootSignature->getRootSignature());
     mSceneCB.copyStatingToGPU(frameIndex);
 
     ID3D12DescriptorHeap* heaps[] = { mDescriptorTable->getHeap() };
@@ -389,678 +389,630 @@ void Scene::createDeviceDependentResources() {
         mGpuTimer.storeDevice(mDeviceResource->getDevice(), mDeviceResource->getCommandQueue(),
             mDeviceResource->getBackBufferCount());
     }
+    { //グローバルルートシグネチャ
+        { CD3DX12_DESCRIPTOR_RANGE ranges[3];
+    ranges[0].Init(D3D12_DESCRIPTOR_RANGE_TYPE::D3D12_DESCRIPTOR_RANGE_TYPE_UAV, 1, 0);
+    ranges[1].Init(D3D12_DESCRIPTOR_RANGE_TYPE::D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 1);
+    ranges[2].Init(D3D12_DESCRIPTOR_RANGE_TYPE::D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 2);
+
+    std::vector<CD3DX12_ROOT_PARAMETER> rootParams(GlobalRootSignature::Slot::Count);
+    rootParams[GlobalRootSignature::Slot::RenderTarget].InitAsDescriptorTable(1, &ranges[0]);
+    rootParams[GlobalRootSignature::Slot::AccelerationStructure].InitAsShaderResourceView(0);
+    rootParams[GlobalRootSignature::Slot::SceneConstant].InitAsConstantBufferView(0);
+    rootParams[GlobalRootSignature::Slot::IndexBuffer].InitAsDescriptorTable(1, &ranges[1]);
+    rootParams[GlobalRootSignature::Slot::VertexBuffer].InitAsDescriptorTable(1, &ranges[2]);
+
+    std::vector<CD3DX12_STATIC_SAMPLER_DESC> sampler(1);
+    sampler[0]
+        = CD3DX12_STATIC_SAMPLER_DESC(0, D3D12_FILTER::D3D12_FILTER_COMPARISON_MIN_MAG_MIP_LINEAR);
+
+    mGlobalRootSignature = std::make_unique<RootSignature>();
+    mGlobalRootSignature->create(
+        mDeviceResource->getDevice(), RootSignature::Flags::Global, rootParams, sampler);
+}
+//ミスシェーダー
+{
+    std::vector<CD3DX12_ROOT_PARAMETER> params(1);
+    params[0].InitAsConstants(
+        Framework::Math::MathUtil::alignPow2(sizeof(MissConstant), sizeof(UINT32)), 1);
+
+    mMissLocalRootSignature = std::make_unique<RootSignature>();
+    mMissLocalRootSignature->create(
+        mDeviceResource->getDevice(), RootSignature::Flags::Local, params);
+}
+//ヒットグループシェーダー
+{
+    CD3DX12_DESCRIPTOR_RANGE range[5];
+    range[0].Init(D3D12_DESCRIPTOR_RANGE_TYPE::D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 3);
+    range[1].Init(D3D12_DESCRIPTOR_RANGE_TYPE::D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 4);
+    range[2].Init(D3D12_DESCRIPTOR_RANGE_TYPE::D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 5);
+    range[3].Init(D3D12_DESCRIPTOR_RANGE_TYPE::D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 6);
+    range[4].Init(D3D12_DESCRIPTOR_RANGE_TYPE::D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 7);
+
+    std::vector<CD3DX12_ROOT_PARAMETER> params(6);
+    UINT contSize = Framework::Math::MathUtil::alignPow2(sizeof(HitGroupConstant), sizeof(UINT32));
+
+    params[0].InitAsDescriptorTable(1, &range[0]);
+    params[1].InitAsDescriptorTable(1, &range[1]);
+    params[2].InitAsDescriptorTable(1, &range[2]);
+    params[3].InitAsDescriptorTable(1, &range[3]);
+    params[4].InitAsDescriptorTable(1, &range[4]);
+
+    params[5].InitAsConstants(contSize, 1);
+    mHitGroupLocalRootSignature = std::make_unique<RootSignature>();
+    mHitGroupLocalRootSignature->create(
+        mDeviceResource->getDevice(), RootSignature::Flags::Local, params);
+}
+}
+{
+    CD3DX12_STATE_OBJECT_DESC pipeline{
+        D3D12_STATE_OBJECT_TYPE::D3D12_STATE_OBJECT_TYPE_RAYTRACING_PIPELINE
+    };
     {
-        auto serializeAndCreateRootSignature
-            = [&](ID3D12Device* device, CD3DX12_ROOT_SIGNATURE_DESC& desc,
-                  ComPtr<ID3D12RootSignature>* rootSig) {
-                  ComPtr<ID3DBlob> blob, error;
-                  MY_THROW_IF_FAILED_LOG(
-                      D3D12SerializeRootSignature(&desc,
-                          D3D_ROOT_SIGNATURE_VERSION::D3D_ROOT_SIGNATURE_VERSION_1, &blob, &error),
-                      error ? toString(static_cast<wchar_t*>(error->GetBufferPointer())) : "");
-                  MY_THROW_IF_FAILED(device->CreateRootSignature(1, blob->GetBufferPointer(),
-                      blob->GetBufferSize(), IID_PPV_ARGS(&(*rootSig))));
-              };
-        {
-            CD3DX12_DESCRIPTOR_RANGE ranges[3];
-            ranges[0].Init(D3D12_DESCRIPTOR_RANGE_TYPE::D3D12_DESCRIPTOR_RANGE_TYPE_UAV, 1, 0);
-            ranges[1].Init(D3D12_DESCRIPTOR_RANGE_TYPE::D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 1);
-            ranges[2].Init(D3D12_DESCRIPTOR_RANGE_TYPE::D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 2);
-
-            CD3DX12_ROOT_PARAMETER rootParams[GlobalRootSignature::Slot::Count];
-            rootParams[GlobalRootSignature::Slot::RenderTarget].InitAsDescriptorTable(
-                1, &ranges[0]);
-            rootParams[GlobalRootSignature::Slot::AccelerationStructure].InitAsShaderResourceView(
-                0);
-            rootParams[GlobalRootSignature::Slot::SceneConstant].InitAsConstantBufferView(0);
-            rootParams[GlobalRootSignature::Slot::IndexBuffer].InitAsDescriptorTable(1, &ranges[1]);
-            rootParams[GlobalRootSignature::Slot::VertexBuffer].InitAsDescriptorTable(
-                1, &ranges[2]);
-
-            CD3DX12_STATIC_SAMPLER_DESC sampler[1];
-            sampler[0] = CD3DX12_STATIC_SAMPLER_DESC(
-                0, D3D12_FILTER::D3D12_FILTER_COMPARISON_MIN_MAG_MIP_LINEAR);
-
-            CD3DX12_ROOT_SIGNATURE_DESC global(
-                _countof(rootParams), rootParams, _countof(sampler), sampler);
-            serializeAndCreateRootSignature(
-                mDeviceResource->getDevice(), global, &mGlobalRootSignature);
-        }
-        {
-            //ミスシェーダー
-            {
-                CD3DX12_ROOT_PARAMETER
-                rootParams[LocalRootSignature::Miss::Count];
-                rootParams[0].InitAsConstants(
-                    Framework::Math::MathUtil::alignPow2(sizeof(MissConstant), sizeof(UINT32)), 1);
-
-                CD3DX12_ROOT_SIGNATURE_DESC local(_countof(rootParams), rootParams);
-                local.Flags
-                    = D3D12_ROOT_SIGNATURE_FLAGS::D3D12_ROOT_SIGNATURE_FLAG_LOCAL_ROOT_SIGNATURE;
-                serializeAndCreateRootSignature(
-                    mDeviceResource->getDevice(), local, &mMissLocalRootSignature);
+        auto exportShader = [&pipeline](void* shaderFile, SIZE_T shaderSize, const auto&... names) {
+            CD3DX12_DXIL_LIBRARY_SUBOBJECT* lib
+                = pipeline.CreateSubobject<CD3DX12_DXIL_LIBRARY_SUBOBJECT>();
+            lib->SetDXILLibrary(&CD3DX12_SHADER_BYTECODE(shaderFile, shaderSize));
+            for (auto&& name : std::initializer_list<std::wstring>{ names... }) {
+                lib->DefineExport(name.c_str());
             }
-            //ヒットグループシェーダー
-            {
-                CD3DX12_DESCRIPTOR_RANGE range[5];
-                range[0].Init(D3D12_DESCRIPTOR_RANGE_TYPE::D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 3);
-                range[1].Init(D3D12_DESCRIPTOR_RANGE_TYPE::D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 4);
-                range[2].Init(D3D12_DESCRIPTOR_RANGE_TYPE::D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 5);
-                range[3].Init(D3D12_DESCRIPTOR_RANGE_TYPE::D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 6);
-                range[4].Init(D3D12_DESCRIPTOR_RANGE_TYPE::D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 7);
-
-                CD3DX12_ROOT_PARAMETER
-                params[LocalRootSignature::HitGroup::Constants::Count];
-                UINT contSize = Framework::Math::MathUtil::alignPow2(
-                    sizeof(HitGroupConstant), sizeof(UINT32));
-                params[LocalRootSignature::HitGroup::Constants::AlbedoTex].InitAsDescriptorTable(
-                    1, &range[0]);
-                params[LocalRootSignature::HitGroup::Constants::NormalMap].InitAsDescriptorTable(
-                    1, &range[1]);
-                params[LocalRootSignature::HitGroup::Constants::MetallicRoughnessMap]
-                    .InitAsDescriptorTable(1, &range[2]);
-                params[LocalRootSignature::HitGroup::Constants::EmissiveMap].InitAsDescriptorTable(
-                    1, &range[3]);
-                params[LocalRootSignature::HitGroup::Constants::OcculusionMap]
-                    .InitAsDescriptorTable(1, &range[4]);
-
-                params[LocalRootSignature::HitGroup::Constants::SceneConstants].InitAsConstants(
-                    contSize, 1);
-
-                CD3DX12_ROOT_SIGNATURE_DESC local(_countof(params), params);
-                local.Flags
-                    = D3D12_ROOT_SIGNATURE_FLAGS::D3D12_ROOT_SIGNATURE_FLAG_LOCAL_ROOT_SIGNATURE;
-                serializeAndCreateRootSignature(mDeviceResource->getDevice(), local,
-                    &mHitGroupLocalRootSignature[LocalRootSignature::HitGroup::Normal]);
-            }
-        }
-    }
-    {
-        CD3DX12_STATE_OBJECT_DESC pipeline{
-            D3D12_STATE_OBJECT_TYPE::D3D12_STATE_OBJECT_TYPE_RAYTRACING_PIPELINE
         };
-        {
-            auto exportShader
-                = [&pipeline](void* shaderFile, SIZE_T shaderSize, const auto&... names) {
-                      CD3DX12_DXIL_LIBRARY_SUBOBJECT* lib
-                          = pipeline.CreateSubobject<CD3DX12_DXIL_LIBRARY_SUBOBJECT>();
-                      lib->SetDXILLibrary(&CD3DX12_SHADER_BYTECODE(shaderFile, shaderSize));
-                      for (auto&& name : std::initializer_list<std::wstring>{ names... }) {
-                          lib->DefineExport(name.c_str());
-                      }
-                  };
 
-            exportShader((void*)g_pMiss, _countof(g_pMiss), MISS_SHADER_NAME);
-            exportShader((void*)g_pClosestHit_Normal, _countof(g_pClosestHit_Normal),
-                CLOSEST_HIT_NORMAL_NAME);
-            exportShader(
-                (void*)g_pClosestHit_Plane, _countof(g_pClosestHit_Plane), CLOSEST_HIT_PLANE_NAME);
-            exportShader((void*)g_pClosestHit_Sphere, _countof(g_pClosestHit_Sphere),
-                CLOSEST_HIT_SPHERE_NAME);
-            exportShader((void*)g_pRayGenShader, _countof(g_pRayGenShader), RAY_GEN_NAME);
-            exportShader((void*)g_pShadow, _countof(g_pShadow), MISS_SHADOW_SHADER_NAME);
-        }
-        {
-            auto bindHitGroup
-                = [&pipeline](const std::wstring& hitGroupName, D3D12_HIT_GROUP_TYPE type,
-                      const std::wstring& closestHit = L"", const std::wstring& anyHit = L"",
-                      const std::wstring& intersection = L"") {
-                      CD3DX12_HIT_GROUP_SUBOBJECT* hitGroup
-                          = pipeline.CreateSubobject<CD3DX12_HIT_GROUP_SUBOBJECT>();
-                      if (!closestHit.empty())
-                          hitGroup->SetClosestHitShaderImport(closestHit.c_str());
-                      if (!anyHit.empty()) hitGroup->SetAnyHitShaderImport(anyHit.c_str());
-                      if (!intersection.empty())
-                          hitGroup->SetIntersectionShaderImport(intersection.c_str());
-                      hitGroup->SetHitGroupExport(hitGroupName.c_str());
-                      hitGroup->SetHitGroupType(type);
-                  };
-
-            bindHitGroup(HIT_GROUP_UFO_NAME, D3D12_HIT_GROUP_TYPE::D3D12_HIT_GROUP_TYPE_TRIANGLES,
-                CLOSEST_HIT_NORMAL_NAME);
-            bindHitGroup(HIT_GROUP_QUAD_NAME, D3D12_HIT_GROUP_TYPE::D3D12_HIT_GROUP_TYPE_TRIANGLES,
-                CLOSEST_HIT_NORMAL_NAME);
-            bindHitGroup(HIT_GROUP_FLOOR_NAME, D3D12_HIT_GROUP_TYPE::D3D12_HIT_GROUP_TYPE_TRIANGLES,
-                CLOSEST_HIT_PLANE_NAME);
-            bindHitGroup(HIT_GROUP_SPHERE_NAME,
-                D3D12_HIT_GROUP_TYPE::D3D12_HIT_GROUP_TYPE_TRIANGLES, CLOSEST_HIT_SPHERE_NAME);
-        }
-        {
-            CD3DX12_RAYTRACING_SHADER_CONFIG_SUBOBJECT* config
-                = pipeline.CreateSubobject<CD3DX12_RAYTRACING_SHADER_CONFIG_SUBOBJECT>();
-            UINT payloadSize = Framework::Math::MathUtil::mymax<UINT>(
-                { sizeof(RayPayload), sizeof(ShadowPayload) });
-            UINT attrSize = sizeof(float) * 2;
-            config->Config(payloadSize, attrSize);
-        }
-        {
-            auto bindLocalRootSignature = [&pipeline](ID3D12RootSignature* rootSig,
-                                              const std::wstring& exportShader) {
-                CD3DX12_LOCAL_ROOT_SIGNATURE_SUBOBJECT* local
-                    = pipeline.CreateSubobject<CD3DX12_LOCAL_ROOT_SIGNATURE_SUBOBJECT>();
-                local->SetRootSignature(rootSig);
-
-                CD3DX12_SUBOBJECT_TO_EXPORTS_ASSOCIATION_SUBOBJECT* asso
-                    = pipeline
-                          .CreateSubobject<CD3DX12_SUBOBJECT_TO_EXPORTS_ASSOCIATION_SUBOBJECT>();
-                asso->SetSubobjectToAssociate(*local);
-                asso->AddExport(exportShader.c_str());
-            };
-
-            bindLocalRootSignature(mMissLocalRootSignature.Get(), MISS_SHADER_NAME);
-            bindLocalRootSignature(
-                mHitGroupLocalRootSignature[LocalRootSignature::HitGroup::Normal].Get(),
-                HIT_GROUP_UFO_NAME);
-            bindLocalRootSignature(
-                mHitGroupLocalRootSignature[LocalRootSignature::HitGroup::Normal].Get(),
-                HIT_GROUP_QUAD_NAME);
-            bindLocalRootSignature(
-                mHitGroupLocalRootSignature[LocalRootSignature::HitGroup::Normal].Get(),
-                HIT_GROUP_FLOOR_NAME);
-            bindLocalRootSignature(
-                mHitGroupLocalRootSignature[LocalRootSignature::HitGroup::Normal].Get(),
-                HIT_GROUP_SPHERE_NAME);
-        }
-        {
-            CD3DX12_GLOBAL_ROOT_SIGNATURE_SUBOBJECT* global
-                = pipeline.CreateSubobject<CD3DX12_GLOBAL_ROOT_SIGNATURE_SUBOBJECT>();
-            global->SetRootSignature(mGlobalRootSignature.Get());
-        }
-        {
-            CD3DX12_RAYTRACING_PIPELINE_CONFIG_SUBOBJECT* config
-                = pipeline.CreateSubobject<CD3DX12_RAYTRACING_PIPELINE_CONFIG_SUBOBJECT>();
-            UINT maxRecursionDepth = MAX_RAY_RECURSION_DEPTH;
-            config->Config(maxRecursionDepth);
-        }
-
-        PrintStateObjectDesc(pipeline);
-        MY_THROW_IF_FAILED(
-            mDXRDevice.getDXRDevice()->CreateStateObject(pipeline, IID_PPV_ARGS(&mDXRStateObject)));
+        exportShader((void*)g_pMiss, _countof(g_pMiss), MISS_SHADER_NAME);
+        exportShader(
+            (void*)g_pClosestHit_Normal, _countof(g_pClosestHit_Normal), CLOSEST_HIT_NORMAL_NAME);
+        exportShader(
+            (void*)g_pClosestHit_Plane, _countof(g_pClosestHit_Plane), CLOSEST_HIT_PLANE_NAME);
+        exportShader(
+            (void*)g_pClosestHit_Sphere, _countof(g_pClosestHit_Sphere), CLOSEST_HIT_SPHERE_NAME);
+        exportShader((void*)g_pRayGenShader, _countof(g_pRayGenShader), RAY_GEN_NAME);
+        exportShader((void*)g_pShadow, _countof(g_pShadow), MISS_SHADOW_SHADER_NAME);
     }
     {
-        using namespace Framework::Desc;
-        DescriptorTableDesc desc
-            = { L"DescriptorTable", 10000, HeapType::CBV_SRV_UAV, HeapFlag::ShaderVisible };
-        mDescriptorTable->create(mDeviceResource->getDevice(), desc);
+        auto bindHitGroup
+            = [&pipeline](const std::wstring& hitGroupName, D3D12_HIT_GROUP_TYPE type,
+                  const std::wstring& closestHit = L"", const std::wstring& anyHit = L"",
+                  const std::wstring& intersection = L"") {
+                  CD3DX12_HIT_GROUP_SUBOBJECT* hitGroup
+                      = pipeline.CreateSubobject<CD3DX12_HIT_GROUP_SUBOBJECT>();
+                  if (!closestHit.empty()) hitGroup->SetClosestHitShaderImport(closestHit.c_str());
+                  if (!anyHit.empty()) hitGroup->SetAnyHitShaderImport(anyHit.c_str());
+                  if (!intersection.empty())
+                      hitGroup->SetIntersectionShaderImport(intersection.c_str());
+                  hitGroup->SetHitGroupExport(hitGroupName.c_str());
+                  hitGroup->SetHitGroupType(type);
+              };
+
+        bindHitGroup(HIT_GROUP_UFO_NAME, D3D12_HIT_GROUP_TYPE::D3D12_HIT_GROUP_TYPE_TRIANGLES,
+            CLOSEST_HIT_NORMAL_NAME);
+        bindHitGroup(HIT_GROUP_QUAD_NAME, D3D12_HIT_GROUP_TYPE::D3D12_HIT_GROUP_TYPE_TRIANGLES,
+            CLOSEST_HIT_NORMAL_NAME);
+        bindHitGroup(HIT_GROUP_FLOOR_NAME, D3D12_HIT_GROUP_TYPE::D3D12_HIT_GROUP_TYPE_TRIANGLES,
+            CLOSEST_HIT_PLANE_NAME);
+        bindHitGroup(HIT_GROUP_SPHERE_NAME, D3D12_HIT_GROUP_TYPE::D3D12_HIT_GROUP_TYPE_TRIANGLES,
+            CLOSEST_HIT_SPHERE_NAME);
+    }
+    {
+        CD3DX12_RAYTRACING_SHADER_CONFIG_SUBOBJECT* config
+            = pipeline.CreateSubobject<CD3DX12_RAYTRACING_SHADER_CONFIG_SUBOBJECT>();
+        UINT payloadSize
+            = Framework::Math::MathUtil::mymax<UINT>({ sizeof(RayPayload), sizeof(ShadowPayload) });
+        UINT attrSize = sizeof(float) * 2;
+        config->Config(payloadSize, attrSize);
+    }
+    {
+        auto bindLocalRootSignature = [&pipeline](ID3D12RootSignature* rootSig,
+                                          const std::wstring& exportShader) {
+            CD3DX12_LOCAL_ROOT_SIGNATURE_SUBOBJECT* local
+                = pipeline.CreateSubobject<CD3DX12_LOCAL_ROOT_SIGNATURE_SUBOBJECT>();
+            local->SetRootSignature(rootSig);
+
+            CD3DX12_SUBOBJECT_TO_EXPORTS_ASSOCIATION_SUBOBJECT* asso
+                = pipeline.CreateSubobject<CD3DX12_SUBOBJECT_TO_EXPORTS_ASSOCIATION_SUBOBJECT>();
+            asso->SetSubobjectToAssociate(*local);
+            asso->AddExport(exportShader.c_str());
+        };
+
+        bindLocalRootSignature(mMissLocalRootSignature->getRootSignature(), MISS_SHADER_NAME);
+        bindLocalRootSignature(mHitGroupLocalRootSignature->getRootSignature(), HIT_GROUP_UFO_NAME);
+        bindLocalRootSignature(
+            mHitGroupLocalRootSignature->getRootSignature(), HIT_GROUP_QUAD_NAME);
+        bindLocalRootSignature(
+            mHitGroupLocalRootSignature->getRootSignature(), HIT_GROUP_FLOOR_NAME);
+        bindLocalRootSignature(
+            mHitGroupLocalRootSignature->getRootSignature(), HIT_GROUP_SPHERE_NAME);
+    }
+    {
+        CD3DX12_GLOBAL_ROOT_SIGNATURE_SUBOBJECT* global
+            = pipeline.CreateSubobject<CD3DX12_GLOBAL_ROOT_SIGNATURE_SUBOBJECT>();
+        global->SetRootSignature(mGlobalRootSignature->getRootSignature());
+    }
+    {
+        CD3DX12_RAYTRACING_PIPELINE_CONFIG_SUBOBJECT* config
+            = pipeline.CreateSubobject<CD3DX12_RAYTRACING_PIPELINE_CONFIG_SUBOBJECT>();
+        UINT maxRecursionDepth = MAX_RAY_RECURSION_DEPTH;
+        config->Config(maxRecursionDepth);
     }
 
-    std::array<UINT, LocalRootSignature::HitGroupIndex::Count> mIndexOffsets;
-    std::array<UINT, LocalRootSignature::HitGroupIndex::Count> mVertexOffsets;
-    auto getOffset
-        = [&mIndexOffsets, &mVertexOffsets](LocalRootSignature::HitGroupIndex::MyEnum e) {
-              if (e == 0)
-                  return std::make_tuple<UINT, UINT>(0, 0);
-              else
-                  return std::make_tuple(
-                      std::accumulate(mIndexOffsets.begin(), mIndexOffsets.begin() + e, 0u),
-                      std::accumulate(mVertexOffsets.begin(), mVertexOffsets.begin() + e, 0u));
-          };
+    PrintStateObjectDesc(pipeline);
+    MY_THROW_IF_FAILED(
+        mDXRDevice.getDXRDevice()->CreateStateObject(pipeline, IID_PPV_ARGS(&mDXRStateObject)));
+}
+{
+    using namespace Framework::Desc;
+    DescriptorTableDesc desc
+        = { L"DescriptorTable", 10000, HeapType::CBV_SRV_UAV, HeapFlag::ShaderVisible };
+    mDescriptorTable->create(mDeviceResource->getDevice(), desc);
+}
 
+std::array<UINT, LocalRootSignature::HitGroupIndex::Count> mIndexOffsets;
+std::array<UINT, LocalRootSignature::HitGroupIndex::Count> mVertexOffsets;
+auto getOffset = [&mIndexOffsets, &mVertexOffsets](LocalRootSignature::HitGroupIndex::MyEnum e) {
+    if (e == 0)
+        return std::make_tuple<UINT, UINT>(0, 0);
+    else
+        return std::make_tuple(
+            std::accumulate(mIndexOffsets.begin(), mIndexOffsets.begin() + e, 0u),
+            std::accumulate(mVertexOffsets.begin(), mVertexOffsets.begin() + e, 0u));
+};
+
+{
+    ID3D12Device* device = mDeviceResource->getDevice();
+    std::array<IBuffer, BottomLevelASType::Count> mIndexBuffer;
+    std::array<IBuffer, BottomLevelASType::Count> mVertexBuffer;
+
+    std::vector<Framework::DX::Vertex> resourceVertices;
+    std::vector<Index> resourceIndices;
     {
-        ID3D12Device* device = mDeviceResource->getDevice();
-        std::array<IBuffer, BottomLevelASType::Count> mIndexBuffer;
-        std::array<IBuffer, BottomLevelASType::Count> mVertexBuffer;
 
-        std::vector<Framework::DX::Vertex> resourceVertices;
-        std::vector<Index> resourceIndices;
+        auto path = Framework::Utility::ExePath::getInstance()->exe();
+        path = path.remove_filename();
+        auto modelPath = path / "Resources" / "Model";
+        auto texPath = path / "Resources" / "Texture";
+
         {
-
-            auto path = Framework::Utility::ExePath::getInstance()->exe();
-            path = path.remove_filename();
-            auto modelPath = path / "Resources" / "Model";
-            auto texPath = path / "Resources" / "Texture";
-
-            {
-                auto createUnitTexture = [](const Color4& color, const std::wstring& name) {
-                    Framework::Desc::TextureDesc desc;
-                    desc.format = Framework::Desc::TextureFormat::R8G8B8A8;
-                    desc.width = 1;
-                    desc.height = 1;
-                    desc.pixels.resize(desc.width * desc.height * 4);
-                    desc.pixels[0] = static_cast<BYTE>(color.r * 255.0f);
-                    desc.pixels[1] = static_cast<BYTE>(color.g * 255.0f);
-                    desc.pixels[2] = static_cast<BYTE>(color.b * 255.0f);
-                    desc.pixels[3] = static_cast<BYTE>(color.a * 255.0f);
-                    desc.name = name;
-                    return desc;
-                };
-                auto createDefaultTexture
-                    = [&](const std::wstring& name, ModelTextureType texType, const Color4& col) {
-                          std::shared_ptr<Texture2D> texture
-                              = std::make_shared<Texture2D>(device, createUnitTexture(col, name));
-                          mDescriptorTable->allocate(texture.get());
-                          texture->createSRV(device);
-                          mTextures[texType] = texture;
-                          mTextureIDs[texType] = texType;
-                      };
-
-                createDefaultTexture(
-                    L"DefaultAlbedo", ModelTextureType::Default_AlbedoTexture, Color4(1, 1, 1, 1));
-                createDefaultTexture(L"DefaultNormal", ModelTextureType::Default_NormalMap,
-                    Color4(0.5f, 0.5f, 1.0f, 1.0f));
-                createDefaultTexture(L"DefaultMetallicRoughness",
-                    ModelTextureType::Default_MetallicRoughnessMap, Color4(0, 0, 0, 1));
-                createDefaultTexture(
-                    L"DefaultEmissive", ModelTextureType::Default_EmissiveMap, Color4(0, 0, 0, 1));
-                createDefaultTexture(L"DefaultOcculusion", ModelTextureType::Default_OcclusionMap,
-                    Color4(1, 1, 1, 1));
-            }
-
-            auto loadTextures = [&](const GlbMaterial& material,
-                                    const std::vector<Framework::Desc::TextureDesc>& textureDatas,
-                                    ModelTextureType idOffset) {
-                ModelTextureType nextID = idOffset;
-                if (textureDatas.empty()) {
-                    mTextureIDs[nextID] = mTextureIDs[ModelTextureType::Default_AlbedoTexture];
-                } else {
-                    auto albedo = textureDatas[0];
-                    auto texture = std::make_shared<Texture2D>(device, albedo);
-                    mDescriptorTable->allocate(texture.get());
-                    texture->createSRV(device);
-                    mTextures[nextID] = texture;
-                    mTextureIDs[nextID] = nextID;
-                }
-                nextID = ModelTextureType(nextID + 1);
-                if (material.normalMapID == -1) {
-                    mTextureIDs[nextID] = mTextureIDs[ModelTextureType::Default_NormalMap];
-                } else {
-                    auto normal = textureDatas[material.normalMapID];
-                    auto texture = std::make_shared<Texture2D>(device, normal);
-                    mDescriptorTable->allocate(texture.get());
-                    texture->createSRV(device);
-                    mTextures[nextID] = texture;
-                    mTextureIDs[nextID] = nextID;
-                }
-
-                nextID = ModelTextureType(nextID + 1);
-                if (material.metallicRoughnessMapID == -1) {
-                    mTextureIDs[nextID]
-                        = mTextureIDs[ModelTextureType::Default_MetallicRoughnessMap];
-                } else {
-                    auto metalRough = textureDatas[material.metallicRoughnessMapID];
-                    auto texture = std::make_shared<Texture2D>(device, metalRough);
-                    mDescriptorTable->allocate(texture.get());
-                    texture->createSRV(device);
-                    mTextures[nextID] = texture;
-                    mTextureIDs[nextID] = nextID;
-                }
-
-                nextID = ModelTextureType(nextID + 1);
-                if (material.emissiveMapID == -1) {
-                    mTextureIDs[nextID] = mTextureIDs[ModelTextureType::Default_EmissiveMap];
-                } else {
-                    auto emissive = textureDatas[material.emissiveMapID];
-                    auto texture = std::make_shared<Texture2D>(device, emissive);
-                    mDescriptorTable->allocate(texture.get());
-                    texture->createSRV(device);
-                    mTextures[nextID] = texture;
-                    mTextureIDs[nextID] = nextID;
-                }
-                nextID = ModelTextureType(nextID + 1);
-                if (material.occlusionMapID == -1) {
-                    mTextureIDs[nextID] = mTextureIDs[ModelTextureType::Default_OcclusionMap];
-                } else {
-                    auto occlusion = textureDatas[material.occlusionMapID];
-                    auto texture = std::make_shared<Texture2D>(device, occlusion);
-                    mDescriptorTable->allocate(texture.get());
-                    texture->createSRV(device);
-                    mTextures[nextID] = texture;
-                    mTextureIDs[nextID] = nextID;
-                }
+            auto createUnitTexture = [](const Color4& color, const std::wstring& name) {
+                Framework::Desc::TextureDesc desc;
+                desc.format = Framework::Desc::TextureFormat::R8G8B8A8;
+                desc.width = 1;
+                desc.height = 1;
+                desc.pixels.resize(desc.width * desc.height * 4);
+                desc.pixels[0] = static_cast<BYTE>(color.r * 255.0f);
+                desc.pixels[1] = static_cast<BYTE>(color.g * 255.0f);
+                desc.pixels[2] = static_cast<BYTE>(color.b * 255.0f);
+                desc.pixels[3] = static_cast<BYTE>(color.a * 255.0f);
+                desc.name = name;
+                return desc;
             };
+            auto createDefaultTexture
+                = [&](const std::wstring& name, ModelTextureType texType, const Color4& col) {
+                      std::shared_ptr<Texture2D> texture
+                          = std::make_shared<Texture2D>(device, createUnitTexture(col, name));
+                      mDescriptorTable->allocate(texture.get());
+                      texture->createSRV(device);
+                      mTextures[texType] = texture;
+                      mTextureIDs[texType] = texType;
+                  };
 
-            {
-                Framework::Utility::GLBLoader loader(
-                    modelPath / MODEL_NAMES.at(BottomLevelASType::UFO));
-                auto indices = toLinearList(loader.getIndicesPerSubMeshes());
-                auto vertices = toLinearVertices(loader.getPositionsPerSubMeshes(),
-                    loader.getNormalsPerSubMeshes(), loader.getUVsPerSubMeshes(),
-                    loader.getTangentsPerSubMeshes());
+            createDefaultTexture(
+                L"DefaultAlbedo", ModelTextureType::Default_AlbedoTexture, Color4(1, 1, 1, 1));
+            createDefaultTexture(L"DefaultNormal", ModelTextureType::Default_NormalMap,
+                Color4(0.5f, 0.5f, 1.0f, 1.0f));
+            createDefaultTexture(L"DefaultMetallicRoughness",
+                ModelTextureType::Default_MetallicRoughnessMap, Color4(0, 0, 0, 1));
+            createDefaultTexture(
+                L"DefaultEmissive", ModelTextureType::Default_EmissiveMap, Color4(0, 0, 0, 1));
+            createDefaultTexture(
+                L"DefaultOcculusion", ModelTextureType::Default_OcclusionMap, Color4(1, 1, 1, 1));
+        }
 
-                createBuffer(mDeviceResource->getDevice(),
-                    &mIndexBuffer[BottomLevelASType::UFO].mResource, indices.data(),
-                    indices.size() * sizeof(indices[0]), L"IndexBuffer");
-                createBuffer(mDeviceResource->getDevice(),
-                    &mVertexBuffer[BottomLevelASType::UFO].mResource, vertices.data(),
-                    vertices.size() * sizeof(vertices[0]), L"VertexBuffer");
-
-                resourceIndices.insert(resourceIndices.end(), indices.begin(), indices.end());
-                resourceVertices.insert(resourceVertices.end(), vertices.begin(), vertices.end());
-                mIndexOffsets[LocalRootSignature::HitGroupIndex::UFO] = (UINT)indices.size();
-                mVertexOffsets[LocalRootSignature::HitGroupIndex::UFO] = (UINT)vertices.size();
-
-                auto materialList = loader.getMaterialDatas();
-                GlbMaterial material = {};
-                if (!materialList.empty()) material = loader.getMaterialDatas()[0];
-                auto descs = loader.getImageDatas();
-
-                loadTextures(material, descs, ModelTextureType::UFO_AlbedoTexture);
-            }
-            {
-                std::vector<Index> indices = { 0, 1, 2, 0, 2, 3 };
-                createBuffer(mDeviceResource->getDevice(),
-                    &mIndexBuffer[BottomLevelASType::Quad].mResource, indices.data(),
-                    indices.size() * sizeof(indices[0]), L"IndexBuffer");
-                std::vector<Framework::DX::Vertex> vertices = {
-                    { Vec3(-1, 1, 0), Vec3(0, 0, -1), Vec2(0, 0) },
-                    { Vec3(1, 1, 0), Vec3(0, 0, -1), Vec2(1, 0) },
-                    { Vec3(1, -1, 0), Vec3(0, 0, -1), Vec2(1, 1) },
-                    { Vec3(-1, -1, 0), Vec3(0, 0, -1), Vec2(0, 1) },
-                };
-                createBuffer(mDeviceResource->getDevice(),
-                    &mVertexBuffer[BottomLevelASType::Quad].mResource, vertices.data(),
-                    vertices.size() * sizeof(vertices[0]), L"VertexBuffer");
-
-                resourceIndices.insert(resourceIndices.end(), indices.begin(), indices.end());
-                resourceVertices.insert(resourceVertices.end(), vertices.begin(), vertices.end());
-                mIndexOffsets[LocalRootSignature::HitGroupIndex::Quad] = (UINT)indices.size();
-                mVertexOffsets[LocalRootSignature::HitGroupIndex::Quad] = (UINT)vertices.size();
-
-                Framework::Desc::TextureDesc desc
-                    = Framework::Utility::TextureLoader::load(texPath / "back2.png");
-                auto texture = std::make_shared<Texture2D>(device, desc);
+        auto loadTextures = [&](const GlbMaterial& material,
+                                const std::vector<Framework::Desc::TextureDesc>& textureDatas,
+                                ModelTextureType idOffset) {
+            ModelTextureType nextID = idOffset;
+            if (textureDatas.empty()) {
+                mTextureIDs[nextID] = mTextureIDs[ModelTextureType::Default_AlbedoTexture];
+            } else {
+                auto albedo = textureDatas[0];
+                auto texture = std::make_shared<Texture2D>(device, albedo);
                 mDescriptorTable->allocate(texture.get());
                 texture->createSRV(device);
-                mTextures[ModelTextureType::Quad_AlbedoTexture] = texture;
-                mTextureIDs[ModelTextureType::Quad_AlbedoTexture]
-                    = ModelTextureType::Quad_AlbedoTexture;
-                mTextureIDs[ModelTextureType::Quad_NormalMap] = ModelTextureType::Default_NormalMap;
-                mTextureIDs[ModelTextureType::Quad_MetallicRoughnessMap]
-                    = ModelTextureType::Default_MetallicRoughnessMap;
-                mTextureIDs[ModelTextureType::Quad_EmissiveMap]
-                    = ModelTextureType::Default_EmissiveMap;
-                mTextureIDs[ModelTextureType::Quad_OcclusionMap]
-                    = ModelTextureType::Default_OcclusionMap;
+                mTextures[nextID] = texture;
+                mTextureIDs[nextID] = nextID;
+            }
+            nextID = ModelTextureType(nextID + 1);
+            if (material.normalMapID == -1) {
+                mTextureIDs[nextID] = mTextureIDs[ModelTextureType::Default_NormalMap];
+            } else {
+                auto normal = textureDatas[material.normalMapID];
+                auto texture = std::make_shared<Texture2D>(device, normal);
+                mDescriptorTable->allocate(texture.get());
+                texture->createSRV(device);
+                mTextures[nextID] = texture;
+                mTextureIDs[nextID] = nextID;
             }
 
-            {
-                Framework::Utility::GLBLoader loader(
-                    modelPath / MODEL_NAMES.at(BottomLevelASType::Floor));
-                auto indices = toLinearList(loader.getIndicesPerSubMeshes());
-                auto vertices = toLinearVertices(loader.getPositionsPerSubMeshes(),
-                    loader.getNormalsPerSubMeshes(), loader.getUVsPerSubMeshes());
-                createBuffer(mDeviceResource->getDevice(),
-                    &mIndexBuffer[BottomLevelASType::Floor].mResource, indices.data(),
-                    indices.size() * sizeof(indices[0]), L"IndexBuffer");
-                createBuffer(mDeviceResource->getDevice(),
-                    &mVertexBuffer[BottomLevelASType::Floor].mResource, vertices.data(),
-                    vertices.size() * sizeof(vertices[0]), L"VertexBuffer");
-
-                resourceIndices.insert(resourceIndices.end(), indices.begin(), indices.end());
-                resourceVertices.insert(resourceVertices.end(), vertices.begin(), vertices.end());
-                mIndexOffsets[LocalRootSignature::HitGroupIndex::Floor] = (UINT)indices.size();
-                mVertexOffsets[LocalRootSignature::HitGroupIndex::Floor] = (UINT)vertices.size();
-
-                auto materialList = loader.getMaterialDatas();
-                GlbMaterial material = {};
-                if (!materialList.empty()) material = loader.getMaterialDatas()[0];
-                auto descs = loader.getImageDatas();
-                loadTextures(material, descs, ModelTextureType::Plane_AlbedoTexture);
+            nextID = ModelTextureType(nextID + 1);
+            if (material.metallicRoughnessMapID == -1) {
+                mTextureIDs[nextID] = mTextureIDs[ModelTextureType::Default_MetallicRoughnessMap];
+            } else {
+                auto metalRough = textureDatas[material.metallicRoughnessMapID];
+                auto texture = std::make_shared<Texture2D>(device, metalRough);
+                mDescriptorTable->allocate(texture.get());
+                texture->createSRV(device);
+                mTextures[nextID] = texture;
+                mTextureIDs[nextID] = nextID;
             }
-            {
-                Framework::Utility::GLBLoader loader(
-                    modelPath / MODEL_NAMES.at(BottomLevelASType::Sphere));
-                auto indices = toLinearList(loader.getIndicesPerSubMeshes());
-                auto vertices = toLinearVertices(loader.getPositionsPerSubMeshes(),
-                    loader.getNormalsPerSubMeshes(), loader.getUVsPerSubMeshes(),
-                    loader.getTangentsPerSubMeshes());
 
-                createBuffer(mDeviceResource->getDevice(),
-                    &mIndexBuffer[BottomLevelASType::Sphere].mResource, indices.data(),
-                    indices.size() * sizeof(indices[0]), L"IndexBuffer");
-                createBuffer(mDeviceResource->getDevice(),
-                    &mVertexBuffer[BottomLevelASType::Sphere].mResource, vertices.data(),
-                    vertices.size() * sizeof(vertices[0]), L"VertexBuffer");
-
-                resourceIndices.insert(resourceIndices.end(), indices.begin(), indices.end());
-                resourceVertices.insert(resourceVertices.end(), vertices.begin(), vertices.end());
-                mIndexOffsets[LocalRootSignature::HitGroupIndex::Sphere] = (UINT)indices.size();
-                mVertexOffsets[LocalRootSignature::HitGroupIndex::Sphere] = (UINT)vertices.size();
-
-                auto materialList = loader.getMaterialDatas();
-                GlbMaterial material = {};
-                if (!materialList.empty()) material = loader.getMaterialDatas()[0];
-                auto descs = loader.getImageDatas();
-
-                loadTextures(material, descs, ModelTextureType::Sphere_AlbedoTexture);
+            nextID = ModelTextureType(nextID + 1);
+            if (material.emissiveMapID == -1) {
+                mTextureIDs[nextID] = mTextureIDs[ModelTextureType::Default_EmissiveMap];
+            } else {
+                auto emissive = textureDatas[material.emissiveMapID];
+                auto texture = std::make_shared<Texture2D>(device, emissive);
+                mDescriptorTable->allocate(texture.get());
+                texture->createSRV(device);
+                mTextures[nextID] = texture;
+                mTextureIDs[nextID] = nextID;
             }
+            nextID = ModelTextureType(nextID + 1);
+            if (material.occlusionMapID == -1) {
+                mTextureIDs[nextID] = mTextureIDs[ModelTextureType::Default_OcclusionMap];
+            } else {
+                auto occlusion = textureDatas[material.occlusionMapID];
+                auto texture = std::make_shared<Texture2D>(device, occlusion);
+                mDescriptorTable->allocate(texture.get());
+                texture->createSRV(device);
+                mTextures[nextID] = texture;
+                mTextureIDs[nextID] = nextID;
+            }
+        };
+
+        {
+            Framework::Utility::GLBLoader loader(
+                modelPath / MODEL_NAMES.at(BottomLevelASType::UFO));
+            auto indices = toLinearList(loader.getIndicesPerSubMeshes());
+            auto vertices = toLinearVertices(loader.getPositionsPerSubMeshes(),
+                loader.getNormalsPerSubMeshes(), loader.getUVsPerSubMeshes(),
+                loader.getTangentsPerSubMeshes());
+
+            createBuffer(mDeviceResource->getDevice(),
+                &mIndexBuffer[BottomLevelASType::UFO].mResource, indices.data(),
+                indices.size() * sizeof(indices[0]), L"IndexBuffer");
+            createBuffer(mDeviceResource->getDevice(),
+                &mVertexBuffer[BottomLevelASType::UFO].mResource, vertices.data(),
+                vertices.size() * sizeof(vertices[0]), L"VertexBuffer");
+
+            resourceIndices.insert(resourceIndices.end(), indices.begin(), indices.end());
+            resourceVertices.insert(resourceVertices.end(), vertices.begin(), vertices.end());
+            mIndexOffsets[LocalRootSignature::HitGroupIndex::UFO] = (UINT)indices.size();
+            mVertexOffsets[LocalRootSignature::HitGroupIndex::UFO] = (UINT)vertices.size();
+
+            auto materialList = loader.getMaterialDatas();
+            GlbMaterial material = {};
+            if (!materialList.empty()) material = loader.getMaterialDatas()[0];
+            auto descs = loader.getImageDatas();
+
+            loadTextures(material, descs, ModelTextureType::UFO_AlbedoTexture);
         }
         {
-            ID3D12Device* device = mDeviceResource->getDevice();
-            ID3D12GraphicsCommandList* commandList = mDeviceResource->getCommandList();
-            ID3D12CommandAllocator* allocator = mDeviceResource->getCommandAllocator();
-            ID3D12Device5* dxrDevice = mDXRDevice.getDXRDevice();
-            ID3D12GraphicsCommandList5* dxrCommandList = mDXRDevice.getDXRCommandList();
+            std::vector<Index> indices = { 0, 1, 2, 0, 2, 3 };
+            createBuffer(mDeviceResource->getDevice(),
+                &mIndexBuffer[BottomLevelASType::Quad].mResource, indices.data(),
+                indices.size() * sizeof(indices[0]), L"IndexBuffer");
+            std::vector<Framework::DX::Vertex> vertices = {
+                { Vec3(-1, 1, 0), Vec3(0, 0, -1), Vec2(0, 0) },
+                { Vec3(1, 1, 0), Vec3(0, 0, -1), Vec2(1, 0) },
+                { Vec3(1, -1, 0), Vec3(0, 0, -1), Vec2(1, 1) },
+                { Vec3(-1, -1, 0), Vec3(0, 0, -1), Vec2(0, 1) },
+            };
+            createBuffer(mDeviceResource->getDevice(),
+                &mVertexBuffer[BottomLevelASType::Quad].mResource, vertices.data(),
+                vertices.size() * sizeof(vertices[0]), L"VertexBuffer");
 
-            commandList->Reset(allocator, nullptr);
+            resourceIndices.insert(resourceIndices.end(), indices.begin(), indices.end());
+            resourceVertices.insert(resourceVertices.end(), vertices.begin(), vertices.end());
+            mIndexOffsets[LocalRootSignature::HitGroupIndex::Quad] = (UINT)indices.size();
+            mVertexOffsets[LocalRootSignature::HitGroupIndex::Quad] = (UINT)vertices.size();
 
-            for (int i = 0; i < BottomLevelASType::Count; i++) {
-                D3D12_RAYTRACING_GEOMETRY_DESC geometryDesc = {};
-                geometryDesc.Type
-                    = D3D12_RAYTRACING_GEOMETRY_TYPE::D3D12_RAYTRACING_GEOMETRY_TYPE_TRIANGLES;
-                geometryDesc.Triangles.IndexBuffer
-                    = mIndexBuffer[i].mResource->GetGPUVirtualAddress();
-                geometryDesc.Triangles.IndexCount
-                    = static_cast<UINT>(mIndexBuffer[i].mResource->GetDesc().Width) / sizeof(Index);
-                geometryDesc.Triangles.IndexFormat = DXGI_FORMAT::DXGI_FORMAT_R16_UINT;
-                geometryDesc.Triangles.Transform3x4 = 0;
-                geometryDesc.Triangles.VertexBuffer.StartAddress
-                    = mVertexBuffer[i].mResource->GetGPUVirtualAddress();
-                geometryDesc.Triangles.VertexBuffer.StrideInBytes = sizeof(Framework::DX::Vertex);
-                geometryDesc.Triangles.VertexCount
-                    = static_cast<UINT>(mVertexBuffer[i].mResource->GetDesc().Width)
-                    / sizeof(Framework::DX::Vertex);
-                geometryDesc.Triangles.VertexFormat = DXGI_FORMAT::DXGI_FORMAT_R32G32B32_FLOAT;
-                geometryDesc.Flags
-                    = D3D12_RAYTRACING_GEOMETRY_FLAGS::D3D12_RAYTRACING_GEOMETRY_FLAG_OPAQUE;
+            Framework::Desc::TextureDesc desc
+                = Framework::Utility::TextureLoader::load(texPath / "back2.png");
+            auto texture = std::make_shared<Texture2D>(device, desc);
+            mDescriptorTable->allocate(texture.get());
+            texture->createSRV(device);
+            mTextures[ModelTextureType::Quad_AlbedoTexture] = texture;
+            mTextureIDs[ModelTextureType::Quad_AlbedoTexture]
+                = ModelTextureType::Quad_AlbedoTexture;
+            mTextureIDs[ModelTextureType::Quad_NormalMap] = ModelTextureType::Default_NormalMap;
+            mTextureIDs[ModelTextureType::Quad_MetallicRoughnessMap]
+                = ModelTextureType::Default_MetallicRoughnessMap;
+            mTextureIDs[ModelTextureType::Quad_EmissiveMap] = ModelTextureType::Default_EmissiveMap;
+            mTextureIDs[ModelTextureType::Quad_OcclusionMap]
+                = ModelTextureType::Default_OcclusionMap;
+        }
 
-                D3D12_RAYTRACING_ACCELERATION_STRUCTURE_BUILD_FLAGS buildFlags
-                    = D3D12_RAYTRACING_ACCELERATION_STRUCTURE_BUILD_FLAGS::
-                        D3D12_RAYTRACING_ACCELERATION_STRUCTURE_BUILD_FLAG_PREFER_FAST_TRACE;
+        {
+            Framework::Utility::GLBLoader loader(
+                modelPath / MODEL_NAMES.at(BottomLevelASType::Floor));
+            auto indices = toLinearList(loader.getIndicesPerSubMeshes());
+            auto vertices = toLinearVertices(loader.getPositionsPerSubMeshes(),
+                loader.getNormalsPerSubMeshes(), loader.getUVsPerSubMeshes());
+            createBuffer(mDeviceResource->getDevice(),
+                &mIndexBuffer[BottomLevelASType::Floor].mResource, indices.data(),
+                indices.size() * sizeof(indices[0]), L"IndexBuffer");
+            createBuffer(mDeviceResource->getDevice(),
+                &mVertexBuffer[BottomLevelASType::Floor].mResource, vertices.data(),
+                vertices.size() * sizeof(vertices[0]), L"VertexBuffer");
 
-                D3D12_BUILD_RAYTRACING_ACCELERATION_STRUCTURE_DESC
-                bottomLevelBuildDesc = {};
-                auto& bottomLevelInputs = bottomLevelBuildDesc.Inputs;
-                bottomLevelInputs.DescsLayout = D3D12_ELEMENTS_LAYOUT::D3D12_ELEMENTS_LAYOUT_ARRAY;
-                bottomLevelInputs.Flags = buildFlags;
-                bottomLevelInputs.NumDescs = 1;
-                bottomLevelInputs.Type = D3D12_RAYTRACING_ACCELERATION_STRUCTURE_TYPE::
-                    D3D12_RAYTRACING_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL;
-                bottomLevelInputs.pGeometryDescs = &geometryDesc;
+            resourceIndices.insert(resourceIndices.end(), indices.begin(), indices.end());
+            resourceVertices.insert(resourceVertices.end(), vertices.begin(), vertices.end());
+            mIndexOffsets[LocalRootSignature::HitGroupIndex::Floor] = (UINT)indices.size();
+            mVertexOffsets[LocalRootSignature::HitGroupIndex::Floor] = (UINT)vertices.size();
 
-                D3D12_RAYTRACING_ACCELERATION_STRUCTURE_PREBUILD_INFO
-                bottomLevelPreInfo = {};
-                dxrDevice->GetRaytracingAccelerationStructurePrebuildInfo(
-                    &bottomLevelInputs, &bottomLevelPreInfo);
-                MY_THROW_IF_FALSE(bottomLevelPreInfo.ResultDataMaxSizeInBytes > 0);
+            auto materialList = loader.getMaterialDatas();
+            GlbMaterial material = {};
+            if (!materialList.empty()) material = loader.getMaterialDatas()[0];
+            auto descs = loader.getImageDatas();
+            loadTextures(material, descs, ModelTextureType::Plane_AlbedoTexture);
+        }
+        {
+            Framework::Utility::GLBLoader loader(
+                modelPath / MODEL_NAMES.at(BottomLevelASType::Sphere));
+            auto indices = toLinearList(loader.getIndicesPerSubMeshes());
+            auto vertices = toLinearVertices(loader.getPositionsPerSubMeshes(),
+                loader.getNormalsPerSubMeshes(), loader.getUVsPerSubMeshes(),
+                loader.getTangentsPerSubMeshes());
 
-                allocateUAVBuffer(device, bottomLevelPreInfo.ScratchDataSizeInBytes,
-                    &mBLASBuffers[i].scratch,
-                    D3D12_RESOURCE_STATES::D3D12_RESOURCE_STATE_UNORDERED_ACCESS,
-                    L"ScratchResource");
+            createBuffer(mDeviceResource->getDevice(),
+                &mIndexBuffer[BottomLevelASType::Sphere].mResource, indices.data(),
+                indices.size() * sizeof(indices[0]), L"IndexBuffer");
+            createBuffer(mDeviceResource->getDevice(),
+                &mVertexBuffer[BottomLevelASType::Sphere].mResource, vertices.data(),
+                vertices.size() * sizeof(vertices[0]), L"VertexBuffer");
 
-                D3D12_RESOURCE_STATES initResourceState
-                    = D3D12_RESOURCE_STATES::D3D12_RESOURCE_STATE_RAYTRACING_ACCELERATION_STRUCTURE;
-                allocateUAVBuffer(device, bottomLevelPreInfo.ResultDataMaxSizeInBytes,
-                    &mBLASBuffers[i].buffer, initResourceState, L"BottomLevelAS");
+            resourceIndices.insert(resourceIndices.end(), indices.begin(), indices.end());
+            resourceVertices.insert(resourceVertices.end(), vertices.begin(), vertices.end());
+            mIndexOffsets[LocalRootSignature::HitGroupIndex::Sphere] = (UINT)indices.size();
+            mVertexOffsets[LocalRootSignature::HitGroupIndex::Sphere] = (UINT)vertices.size();
 
-                bottomLevelBuildDesc.ScratchAccelerationStructureData
-                    = mBLASBuffers[i].scratch->GetGPUVirtualAddress();
-                bottomLevelBuildDesc.DestAccelerationStructureData
-                    = mBLASBuffers[i].buffer->GetGPUVirtualAddress();
+            auto materialList = loader.getMaterialDatas();
+            GlbMaterial material = {};
+            if (!materialList.empty()) material = loader.getMaterialDatas()[0];
+            auto descs = loader.getImageDatas();
 
-                dxrCommandList->BuildRaytracingAccelerationStructure(
-                    &bottomLevelBuildDesc, 0, nullptr);
-                commandList->ResourceBarrier(
-                    1, &CD3DX12_RESOURCE_BARRIER::UAV(mBLASBuffers[i].buffer.Get()));
-            }
+            loadTextures(material, descs, ModelTextureType::Sphere_AlbedoTexture);
+        }
+    }
+    {
+        ID3D12Device* device = mDeviceResource->getDevice();
+        ID3D12GraphicsCommandList* commandList = mDeviceResource->getCommandList();
+        ID3D12CommandAllocator* allocator = mDeviceResource->getCommandAllocator();
+        ID3D12Device5* dxrDevice = mDXRDevice.getDXRDevice();
+        ID3D12GraphicsCommandList5* dxrCommandList = mDXRDevice.getDXRCommandList();
+
+        commandList->Reset(allocator, nullptr);
+
+        for (int i = 0; i < BottomLevelASType::Count; i++) {
+            D3D12_RAYTRACING_GEOMETRY_DESC geometryDesc = {};
+            geometryDesc.Type
+                = D3D12_RAYTRACING_GEOMETRY_TYPE::D3D12_RAYTRACING_GEOMETRY_TYPE_TRIANGLES;
+            geometryDesc.Triangles.IndexBuffer = mIndexBuffer[i].mResource->GetGPUVirtualAddress();
+            geometryDesc.Triangles.IndexCount
+                = static_cast<UINT>(mIndexBuffer[i].mResource->GetDesc().Width) / sizeof(Index);
+            geometryDesc.Triangles.IndexFormat = DXGI_FORMAT::DXGI_FORMAT_R16_UINT;
+            geometryDesc.Triangles.Transform3x4 = 0;
+            geometryDesc.Triangles.VertexBuffer.StartAddress
+                = mVertexBuffer[i].mResource->GetGPUVirtualAddress();
+            geometryDesc.Triangles.VertexBuffer.StrideInBytes = sizeof(Framework::DX::Vertex);
+            geometryDesc.Triangles.VertexCount
+                = static_cast<UINT>(mVertexBuffer[i].mResource->GetDesc().Width)
+                / sizeof(Framework::DX::Vertex);
+            geometryDesc.Triangles.VertexFormat = DXGI_FORMAT::DXGI_FORMAT_R32G32B32_FLOAT;
+            geometryDesc.Flags
+                = D3D12_RAYTRACING_GEOMETRY_FLAGS::D3D12_RAYTRACING_GEOMETRY_FLAG_OPAQUE;
+
             D3D12_RAYTRACING_ACCELERATION_STRUCTURE_BUILD_FLAGS buildFlags
                 = D3D12_RAYTRACING_ACCELERATION_STRUCTURE_BUILD_FLAGS::
                     D3D12_RAYTRACING_ACCELERATION_STRUCTURE_BUILD_FLAG_PREFER_FAST_TRACE;
 
-            auto& topLevelInputs = topLevelBuildDesc.Inputs;
-            topLevelInputs.DescsLayout = D3D12_ELEMENTS_LAYOUT::D3D12_ELEMENTS_LAYOUT_ARRAY;
-            topLevelInputs.Flags = buildFlags;
-            topLevelInputs.NumDescs = TLAS_NUM;
-            topLevelInputs.pGeometryDescs = nullptr;
-            topLevelInputs.Type = D3D12_RAYTRACING_ACCELERATION_STRUCTURE_TYPE::
-                D3D12_RAYTRACING_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL;
+            D3D12_BUILD_RAYTRACING_ACCELERATION_STRUCTURE_DESC
+            bottomLevelBuildDesc = {};
+            auto& bottomLevelInputs = bottomLevelBuildDesc.Inputs;
+            bottomLevelInputs.DescsLayout = D3D12_ELEMENTS_LAYOUT::D3D12_ELEMENTS_LAYOUT_ARRAY;
+            bottomLevelInputs.Flags = buildFlags;
+            bottomLevelInputs.NumDescs = 1;
+            bottomLevelInputs.Type = D3D12_RAYTRACING_ACCELERATION_STRUCTURE_TYPE::
+                D3D12_RAYTRACING_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL;
+            bottomLevelInputs.pGeometryDescs = &geometryDesc;
 
             D3D12_RAYTRACING_ACCELERATION_STRUCTURE_PREBUILD_INFO
-            topLevelPreInfo = {};
+            bottomLevelPreInfo = {};
             dxrDevice->GetRaytracingAccelerationStructurePrebuildInfo(
-                &topLevelInputs, &topLevelPreInfo);
-            MY_THROW_IF_FALSE(topLevelPreInfo.ResultDataMaxSizeInBytes > 0);
+                &bottomLevelInputs, &bottomLevelPreInfo);
+            MY_THROW_IF_FALSE(bottomLevelPreInfo.ResultDataMaxSizeInBytes > 0);
 
-            allocateUAVBuffer(device, topLevelPreInfo.ScratchDataSizeInBytes, &mTLASBuffer.scratch,
+            allocateUAVBuffer(device, bottomLevelPreInfo.ScratchDataSizeInBytes,
+                &mBLASBuffers[i].scratch,
                 D3D12_RESOURCE_STATES::D3D12_RESOURCE_STATE_UNORDERED_ACCESS, L"ScratchResource");
 
             D3D12_RESOURCE_STATES initResourceState
                 = D3D12_RESOURCE_STATES::D3D12_RESOURCE_STATE_RAYTRACING_ACCELERATION_STRUCTURE;
-            allocateUAVBuffer(device, topLevelPreInfo.ResultDataMaxSizeInBytes, &mTLASBuffer.buffer,
-                initResourceState, L"TopLevelAS");
+            allocateUAVBuffer(device, bottomLevelPreInfo.ResultDataMaxSizeInBytes,
+                &mBLASBuffers[i].buffer, initResourceState, L"BottomLevelAS");
 
-            topLevelBuildDesc.DestAccelerationStructureData
-                = mTLASBuffer.buffer->GetGPUVirtualAddress();
-            topLevelBuildDesc.ScratchAccelerationStructureData
-                = mTLASBuffer.scratch->GetGPUVirtualAddress();
+            bottomLevelBuildDesc.ScratchAccelerationStructureData
+                = mBLASBuffers[i].scratch->GetGPUVirtualAddress();
+            bottomLevelBuildDesc.DestAccelerationStructureData
+                = mBLASBuffers[i].buffer->GetGPUVirtualAddress();
 
-            mDeviceResource->executeCommandList();
-            mDeviceResource->waitForGPU();
-
-            createBuffer(device, &mResourcesIndexBuffer.mResource, resourceIndices.data(),
-                resourceIndices.size() * sizeof(resourceIndices[0]), L"ResourceIndex");
-            createBuffer(device, &mResourcesVertexBuffer.mResource, resourceVertices.data(),
-                resourceVertices.size() * sizeof(resourceVertices[0]), L"ResourceVertex");
-
-            {
-                UINT indexBufferSize
-                    = (UINT)resourceIndices.size() * sizeof(resourceIndices[0]) / sizeof(float);
-                D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
-                srvDesc.ViewDimension = D3D12_SRV_DIMENSION::D3D12_SRV_DIMENSION_BUFFER;
-                srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
-                srvDesc.Buffer.NumElements = indexBufferSize;
-                srvDesc.Format = DXGI_FORMAT::DXGI_FORMAT_R32_TYPELESS;
-                srvDesc.Buffer.Flags = D3D12_BUFFER_SRV_FLAGS::D3D12_BUFFER_SRV_FLAG_RAW;
-                srvDesc.Buffer.StructureByteStride = 0;
-                mDescriptorTable->allocate(&mResourcesIndexBuffer);
-                device->CreateShaderResourceView(mResourcesIndexBuffer.mResource.Get(), &srvDesc,
-                    mResourcesIndexBuffer.mCPUHandle);
-            }
-            {
-                UINT vertexBufferSize = (UINT)resourceVertices.size();
-                D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
-                srvDesc.ViewDimension = D3D12_SRV_DIMENSION::D3D12_SRV_DIMENSION_BUFFER;
-                srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
-                srvDesc.Buffer.NumElements = vertexBufferSize;
-                srvDesc.Format = DXGI_FORMAT::DXGI_FORMAT_UNKNOWN;
-                srvDesc.Buffer.Flags = D3D12_BUFFER_SRV_FLAGS::D3D12_BUFFER_SRV_FLAG_NONE;
-                srvDesc.Buffer.StructureByteStride = sizeof(resourceVertices[0]);
-                mDescriptorTable->allocate(&mResourcesVertexBuffer);
-                device->CreateShaderResourceView(mResourcesVertexBuffer.mResource.Get(), &srvDesc,
-                    mResourcesVertexBuffer.mCPUHandle);
-            }
+            dxrCommandList->BuildRaytracingAccelerationStructure(&bottomLevelBuildDesc, 0, nullptr);
+            commandList->ResourceBarrier(
+                1, &CD3DX12_RESOURCE_BARRIER::UAV(mBLASBuffers[i].buffer.Get()));
         }
+        D3D12_RAYTRACING_ACCELERATION_STRUCTURE_BUILD_FLAGS buildFlags
+            = D3D12_RAYTRACING_ACCELERATION_STRUCTURE_BUILD_FLAGS::
+                D3D12_RAYTRACING_ACCELERATION_STRUCTURE_BUILD_FLAG_PREFER_FAST_TRACE;
+
+        auto& topLevelInputs = topLevelBuildDesc.Inputs;
+        topLevelInputs.DescsLayout = D3D12_ELEMENTS_LAYOUT::D3D12_ELEMENTS_LAYOUT_ARRAY;
+        topLevelInputs.Flags = buildFlags;
+        topLevelInputs.NumDescs = TLAS_NUM;
+        topLevelInputs.pGeometryDescs = nullptr;
+        topLevelInputs.Type = D3D12_RAYTRACING_ACCELERATION_STRUCTURE_TYPE::
+            D3D12_RAYTRACING_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL;
+
+        D3D12_RAYTRACING_ACCELERATION_STRUCTURE_PREBUILD_INFO
+        topLevelPreInfo = {};
+        dxrDevice->GetRaytracingAccelerationStructurePrebuildInfo(
+            &topLevelInputs, &topLevelPreInfo);
+        MY_THROW_IF_FALSE(topLevelPreInfo.ResultDataMaxSizeInBytes > 0);
+
+        allocateUAVBuffer(device, topLevelPreInfo.ScratchDataSizeInBytes, &mTLASBuffer.scratch,
+            D3D12_RESOURCE_STATES::D3D12_RESOURCE_STATE_UNORDERED_ACCESS, L"ScratchResource");
+
+        D3D12_RESOURCE_STATES initResourceState
+            = D3D12_RESOURCE_STATES::D3D12_RESOURCE_STATE_RAYTRACING_ACCELERATION_STRUCTURE;
+        allocateUAVBuffer(device, topLevelPreInfo.ResultDataMaxSizeInBytes, &mTLASBuffer.buffer,
+            initResourceState, L"TopLevelAS");
+
+        topLevelBuildDesc.DestAccelerationStructureData
+            = mTLASBuffer.buffer->GetGPUVirtualAddress();
+        topLevelBuildDesc.ScratchAccelerationStructureData
+            = mTLASBuffer.scratch->GetGPUVirtualAddress();
+
+        mDeviceResource->executeCommandList();
+        mDeviceResource->waitForGPU();
+
+        createBuffer(device, &mResourcesIndexBuffer.mResource, resourceIndices.data(),
+            resourceIndices.size() * sizeof(resourceIndices[0]), L"ResourceIndex");
+        createBuffer(device, &mResourcesVertexBuffer.mResource, resourceVertices.data(),
+            resourceVertices.size() * sizeof(resourceVertices[0]), L"ResourceVertex");
+
+        {
+            UINT indexBufferSize
+                = (UINT)resourceIndices.size() * sizeof(resourceIndices[0]) / sizeof(float);
+            D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
+            srvDesc.ViewDimension = D3D12_SRV_DIMENSION::D3D12_SRV_DIMENSION_BUFFER;
+            srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
+            srvDesc.Buffer.NumElements = indexBufferSize;
+            srvDesc.Format = DXGI_FORMAT::DXGI_FORMAT_R32_TYPELESS;
+            srvDesc.Buffer.Flags = D3D12_BUFFER_SRV_FLAGS::D3D12_BUFFER_SRV_FLAG_RAW;
+            srvDesc.Buffer.StructureByteStride = 0;
+            mDescriptorTable->allocate(&mResourcesIndexBuffer);
+            device->CreateShaderResourceView(
+                mResourcesIndexBuffer.mResource.Get(), &srvDesc, mResourcesIndexBuffer.mCPUHandle);
+        }
+        {
+            UINT vertexBufferSize = (UINT)resourceVertices.size();
+            D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
+            srvDesc.ViewDimension = D3D12_SRV_DIMENSION::D3D12_SRV_DIMENSION_BUFFER;
+            srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
+            srvDesc.Buffer.NumElements = vertexBufferSize;
+            srvDesc.Format = DXGI_FORMAT::DXGI_FORMAT_UNKNOWN;
+            srvDesc.Buffer.Flags = D3D12_BUFFER_SRV_FLAGS::D3D12_BUFFER_SRV_FLAG_NONE;
+            srvDesc.Buffer.StructureByteStride = sizeof(resourceVertices[0]);
+            mDescriptorTable->allocate(&mResourcesVertexBuffer);
+            device->CreateShaderResourceView(mResourcesVertexBuffer.mResource.Get(), &srvDesc,
+                mResourcesVertexBuffer.mCPUHandle);
+        }
+    }
+}
+{
+    ID3D12Device* device = mDeviceResource->getDevice();
+    ComPtr<ID3D12StateObjectProperties> stateObjectProp;
+    MY_THROW_IF_FAILED(mDXRStateObject.As(&stateObjectProp));
+    void* rayGenShaderID = stateObjectProp->GetShaderIdentifier(RAY_GEN_NAME.c_str());
+    void* missShaderID = stateObjectProp->GetShaderIdentifier(MISS_SHADER_NAME.c_str());
+    void* missShadowShaderID
+        = stateObjectProp->GetShaderIdentifier(MISS_SHADOW_SHADER_NAME.c_str());
+    void* hitGroup_SphereShaderID
+        = stateObjectProp->GetShaderIdentifier(HIT_GROUP_UFO_NAME.c_str());
+    void* hitGroup_QuadShaderID = stateObjectProp->GetShaderIdentifier(HIT_GROUP_QUAD_NAME.c_str());
+    void* hitGroup_FloorShaderID
+        = stateObjectProp->GetShaderIdentifier(HIT_GROUP_FLOOR_NAME.c_str());
+    UINT shaderIDSize = D3D12_SHADER_IDENTIFIER_SIZE_IN_BYTES;
+    {
+        UINT num = 1;
+        UINT recordSize = shaderIDSize;
+        ShaderTable table(device, num, recordSize, L"RayGenShaderTable");
+        table.push_back(ShaderRecord(rayGenShaderID, shaderIDSize));
+        mRayGenTable = table.getResource();
     }
     {
-        ID3D12Device* device = mDeviceResource->getDevice();
-        ComPtr<ID3D12StateObjectProperties> stateObjectProp;
-        MY_THROW_IF_FAILED(mDXRStateObject.As(&stateObjectProp));
-        void* rayGenShaderID = stateObjectProp->GetShaderIdentifier(RAY_GEN_NAME.c_str());
-        void* missShaderID = stateObjectProp->GetShaderIdentifier(MISS_SHADER_NAME.c_str());
-        void* missShadowShaderID
-            = stateObjectProp->GetShaderIdentifier(MISS_SHADOW_SHADER_NAME.c_str());
-        void* hitGroup_SphereShaderID
-            = stateObjectProp->GetShaderIdentifier(HIT_GROUP_UFO_NAME.c_str());
-        void* hitGroup_QuadShaderID
-            = stateObjectProp->GetShaderIdentifier(HIT_GROUP_QUAD_NAME.c_str());
-        void* hitGroup_FloorShaderID
-            = stateObjectProp->GetShaderIdentifier(HIT_GROUP_FLOOR_NAME.c_str());
-        UINT shaderIDSize = D3D12_SHADER_IDENTIFIER_SIZE_IN_BYTES;
-        {
-            UINT num = 1;
-            UINT recordSize = shaderIDSize;
-            ShaderTable table(device, num, recordSize, L"RayGenShaderTable");
-            table.push_back(ShaderRecord(rayGenShaderID, shaderIDSize));
-            mRayGenTable = table.getResource();
-        }
-        {
-            struct RootArgument {
-                MissConstant cb;
-            } rootArgument;
-            rootArgument.cb.back = Color(0.1f, 0.2f, 0.3f, 1);
-            UINT num = 2;
-            UINT recordSize = shaderIDSize + sizeof(RootArgument);
-            ShaderTable table(device, num, recordSize, L"MissShaderTable");
-            table.push_back(
-                ShaderRecord(missShaderID, shaderIDSize, &rootArgument, sizeof(RootArgument)));
-            table.push_back(ShaderRecord(missShadowShaderID, shaderIDSize));
-            mMissTable = table.getResource();
-            mMissStride = table.getShaderRecordSize();
-        }
-        {
-            struct RootArgument {
-                D3D12_GPU_DESCRIPTOR_HANDLE albedo;
-                D3D12_GPU_DESCRIPTOR_HANDLE normal;
-                D3D12_GPU_DESCRIPTOR_HANDLE metallicRoughness;
-                D3D12_GPU_DESCRIPTOR_HANDLE emissive;
-                D3D12_GPU_DESCRIPTOR_HANDLE occlusion;
-                HitGroupConstant cb;
-            } rootArguments;
-
-            auto setRootArgumentTexture = [&](RootArgument& root, ModelTextureType offset) {
-                root.albedo = mTextures[mTextureIDs[offset]]->getGPUHandle();
-                root.normal = mTextures[mTextureIDs[ModelTextureType(offset + 1)]]->getGPUHandle();
-                root.metallicRoughness
-                    = mTextures[mTextureIDs[ModelTextureType(offset + 2)]]->getGPUHandle();
-                root.emissive
-                    = mTextures[mTextureIDs[ModelTextureType(offset + 3)]]->getGPUHandle();
-                root.occlusion
-                    = mTextures[mTextureIDs[ModelTextureType(offset + 4)]]->getGPUHandle();
-            };
-            UINT num = 4;
-            UINT recordSize = shaderIDSize + sizeof(RootArgument);
-            ShaderTable table(device, num, recordSize, L"HitGroupShaderTable");
-            {
-                rootArguments.cb.indexOffset
-                    = std::get<0>(getOffset(LocalRootSignature::HitGroupIndex::UFO));
-                rootArguments.cb.vertexOffset
-                    = std::get<1>(getOffset(LocalRootSignature::HitGroupIndex::UFO));
-                setRootArgumentTexture(rootArguments, ModelTextureType::UFO_AlbedoTexture);
-                table.push_back(ShaderRecord(
-                    hitGroup_SphereShaderID, shaderIDSize, &rootArguments, sizeof(RootArgument)));
-            }
-            {
-                rootArguments.cb.indexOffset
-                    = std::get<0>(getOffset(LocalRootSignature::HitGroupIndex::Quad));
-                rootArguments.cb.vertexOffset
-                    = std::get<1>(getOffset(LocalRootSignature::HitGroupIndex::Quad));
-                setRootArgumentTexture(rootArguments, ModelTextureType::Quad_AlbedoTexture);
-                table.push_back(ShaderRecord(
-                    hitGroup_QuadShaderID, shaderIDSize, &rootArguments, sizeof(RootArgument)));
-            }
-            {
-                rootArguments.cb.indexOffset
-                    = std::get<0>(getOffset(LocalRootSignature::HitGroupIndex::Floor));
-                rootArguments.cb.vertexOffset
-                    = std::get<1>(getOffset(LocalRootSignature::HitGroupIndex::Floor));
-                setRootArgumentTexture(rootArguments, ModelTextureType::Plane_AlbedoTexture);
-                table.push_back(ShaderRecord(
-                    hitGroup_FloorShaderID, shaderIDSize, &rootArguments, sizeof(RootArgument)));
-            }
-            {
-                rootArguments.cb.indexOffset
-                    = std::get<0>(getOffset(LocalRootSignature::HitGroupIndex::Sphere));
-                rootArguments.cb.vertexOffset
-                    = std::get<1>(getOffset(LocalRootSignature::HitGroupIndex::Sphere));
-                setRootArgumentTexture(rootArguments, ModelTextureType::Sphere_AlbedoTexture);
-                table.push_back(ShaderRecord(
-                    hitGroup_FloorShaderID, shaderIDSize, &rootArguments, sizeof(RootArgument)));
-            }
-            mHitGroupStride = table.getShaderRecordSize();
-            mHitGroupTable = table.getResource();
-        }
+        struct RootArgument {
+            MissConstant cb;
+        } rootArgument;
+        rootArgument.cb.back = Color(0.1f, 0.2f, 0.3f, 1);
+        UINT num = 2;
+        UINT recordSize = shaderIDSize + sizeof(RootArgument);
+        ShaderTable table(device, num, recordSize, L"MissShaderTable");
+        table.push_back(
+            ShaderRecord(missShaderID, shaderIDSize, &rootArgument, sizeof(RootArgument)));
+        table.push_back(ShaderRecord(missShadowShaderID, shaderIDSize));
+        mMissTable = table.getResource();
+        mMissStride = table.getShaderRecordSize();
     }
+    {
+        struct RootArgument {
+            D3D12_GPU_DESCRIPTOR_HANDLE albedo;
+            D3D12_GPU_DESCRIPTOR_HANDLE normal;
+            D3D12_GPU_DESCRIPTOR_HANDLE metallicRoughness;
+            D3D12_GPU_DESCRIPTOR_HANDLE emissive;
+            D3D12_GPU_DESCRIPTOR_HANDLE occlusion;
+            HitGroupConstant cb;
+        } rootArguments;
+
+        auto setRootArgumentTexture = [&](RootArgument& root, ModelTextureType offset) {
+            root.albedo = mTextures[mTextureIDs[offset]]->getGPUHandle();
+            root.normal = mTextures[mTextureIDs[ModelTextureType(offset + 1)]]->getGPUHandle();
+            root.metallicRoughness
+                = mTextures[mTextureIDs[ModelTextureType(offset + 2)]]->getGPUHandle();
+            root.emissive = mTextures[mTextureIDs[ModelTextureType(offset + 3)]]->getGPUHandle();
+            root.occlusion = mTextures[mTextureIDs[ModelTextureType(offset + 4)]]->getGPUHandle();
+        };
+        UINT num = 4;
+        UINT recordSize = shaderIDSize + sizeof(RootArgument);
+        ShaderTable table(device, num, recordSize, L"HitGroupShaderTable");
+        {
+            rootArguments.cb.indexOffset
+                = std::get<0>(getOffset(LocalRootSignature::HitGroupIndex::UFO));
+            rootArguments.cb.vertexOffset
+                = std::get<1>(getOffset(LocalRootSignature::HitGroupIndex::UFO));
+            setRootArgumentTexture(rootArguments, ModelTextureType::UFO_AlbedoTexture);
+            table.push_back(ShaderRecord(
+                hitGroup_SphereShaderID, shaderIDSize, &rootArguments, sizeof(RootArgument)));
+        }
+        {
+            rootArguments.cb.indexOffset
+                = std::get<0>(getOffset(LocalRootSignature::HitGroupIndex::Quad));
+            rootArguments.cb.vertexOffset
+                = std::get<1>(getOffset(LocalRootSignature::HitGroupIndex::Quad));
+            setRootArgumentTexture(rootArguments, ModelTextureType::Quad_AlbedoTexture);
+            table.push_back(ShaderRecord(
+                hitGroup_QuadShaderID, shaderIDSize, &rootArguments, sizeof(RootArgument)));
+        }
+        {
+            rootArguments.cb.indexOffset
+                = std::get<0>(getOffset(LocalRootSignature::HitGroupIndex::Floor));
+            rootArguments.cb.vertexOffset
+                = std::get<1>(getOffset(LocalRootSignature::HitGroupIndex::Floor));
+            setRootArgumentTexture(rootArguments, ModelTextureType::Plane_AlbedoTexture);
+            table.push_back(ShaderRecord(
+                hitGroup_FloorShaderID, shaderIDSize, &rootArguments, sizeof(RootArgument)));
+        }
+        {
+            rootArguments.cb.indexOffset
+                = std::get<0>(getOffset(LocalRootSignature::HitGroupIndex::Sphere));
+            rootArguments.cb.vertexOffset
+                = std::get<1>(getOffset(LocalRootSignature::HitGroupIndex::Sphere));
+            setRootArgumentTexture(rootArguments, ModelTextureType::Sphere_AlbedoTexture);
+            table.push_back(ShaderRecord(
+                hitGroup_FloorShaderID, shaderIDSize, &rootArguments, sizeof(RootArgument)));
+        }
+        mHitGroupStride = table.getShaderRecordSize();
+        mHitGroupTable = table.getResource();
+    }
+}
 }
 
 void Scene::releaseDeviceDependentResources() {}
@@ -1087,4 +1039,6 @@ void Scene::createWindowDependentResources() {
         mRaytracingOutput.mResource.Get(), nullptr, &uavDesc, mRaytracingOutput.mCPUHandle);
 }
 
-void Scene::releaseWindowDependentResources() { mRaytracingOutput.mResource.Reset(); }
+void Scene::releaseWindowDependentResources() {
+    mRaytracingOutput.mResource.Reset();
+}

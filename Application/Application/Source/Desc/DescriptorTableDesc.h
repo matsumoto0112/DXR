@@ -1,5 +1,5 @@
 /**
- * @ file DescriptorTableDesch
+ * @file DescriptorTableDesc.h
  * @brief ディスクリプタテーブルディスク
  */
 
