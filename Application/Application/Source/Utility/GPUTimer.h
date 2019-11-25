@@ -1,3 +1,8 @@
+/**
+ * @file GPUTimer.h
+ * @brief GPU‚Ìˆ—ŠÔŒv‘ª
+ */
+
 #pragma once
 
 namespace Framework::Utility {

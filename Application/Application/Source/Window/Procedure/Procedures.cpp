@@ -1,7 +1,8 @@
 #include "Procedures.h"
 
 namespace Framework::Window {
-    std::vector<std::unique_ptr<IWindowProc>> Procedures::mWindowProcs = {}; //!< プロシージャ処理リスト
+    std::vector<std::unique_ptr<IWindowProc>> Procedures::mWindowProcs
+        = {}; //!< プロシージャ処理リスト
 
     //メインプロシージャ
     LRESULT Procedures::mainWndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) {
@@ -18,4 +19,4 @@ namespace Framework::Window {
     void Procedures::addProc(IWindowProc* proc) {
         mWindowProcs.emplace_back(std::unique_ptr<IWindowProc>(proc));
     }
-} //Framework::Window
+} // namespace Framework::Window

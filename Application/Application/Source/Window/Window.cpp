@@ -2,7 +2,7 @@
 #include "Window/Procedure/Procedures.h"
 
 namespace Framework::Window {
-
+    //コンストラクタ
     Window::Window(UINT width, UINT height, const std::wstring& title, HINSTANCE hInstance,
         Device::ISystemEventNotify* notify) {
         WNDCLASSEX windowClass = { 0 };
@@ -21,11 +21,13 @@ namespace Framework::Window {
             CW_USEDEFAULT, windowRect.right - windowRect.left, windowRect.bottom - windowRect.top,
             nullptr, nullptr, hInstance, notify);
     }
+    //デストラクタ
     Window::~Window() {}
-
+    //ウィンドウの表示
     void Window::show(int nCmdShow) { ShowWindow(mHWnd, nCmdShow); }
-
+    //フルスクリーンモード切替
     void Window::toggleFullScreenWindow(IDXGISwapChain* swapChain) {
+        //フルスクリーンからウィンドウモード
         if (mIsFullScreen) {
             SetWindowLong(mHWnd, GWL_STYLE, WINDOW_STYLE);
 
@@ -34,7 +36,9 @@ namespace Framework::Window {
                 SWP_FRAMECHANGED | SWP_NOACTIVATE);
 
             ShowWindow(mHWnd, SW_NORMAL);
-        } else {
+        }
+        //ウィンドウモードからフルスクリーンモード
+        else {
             GetWindowRect(mHWnd, &mWindowRect);
 
             SetWindowLong(mHWnd, GWL_STYLE,
@@ -71,7 +75,7 @@ namespace Framework::Window {
 
         mIsFullScreen = !mIsFullScreen;
     }
-
+    //ウィンドウのZオーダーを設定
     void Window::setWindowZOrderToTopMost(bool setToTopMost) const {
         RECT windowRect;
         GetWindowRect(mHWnd, &windowRect);

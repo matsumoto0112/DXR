@@ -1,5 +1,4 @@
 #include "Path.h"
-#include <Windows.h>
 
 namespace {
     constexpr int MAX_SIZE = 1024;
@@ -10,13 +9,14 @@ namespace {
         std::wstring res(path);
         return res;
     }
-}
+} // namespace
 
 namespace Framework::Utility {
     //コンストラクタ
     ExePath::ExePath() {
         mExe = getExePath();
+        mExe = mExe.remove_filename();
     }
     //デストラクタ
-    ExePath::~ExePath() { }
-} //Framework::Utility 
+    ExePath::~ExePath() {}
+} // namespace Framework::Utility

@@ -8,11 +8,12 @@ namespace Framework::Window {
         if (msg != WM_PAINT) return 0L;
         *isReturn = true;
         //描画イベントを発行する
-        Device::ISystemEventNotify* notify = reinterpret_cast<Device::ISystemEventNotify*>(GetWindowLongPtr(hWnd, GWLP_USERDATA));
+        Device::ISystemEventNotify* notify
+            = reinterpret_cast<Device::ISystemEventNotify*>(GetWindowLongPtr(hWnd, GWLP_USERDATA));
         if (!notify) return 0L;
 
         notify->onFrameEvent();
         return 0L;
     }
 
-} //Framework::Window
+} // namespace Framework::Window

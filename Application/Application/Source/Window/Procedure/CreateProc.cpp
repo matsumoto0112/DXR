@@ -8,7 +8,8 @@ namespace Framework::Window {
         *isReturn = true;
         //ウィンドウにクラスを登録する
         LPCREATESTRUCT createStruct = reinterpret_cast<LPCREATESTRUCT>(lParam);
-        SetWindowLongPtr(hWnd, GWLP_USERDATA, reinterpret_cast<LONG_PTR>(createStruct->lpCreateParams));
+        SetWindowLongPtr(
+            hWnd, GWLP_USERDATA, reinterpret_cast<LONG_PTR>(createStruct->lpCreateParams));
         return 0L;
     }
-} //Framework::Window
+} // namespace Framework::Window
