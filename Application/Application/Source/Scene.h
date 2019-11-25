@@ -81,7 +81,7 @@ private:
     Color mLightDiffuse;
     Color mLightAmbient;
 
-private:
-    std::unique_ptr<Framework::ImGUI::Window> mDebugWindow;
-    std::shared_ptr<Framework::ImGUI::Text> mFPSText;
+    //private:
+    //    std::unique_ptr<Framework::ImGUI::Window> mDebugWindow;
+    //    std::shared_ptr<Framework::ImGUI::Text> mFPSText;
 };

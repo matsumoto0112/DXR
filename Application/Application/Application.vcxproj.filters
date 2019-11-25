@@ -10,11 +10,6 @@
     <ClCompile Include="Source\DX\Util\GPUUploadBuffer.cpp" />
     <ClCompile Include="Source\DX\Raytracing\DXRDevice.cpp" />
     <ClCompile Include="Source\DX\Resource\Texture2D.cpp" />
-    <ClCompile Include="Source\ImGui\Item\Button.cpp" />
-    <ClCompile Include="Source\ImGui\Item\FloatField.cpp" />
-    <ClCompile Include="Source\ImGui\Item\IntField.cpp" />
-    <ClCompile Include="Source\ImGui\Item\Text.cpp" />
-    <ClCompile Include="Source\ImGui\Item\Window.cpp" />
     <ClCompile Include="Source\ImGui\ImGuiManager.cpp" />
     <ClCompile Include="Source\Input\InputManager.cpp" />
     <ClCompile Include="Source\Input\Keyboard.cpp" />
@@ -69,14 +64,6 @@
     <ClInclude Include="Source\DX\Raytracing\Helper.h" />
     <ClInclude Include="Source\DX\Resource\IBuffer.h" />
     <ClInclude Include="Source\DX\Resource\Texture2D.h" />
-    <ClInclude Include="Source\ImGui\Item\Button.h" />
-    <ClInclude Include="Source\ImGui\Item\CallBackItem.h" />
-    <ClInclude Include="Source\ImGui\Item\FloatField.h" />
-    <ClInclude Include="Source\ImGui\Item\IItem.h" />
-    <ClInclude Include="Source\ImGui\Item\ImGUI.h" />
-    <ClInclude Include="Source\ImGui\Item\IntField.h" />
-    <ClInclude Include="Source\ImGui\Item\Text.h" />
-    <ClInclude Include="Source\ImGui\Item\Window.h" />
     <ClInclude Include="Source\ImGui\ImGuiInclude.h" />
     <ClInclude Include="Source\ImGui\ImGuiManager.h" />
     <ClInclude Include="Source\Input\InputManager.h" />

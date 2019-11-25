@@ -130,8 +130,6 @@ namespace {
     D3D12_GPU_DESCRIPTOR_HANDLE mDefaultMetalRoughTexture;
     D3D12_GPU_DESCRIPTOR_HANDLE mDefaultEmissiveTexture;
 
-    std::shared_ptr<Framework::ImGUI::Text> mRotSphereText;
-
     ComPtr<ID3D12Resource> mInstanceDescs;
 } // namespace
 
@@ -142,9 +140,7 @@ Scene::Scene(Framework::DX::DeviceResource* device, Framework::Input::InputManag
       mDXRDevice(),
       mWidth(width),
       mHeight(height) {
-    mDebugWindow = std::make_unique<Framework::ImGUI::Window>("Debug");
-    mFPSText = std::make_shared<Framework::ImGUI::Text>("FPS:");
-    mDebugWindow->addItem(mFPSText);
+    //mDebugWindow->addItem(mFPSText);
     Framework::Desc::DescriptorTableDesc desc = { L"ResourceTable", 10000,
         Framework::Desc::HeapType::CBV_SRV_UAV, Framework::Desc::HeapFlag::ShaderVisible };
     mDescriptorTable = std::make_unique<CountingDescriptorTable>(device->getDevice(), desc);
@@ -153,42 +149,42 @@ Scene::Scene(Framework::DX::DeviceResource* device, Framework::Input::InputManag
     mLightDiffuse = Color4(1.0f, 1.0f, 1.0f, 1.0f);
     mLightAmbient = Color4(0.1f, 0.1f, 0.1f, 1.0f);
 
-#define CAMERA_POSITION_PARAMS(name, type, min, max)                                               \
-    {                                                                                              \
-        std::shared_ptr<Framework::ImGUI::FloatField> field                                        \
-            = std::make_shared<Framework::ImGUI::FloatField>(name, type);                          \
-        field->setCallBack([&](float val) { type = val; });                                        \
-        field->setMinValue(min);                                                                   \
-        field->setMaxValue(max);                                                                   \
-        mDebugWindow->addItem(field);                                                              \
-    }
-#define CAMERA_ROTATION_PARAMS(name, type, min, max)                                               \
-    {                                                                                              \
-        std::shared_ptr<Framework::ImGUI::FloatField> field                                        \
-            = std::make_shared<Framework::ImGUI::FloatField>(name, type);                          \
-        field->setCallBack([&](float val) { type = (float)Rad(Deg(val)); });                       \
-        field->setMinValue(min);                                                                   \
-        field->setMaxValue(max);                                                                   \
-        mDebugWindow->addItem(field);                                                              \
-    }
-    mDebugWindow->addItem(std::make_shared<Framework::ImGUI::Text>("Camera"));
-    mDebugWindow->addItem(std::make_shared<Framework::ImGUI::Text>("Position"));
-    CAMERA_POSITION_PARAMS("X", mCameraPosition.x, -100.0f, 100.0f);
-    CAMERA_POSITION_PARAMS("Y", mCameraPosition.y, -100.0f, 100.0f);
-    CAMERA_POSITION_PARAMS("Z", mCameraPosition.z, -100.0f, 100.0f);
-    mDebugWindow->addItem(std::make_shared<Framework::ImGUI::Text>("Rotation"));
-    CAMERA_ROTATION_PARAMS("RX", mCameraRotation.x, 0.0f, 360.0f);
-    CAMERA_ROTATION_PARAMS("RY", mCameraRotation.y, 0.0f, 360.0f);
-    CAMERA_ROTATION_PARAMS("RZ", mCameraRotation.z, 0.0f, 360.0f);
-    mDebugWindow->addItem(std::make_shared<Framework::ImGUI::Text>("LightPosition"));
-    CAMERA_POSITION_PARAMS("LX", mLightPosition.x, -100.0f, 100.0f);
-    CAMERA_POSITION_PARAMS("LY", mLightPosition.y, -100.0f, 100.0f);
-    CAMERA_POSITION_PARAMS("LZ", mLightPosition.z, -100.0f, 100.0f);
-
+    //#define CAMERA_POSITION_PARAMS(name, type, min, max)                      \
+//    {                                                                     \
+//        std::shared_ptr<Framework::ImGUI::FloatField> field               \
+//            = std::make_shared<Framework::ImGUI::FloatField>(name, type); \
+//        field->setCallBack([&](float val) { type = val; });               \
+//        field->setMinValue(min);                                          \
+//        field->setMaxValue(max);                                          \
+//        mDebugWindow->addItem(field);                                     \
+//    }
+    //#define CAMERA_ROTATION_PARAMS(name, type, min, max)                         \
+//    {                                                                        \
+//        std::shared_ptr<Framework::ImGUI::FloatField> field                  \
+//            = std::make_shared<Framework::ImGUI::FloatField>(name, type);    \
+//        field->setCallBack([&](float val) { type = (float)Rad(Deg(val)); }); \
+//        field->setMinValue(min);                                             \
+//        field->setMaxValue(max);                                             \
+//        mDebugWindow->addItem(field);                                        \
+//    }
+    //    mDebugWindow->addItem(std::make_shared<Framework::ImGUI::Text>("Camera"));
+    //    mDebugWindow->addItem(std::make_shared<Framework::ImGUI::Text>("Position"));
+    //    CAMERA_POSITION_PARAMS("X", mCameraPosition.x, -100.0f, 100.0f);
+    //    CAMERA_POSITION_PARAMS("Y", mCameraPosition.y, -100.0f, 100.0f);
+    //    CAMERA_POSITION_PARAMS("Z", mCameraPosition.z, -100.0f, 100.0f);
+    //    mDebugWindow->addItem(std::make_shared<Framework::ImGUI::Text>("Rotation"));
+    //    CAMERA_ROTATION_PARAMS("RX", mCameraRotation.x, 0.0f, 360.0f);
+    //    CAMERA_ROTATION_PARAMS("RY", mCameraRotation.y, 0.0f, 360.0f);
+    //    CAMERA_ROTATION_PARAMS("RZ", mCameraRotation.z, 0.0f, 360.0f);
+    //    mDebugWindow->addItem(std::make_shared<Framework::ImGUI::Text>("LightPosition"));
+    //    CAMERA_POSITION_PARAMS("LX", mLightPosition.x, -100.0f, 100.0f);
+    //    CAMERA_POSITION_PARAMS("LY", mLightPosition.y, -100.0f, 100.0f);
+    //    CAMERA_POSITION_PARAMS("LZ", mLightPosition.z, -100.0f, 100.0f);
+    //
     mTextures.resize(TEXTURE_NUM);
 
-    mRotSphereText = std::make_shared<Framework::ImGUI::Text>("Rot");
-    mDebugWindow->addItem(mRotSphereText);
+    //mRotSphereText = std::make_shared<Framework::ImGUI::Text>("Rot");
+    //mDebugWindow->addItem(mRotSphereText);
 }
 
 Scene::~Scene() {}
@@ -211,7 +207,39 @@ void Scene::reset() {
 
 void Scene::update() {
     mTime.update();
-    mFPSText->setText(format("FPS:%0.3f", mTime.getFPS()));
+    ImGui::Begin("Status");
+    { ImGui::Text("FPS:%0.3f", mTime.getFPS()); }
+    ImGui::End();
+
+    ImGui::Begin("Parameter");
+    {
+        ImGui::SetNextTreeNodeOpen(true, ImGuiCond_::ImGuiCond_Once);
+        if (ImGui::TreeNode("Camera")) {
+            ImGui::SetNextTreeNodeOpen(true, ImGuiCond_::ImGuiCond_Once);
+            if (ImGui::TreeNode("Position")) {
+                ImGui::DragFloat("X", &mCameraPosition.x, 1.0f);
+                ImGui::DragFloat("Y", &mCameraPosition.y, 1.0f);
+                ImGui::DragFloat("Z", &mCameraPosition.z, 1.0f);
+                ImGui ::TreePop();
+            }
+            ImGui::SetNextTreeNodeOpen(true, ImGuiCond_::ImGuiCond_Once);
+            if (ImGui::TreeNode("Rotation")) {
+                ImGui::DragFloat("X", &mCameraRotation.x, 0.1f);
+                ImGui::DragFloat("Y", &mCameraRotation.y, 0.1f);
+                ImGui::DragFloat("Z", &mCameraRotation.z, 0.1f);
+                ImGui::TreePop();
+            }
+            ImGui::TreePop();
+        }
+        ImGui::SetNextTreeNodeOpen(true, ImGuiCond_::ImGuiCond_Once);
+        if (ImGui::TreeNode("LightPosition")) {
+            ImGui::DragFloat("X", &mLightPosition.x, 1.0f);
+            ImGui::DragFloat("Y", &mLightPosition.y, 1.0f);
+            ImGui::DragFloat("Z", &mLightPosition.z, 1.0f);
+            ImGui::TreePop();
+        }
+    }
+    ImGui::End();
 
     mSceneCB->cameraPosition = Vec4(mCameraPosition, 1.0f);
     const float aspect = static_cast<float>(mWidth) / static_cast<float>(mHeight);
@@ -243,10 +271,6 @@ void Scene::render() {
         XMMATRIX transform
             = XMMatrixRotationRollPitchYaw(rotX.getRad(), rotY.getRad(), rotZ.getRad())
             * XMMatrixTranslation((float)n * 5, 0, 0);
-        std::stringstream ss;
-        ss << "(" << rotX.toDegree().getDeg() << "," << rotY.toDegree().getDeg() << ","
-           << rotZ.toDegree().getDeg() << ")\n";
-        mRotSphereText->setText(ss.str());
         instanceDesc[n + offset].InstanceID = 0;
         instanceDesc[n + offset].InstanceMask = 0xff;
         instanceDesc[n + offset].Flags
@@ -355,7 +379,7 @@ void Scene::render() {
         D3D12_RESOURCE_STATES::D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
     commandList->ResourceBarrier(_countof(postCopyBarriers), postCopyBarriers);
 
-    mDebugWindow->draw();
+    //mDebugWindow->draw();
 }
 
 void Scene::onWindowSizeChanged(UINT width, UINT height) {

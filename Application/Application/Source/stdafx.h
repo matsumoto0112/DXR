@@ -32,6 +32,4 @@
 #include "Math/VectorUtil.h"
 #include "Utility/Color4.h"
 
-#include "ImGui/Item/ImGUI.h"
-
 #include "Typedef.h"
