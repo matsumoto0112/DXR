@@ -21,6 +21,7 @@
 struct HitGroupConstant {
     UINT vertexOffset; //!< 頂点オフセット
     UINT indexOffset; //!< インデックスオフセット
+    Vec3 emissiveFactor; //!< エミッションの要素
 };
 
 #endif // !SHADER_RAYTRACING_HITGROUP_HITGROUPCOMPAT_H

@@ -106,29 +106,31 @@ namespace {
     D3D12_BUILD_RAYTRACING_ACCELERATION_STRUCTURE_DESC topLevelBuildDesc = {};
 
     enum ModelTextureType {
-        Default_Albedo,
+        Default_AlbedoTexture,
         Default_NormalMap,
-        Default_MetalRough,
-        Default_Emissive,
+        Default_MetallicRoughnessMap,
+        Default_EmissiveMap,
+        Default_OcclusionMap,
 
-        UFO_Albedo,
-        UFO_Normal,
-        UFO_MetalRough,
-        UFO_Emissive,
+        UFO_AlbedoTexture,
+        UFO_NormalMap,
+        UFO_MetallicRoughness,
+        UFO_EmissiveMap,
+        UFO_OcclusionMap,
 
-        Quad_Albedo,
+        Quad_AlbedoTexture,
+        Quad_NormalMap,
+        Quad_MetallicRoughnessMap,
+        Quad_EmissiveMap,
+        Quad_OcclusionMap,
 
-        Plane_Albedo,
-        Plane_Normal,
-        Plane_MetalRough,
-        Plane_Emissive,
+        Plane_AlbedoTexture,
+        Plane_NormalMap,
+        Plane_MetallicRoughnessMap,
+        Plane_EmissiveMap,
+        Plane_OcclusionMap,
     };
     std::unordered_map<ModelTextureType, UINT> mTextureIDs;
-
-    D3D12_GPU_DESCRIPTOR_HANDLE mDefaultAlbedoTexture;
-    D3D12_GPU_DESCRIPTOR_HANDLE mDefaultNormalMapTexture;
-    D3D12_GPU_DESCRIPTOR_HANDLE mDefaultMetalRoughTexture;
-    D3D12_GPU_DESCRIPTOR_HANDLE mDefaultEmissiveTexture;
 
     ComPtr<ID3D12Resource> mInstanceDescs;
 } // namespace
@@ -140,7 +142,6 @@ Scene::Scene(Framework::DX::DeviceResource* device, Framework::Input::InputManag
       mDXRDevice(),
       mWidth(width),
       mHeight(height) {
-    //mDebugWindow->addItem(mFPSText);
     Framework::Desc::DescriptorTableDesc desc = { L"ResourceTable", 10000,
         Framework::Desc::HeapType::CBV_SRV_UAV, Framework::Desc::HeapFlag::ShaderVisible };
     mDescriptorTable = std::make_unique<CountingDescriptorTable>(device->getDevice(), desc);
@@ -149,44 +150,8 @@ Scene::Scene(Framework::DX::DeviceResource* device, Framework::Input::InputManag
     mLightDiffuse = Color4(1.0f, 1.0f, 1.0f, 1.0f);
     mLightAmbient = Color4(0.1f, 0.1f, 0.1f, 1.0f);
 
-    //#define CAMERA_POSITION_PARAMS(name, type, min, max)                      \
-//    {                                                                     \
-//        std::shared_ptr<Framework::ImGUI::FloatField> field               \
-//            = std::make_shared<Framework::ImGUI::FloatField>(name, type); \
-//        field->setCallBack([&](float val) { type = val; });               \
-//        field->setMinValue(min);                                          \
-//        field->setMaxValue(max);                                          \
-//        mDebugWindow->addItem(field);                                     \
-//    }
-    //#define CAMERA_ROTATION_PARAMS(name, type, min, max)                         \
-//    {                                                                        \
-//        std::shared_ptr<Framework::ImGUI::FloatField> field                  \
-//            = std::make_shared<Framework::ImGUI::FloatField>(name, type);    \
-//        field->setCallBack([&](float val) { type = (float)Rad(Deg(val)); }); \
-//        field->setMinValue(min);                                             \
-//        field->setMaxValue(max);                                             \
-//        mDebugWindow->addItem(field);                                        \
-//    }
-    //    mDebugWindow->addItem(std::make_shared<Framework::ImGUI::Text>("Camera"));
-    //    mDebugWindow->addItem(std::make_shared<Framework::ImGUI::Text>("Position"));
-    //    CAMERA_POSITION_PARAMS("X", mCameraPosition.x, -100.0f, 100.0f);
-    //    CAMERA_POSITION_PARAMS("Y", mCameraPosition.y, -100.0f, 100.0f);
-    //    CAMERA_POSITION_PARAMS("Z", mCameraPosition.z, -100.0f, 100.0f);
-    //    mDebugWindow->addItem(std::make_shared<Framework::ImGUI::Text>("Rotation"));
-    //    CAMERA_ROTATION_PARAMS("RX", mCameraRotation.x, 0.0f, 360.0f);
-    //    CAMERA_ROTATION_PARAMS("RY", mCameraRotation.y, 0.0f, 360.0f);
-    //    CAMERA_ROTATION_PARAMS("RZ", mCameraRotation.z, 0.0f, 360.0f);
-    //    mDebugWindow->addItem(std::make_shared<Framework::ImGUI::Text>("LightPosition"));
-    //    CAMERA_POSITION_PARAMS("LX", mLightPosition.x, -100.0f, 100.0f);
-    //    CAMERA_POSITION_PARAMS("LY", mLightPosition.y, -100.0f, 100.0f);
-    //    CAMERA_POSITION_PARAMS("LZ", mLightPosition.z, -100.0f, 100.0f);
-    //
     mTextures.resize(TEXTURE_NUM);
-
-    //mRotSphereText = std::make_shared<Framework::ImGUI::Text>("Rot");
-    //mDebugWindow->addItem(mRotSphereText);
 }
-
 Scene::~Scene() {}
 
 void Scene::create() {
@@ -434,6 +399,7 @@ void Scene::createDeviceDependentResources() {
                 mDeviceResource->getDevice(), global, &mGlobalRootSignature);
         }
         {
+            //ミスシェーダー
             {
                 CD3DX12_ROOT_PARAMETER
                 rootParams[LocalRootSignature::Miss::Count];
@@ -446,25 +412,29 @@ void Scene::createDeviceDependentResources() {
                 serializeAndCreateRootSignature(
                     mDeviceResource->getDevice(), local, &mMissLocalRootSignature);
             }
+            //ヒットグループシェーダー
             {
-                CD3DX12_DESCRIPTOR_RANGE range[4];
+                CD3DX12_DESCRIPTOR_RANGE range[5];
                 range[0].Init(D3D12_DESCRIPTOR_RANGE_TYPE::D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 3);
                 range[1].Init(D3D12_DESCRIPTOR_RANGE_TYPE::D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 4);
                 range[2].Init(D3D12_DESCRIPTOR_RANGE_TYPE::D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 5);
                 range[3].Init(D3D12_DESCRIPTOR_RANGE_TYPE::D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 6);
+                range[4].Init(D3D12_DESCRIPTOR_RANGE_TYPE::D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 7);
 
                 CD3DX12_ROOT_PARAMETER
                 params[LocalRootSignature::HitGroup::Constants::Count];
                 UINT contSize = Framework::Math::MathUtil::alignPow2(
                     sizeof(HitGroupConstant), sizeof(UINT32));
-                params[LocalRootSignature::HitGroup::Constants::Albedo].InitAsDescriptorTable(
+                params[LocalRootSignature::HitGroup::Constants::AlbedoTex].InitAsDescriptorTable(
                     1, &range[0]);
-                params[LocalRootSignature::HitGroup::Constants::Normal].InitAsDescriptorTable(
+                params[LocalRootSignature::HitGroup::Constants::NormalMap].InitAsDescriptorTable(
                     1, &range[1]);
-                params[LocalRootSignature::HitGroup::Constants::MetalRough].InitAsDescriptorTable(
-                    1, &range[2]);
-                params[LocalRootSignature::HitGroup::Constants::Emissive].InitAsDescriptorTable(
+                params[LocalRootSignature::HitGroup::Constants::MetallicRoughnessMap]
+                    .InitAsDescriptorTable(1, &range[2]);
+                params[LocalRootSignature::HitGroup::Constants::EmissiveMap].InitAsDescriptorTable(
                     1, &range[3]);
+                params[LocalRootSignature::HitGroup::Constants::OcculusionMap]
+                    .InitAsDescriptorTable(1, &range[4]);
 
                 params[LocalRootSignature::HitGroup::Constants::SceneConstants].InitAsConstants(
                     contSize, 1);
@@ -619,56 +589,40 @@ void Scene::createDeviceDependentResources() {
                     desc.name = name;
                     return desc;
                 };
-                {
-                    auto texture = std::make_shared<Texture2D>(
-                        device, createUnitTexture(Color4(1, 1, 1, 1), L"DefaultAlbedo"));
-                    mDescriptorTable->allocate(texture.get());
-                    texture->createSRV(device);
-                    mTextures[ModelTextureType::Default_Albedo] = (texture);
-                    mTextureIDs[ModelTextureType::Default_Albedo]
-                        = ModelTextureType::Default_Albedo;
-                }
-                {
-                    auto texture = std::make_shared<Texture2D>(device,
-                        createUnitTexture(Color4(0.5f, 0.5f, 1.0f, 1.0f), L"DefaultNormal"));
-                    mDescriptorTable->allocate(texture.get());
-                    texture->createSRV(device);
-                    mTextures[ModelTextureType::Default_NormalMap] = (texture);
-                    mTextureIDs[ModelTextureType::Default_NormalMap]
-                        = ModelTextureType::Default_NormalMap;
-                }
-                {
-                    auto texture = std::make_shared<Texture2D>(
-                        device, createUnitTexture(Color4(0, 0, 0, 1), L"DefaultMetallicRoughness"));
-                    mDescriptorTable->allocate(texture.get());
-                    texture->createSRV(device);
-                    mTextures[ModelTextureType::Default_MetalRough] = (texture);
-                    mTextureIDs[ModelTextureType::Default_MetalRough]
-                        = ModelTextureType::Default_MetalRough;
-                }
-                {
-                    auto texture = std::make_shared<Texture2D>(
-                        device, createUnitTexture(Color4(0, 0, 0, 1), L"DefaultEmissive"));
-                    mDescriptorTable->allocate(texture.get());
-                    texture->createSRV(device);
-                    mTextures[ModelTextureType::Default_Emissive] = (texture);
-                    mTextureIDs[ModelTextureType::Default_Emissive]
-                        = ModelTextureType::Default_Emissive;
-                }
+                auto createDefaultTexture
+                    = [&](const std::wstring& name, ModelTextureType texType, const Color4& col) {
+                          std::shared_ptr<Texture2D> texture
+                              = std::make_shared<Texture2D>(device, createUnitTexture(col, name));
+                          mDescriptorTable->allocate(texture.get());
+                          texture->createSRV(device);
+                          mTextures[texType] = texture;
+                          mTextureIDs[texType] = texType;
+                      };
+
+                createDefaultTexture(
+                    L"DefaultAlbedo", ModelTextureType::Default_AlbedoTexture, Color4(1, 1, 1, 1));
+                createDefaultTexture(L"DefaultNormal", ModelTextureType::Default_NormalMap,
+                    Color4(0.5f, 0.5f, 1.0f, 1.0f));
+                createDefaultTexture(L"DefaultMetallicRoughness",
+                    ModelTextureType::Default_MetallicRoughnessMap, Color4(0, 0, 0, 1));
+                createDefaultTexture(
+                    L"DefaultEmissive", ModelTextureType::Default_EmissiveMap, Color4(0, 0, 0, 1));
+                createDefaultTexture(L"DefaultOcculusion", ModelTextureType::Default_OcclusionMap,
+                    Color4(1, 1, 1, 1));
             }
 
-            auto loadTextures = [&](const Material& material,
+            auto loadTextures = [&](const GlbMaterial& material,
                                     const std::vector<Framework::Desc::TextureDesc>& textureDatas,
                                     ModelTextureType idOffset) {
                 ModelTextureType nextID = idOffset;
                 if (textureDatas.empty()) {
-                    mTextureIDs[nextID] = mTextureIDs[ModelTextureType::Default_Albedo];
+                    mTextureIDs[nextID] = mTextureIDs[ModelTextureType::Default_AlbedoTexture];
                 } else {
                     auto albedo = textureDatas[0];
                     auto texture = std::make_shared<Texture2D>(device, albedo);
                     mDescriptorTable->allocate(texture.get());
                     texture->createSRV(device);
-                    mTextures[nextID] = (texture);
+                    mTextures[nextID] = texture;
                     mTextureIDs[nextID] = nextID;
                 }
                 nextID = ModelTextureType(nextID + 1);
@@ -679,31 +633,43 @@ void Scene::createDeviceDependentResources() {
                     auto texture = std::make_shared<Texture2D>(device, normal);
                     mDescriptorTable->allocate(texture.get());
                     texture->createSRV(device);
-                    mTextures[nextID] = (texture);
+                    mTextures[nextID] = texture;
                     mTextureIDs[nextID] = nextID;
                 }
 
                 nextID = ModelTextureType(nextID + 1);
-                if (material.metalRoughID == -1) {
-                    mTextureIDs[nextID] = mTextureIDs[ModelTextureType::Default_MetalRough];
+                if (material.metallicRoughnessMapID == -1) {
+                    mTextureIDs[nextID]
+                        = mTextureIDs[ModelTextureType::Default_MetallicRoughnessMap];
                 } else {
-                    auto metalRough = textureDatas[material.metalRoughID];
+                    auto metalRough = textureDatas[material.metallicRoughnessMapID];
                     auto texture = std::make_shared<Texture2D>(device, metalRough);
                     mDescriptorTable->allocate(texture.get());
                     texture->createSRV(device);
-                    mTextures[nextID] = (texture);
+                    mTextures[nextID] = texture;
                     mTextureIDs[nextID] = nextID;
                 }
 
                 nextID = ModelTextureType(nextID + 1);
                 if (material.emissiveMapID == -1) {
-                    mTextureIDs[nextID] = mTextureIDs[ModelTextureType::Default_Emissive];
+                    mTextureIDs[nextID] = mTextureIDs[ModelTextureType::Default_EmissiveMap];
                 } else {
                     auto emissive = textureDatas[material.emissiveMapID];
                     auto texture = std::make_shared<Texture2D>(device, emissive);
                     mDescriptorTable->allocate(texture.get());
                     texture->createSRV(device);
-                    mTextures[nextID] = (texture);
+                    mTextures[nextID] = texture;
+                    mTextureIDs[nextID] = nextID;
+                }
+                nextID = ModelTextureType(nextID + 1);
+                if (material.emissiveMapID == -1) {
+                    mTextureIDs[nextID] = mTextureIDs[ModelTextureType::Default_OcclusionMap];
+                } else {
+                    auto occlusion = textureDatas[material.occlusionMapID];
+                    auto texture = std::make_shared<Texture2D>(device, occlusion);
+                    mDescriptorTable->allocate(texture.get());
+                    texture->createSRV(device);
+                    mTextures[nextID] = texture;
                     mTextureIDs[nextID] = nextID;
                 }
             };
@@ -729,10 +695,11 @@ void Scene::createDeviceDependentResources() {
                 mVertexOffsets[LocalRootSignature::HitGroupIndex::UFO] = (UINT)vertices.size();
 
                 auto materialList = loader.getMaterialDatas();
-                Material material = {};
+                GlbMaterial material = {};
                 if (!materialList.empty()) material = loader.getMaterialDatas()[0];
                 auto descs = loader.getImageDatas();
-                loadTextures(material, descs, ModelTextureType::UFO_Albedo);
+
+                loadTextures(material, descs, ModelTextureType::UFO_AlbedoTexture);
             }
             {
                 std::vector<Index> indices = { 0, 1, 2, 0, 2, 3 };
@@ -759,8 +726,16 @@ void Scene::createDeviceDependentResources() {
                 auto texture = std::make_shared<Texture2D>(device, desc);
                 mDescriptorTable->allocate(texture.get());
                 texture->createSRV(device);
-                mTextures[ModelTextureType::Quad_Albedo] = (texture);
-                mTextureIDs[ModelTextureType::Quad_Albedo] = ModelTextureType::Quad_Albedo;
+                mTextures[ModelTextureType::Quad_AlbedoTexture] = texture;
+                mTextureIDs[ModelTextureType::Quad_AlbedoTexture]
+                    = ModelTextureType::Quad_AlbedoTexture;
+                mTextureIDs[ModelTextureType::Quad_NormalMap] = ModelTextureType::Default_NormalMap;
+                mTextureIDs[ModelTextureType::Quad_MetallicRoughnessMap]
+                    = ModelTextureType::Default_MetallicRoughnessMap;
+                mTextureIDs[ModelTextureType::Quad_EmissiveMap]
+                    = ModelTextureType::Default_EmissiveMap;
+                mTextureIDs[ModelTextureType::Quad_OcclusionMap]
+                    = ModelTextureType::Default_OcclusionMap;
             }
 
             {
@@ -782,10 +757,10 @@ void Scene::createDeviceDependentResources() {
                 mVertexOffsets[LocalRootSignature::HitGroupIndex::Floor] = (UINT)vertices.size();
 
                 auto materialList = loader.getMaterialDatas();
-                Material material = {};
+                GlbMaterial material = {};
                 if (!materialList.empty()) material = loader.getMaterialDatas()[0];
                 auto descs = loader.getImageDatas();
-                loadTextures(material, descs, ModelTextureType::Plane_Albedo);
+                loadTextures(material, descs, ModelTextureType::Plane_AlbedoTexture);
             }
         }
         {
@@ -965,10 +940,22 @@ void Scene::createDeviceDependentResources() {
             struct RootArgument {
                 D3D12_GPU_DESCRIPTOR_HANDLE albedo;
                 D3D12_GPU_DESCRIPTOR_HANDLE normal;
-                D3D12_GPU_DESCRIPTOR_HANDLE metalRough;
+                D3D12_GPU_DESCRIPTOR_HANDLE metallicRoughness;
                 D3D12_GPU_DESCRIPTOR_HANDLE emissive;
+                D3D12_GPU_DESCRIPTOR_HANDLE occlusion;
                 HitGroupConstant cb;
             } rootArguments;
+
+            auto setRootArgumentTexture = [&](RootArgument& root, ModelTextureType offset) {
+                root.albedo = mTextures[mTextureIDs[offset]]->getGPUHandle();
+                root.normal = mTextures[mTextureIDs[ModelTextureType(offset + 1)]]->getGPUHandle();
+                root.metallicRoughness
+                    = mTextures[mTextureIDs[ModelTextureType(offset + 2)]]->getGPUHandle();
+                root.emissive
+                    = mTextures[mTextureIDs[ModelTextureType(offset + 3)]]->getGPUHandle();
+                root.occlusion
+                    = mTextures[mTextureIDs[ModelTextureType(offset + 4)]]->getGPUHandle();
+            };
             UINT num = 3;
             UINT recordSize = shaderIDSize + sizeof(RootArgument);
             ShaderTable table(device, num, recordSize, L"HitGroupShaderTable");
@@ -977,14 +964,7 @@ void Scene::createDeviceDependentResources() {
                     = std::get<0>(getOffset(LocalRootSignature::HitGroupIndex::UFO));
                 rootArguments.cb.vertexOffset
                     = std::get<1>(getOffset(LocalRootSignature::HitGroupIndex::UFO));
-                rootArguments.albedo
-                    = mTextures[mTextureIDs[ModelTextureType::UFO_Albedo]]->getGPUHandle();
-                rootArguments.normal
-                    = mTextures[mTextureIDs[ModelTextureType::UFO_Normal]]->getGPUHandle();
-                rootArguments.metalRough
-                    = mTextures[mTextureIDs[ModelTextureType::UFO_MetalRough]]->getGPUHandle();
-                rootArguments.emissive
-                    = mTextures[mTextureIDs[ModelTextureType::UFO_Emissive]]->getGPUHandle();
+                setRootArgumentTexture(rootArguments, ModelTextureType::UFO_AlbedoTexture);
                 table.push_back(ShaderRecord(
                     hitGroup_SphereShaderID, shaderIDSize, &rootArguments, sizeof(RootArgument)));
             }
@@ -993,8 +973,7 @@ void Scene::createDeviceDependentResources() {
                     = std::get<0>(getOffset(LocalRootSignature::HitGroupIndex::Quad));
                 rootArguments.cb.vertexOffset
                     = std::get<1>(getOffset(LocalRootSignature::HitGroupIndex::Quad));
-                rootArguments.albedo
-                    = mTextures[mTextureIDs[ModelTextureType::Quad_Albedo]]->getGPUHandle();
+                setRootArgumentTexture(rootArguments, ModelTextureType::Quad_AlbedoTexture);
                 table.push_back(ShaderRecord(
                     hitGroup_QuadShaderID, shaderIDSize, &rootArguments, sizeof(RootArgument)));
             }
@@ -1003,14 +982,7 @@ void Scene::createDeviceDependentResources() {
                     = std::get<0>(getOffset(LocalRootSignature::HitGroupIndex::Floor));
                 rootArguments.cb.vertexOffset
                     = std::get<1>(getOffset(LocalRootSignature::HitGroupIndex::Floor));
-                rootArguments.albedo
-                    = mTextures[mTextureIDs[ModelTextureType::Plane_Albedo]]->getGPUHandle();
-                rootArguments.normal
-                    = mTextures[mTextureIDs[ModelTextureType::Plane_Normal]]->getGPUHandle();
-                rootArguments.metalRough
-                    = mTextures[mTextureIDs[ModelTextureType::Plane_MetalRough]]->getGPUHandle();
-                rootArguments.emissive
-                    = mTextures[mTextureIDs[ModelTextureType::Plane_Emissive]]->getGPUHandle();
+                setRootArgumentTexture(rootArguments, ModelTextureType::Plane_AlbedoTexture);
                 table.push_back(ShaderRecord(
                     hitGroup_FloorShaderID, shaderIDSize, &rootArguments, sizeof(RootArgument)));
             }

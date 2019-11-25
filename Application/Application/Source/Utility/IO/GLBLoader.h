@@ -1,44 +1,50 @@
+/**
+ * @file GLBLoader.h
+ * @brief GLBモデル読み込み
+ */
+
 #pragma once
 #include <GLTFSDK/Deserialize.h>
 #include <GLTFSDK/GLBResourceReader.h>
 #include <GLTFSDK/GLTF.h>
 #include "Desc/TextureDesc.h"
-#include "Math/Vector2.h"
-#include "Math/Vector3.h"
-#include "Math/Vector4.h"
 
 namespace Framework::Utility {
     /**
      * @brief アルファの種類
      */
-    enum class AlphaMode {
-        Opaque,
+    enum class GlbAlphaMode {
+        Opaque, //!< 不透明
         Blend,
         Mask,
     };
     /**
      * @brief マテリアルデータ
      */
-    struct Material {
+    struct GlbMaterial {
         std::string name;
         int normalMapID;
+        int metallicRoughnessMapID;
         int emissiveMapID;
-        int metalRoughID;
-        AlphaMode alphaMode;
+        int occlusionMapID;
+        Vec3 emissiveFactor;
+        GlbAlphaMode alphaMode;
 
-        Material()
+        GlbMaterial()
             : name(""),
               normalMapID(-1),
+              metallicRoughnessMapID(-1),
               emissiveMapID(-1),
-              metalRoughID(-1),
-              alphaMode(AlphaMode::Opaque) {}
+              occlusionMapID(-1),
+              emissiveFactor(0, 0, 0),
+              alphaMode(GlbAlphaMode::Opaque) {}
     };
 
     using IndexList = std::vector<UINT16>;
-    using PositionList = std::vector<Math::Vector3>;
-    using NormalList = std::vector<Math::Vector3>;
-    using UVList = std::vector<Math::Vector2>;
-    using TangentList = std::vector<Math::Vector4>;
+    using PositionList = std::vector<Vec3>;
+    using NormalList = std::vector<Vec3>;
+    using UVList = std::vector<Vec2>;
+    using TangentList = std::vector<Vec4>;
 
     /**
      * @class GLBLoader
@@ -55,13 +61,21 @@ namespace Framework::Utility {
          */
         ~GLBLoader();
         /**
+         * @brief サブメッシュの数を取得する
+         */
+        UINT getSubmeshesCount() const;
+        /**
          * @brief 画像データを取得する
          */
         std::vector<Desc::TextureDesc> getImageDatas() const;
         /**
          * @brief マテリアルデータを取得する
          */
-        std::vector<Material> getMaterialDatas() const;
+        std::vector<GlbMaterial> getMaterialDatas() const;
+        /**
+         * @brief サブメッシュのマテリアル名を取得する
+         */
+        std::vector<std::string> getSubmeshesMaterialNames() const;
         /**
          * @brief サブメッシュごとの頂点インデックスを取得する
          */

@@ -11,8 +11,8 @@ namespace GlobalRootSignature {
 
             Count
         };
-    } //Slot
-} //GlobalRootSignature
+    } // namespace Slot
+} // namespace GlobalRootSignature
 
 namespace LocalRootSignature {
     namespace Miss {
@@ -21,29 +21,30 @@ namespace LocalRootSignature {
 
             Count
         };
-    } //Miss
+    } // namespace Miss
     //マテリアルとして使用する
     //使用するルートシグネチャごとに分ける
     //ルートシグネチャの分け方はコンスタントバッファの構造体の種類
     namespace HitGroup {
         namespace Constants {
             enum MyEnum {
-                Albedo,
-                Normal,
-                MetalRough,
-                Emissive,
+                AlbedoTex,
+                NormalMap,
+                MetallicRoughnessMap,
+                EmissiveMap,
+                OcculusionMap,
 
                 SceneConstants,
 
                 Count
             };
-        } //Constants
+        } // namespace Constants
         enum MyEnum {
             Normal,
 
             Count
         };
-    } //HitGroup
+    } // namespace HitGroup
     struct NormalRootArgument {
         Color color;
     };
@@ -55,12 +56,12 @@ namespace LocalRootSignature {
 
             Count
         };
-    } //HitGroupIndex
+    } // namespace HitGroupIndex
 
     inline constexpr UINT rootArgumentSize() {
         return Framework::Math::MathUtil::mymax({ (UINT)sizeof(NormalRootArgument) });
     }
-} //LocalRootSignature
+} // namespace LocalRootSignature
 
 namespace RayType {
     enum MyEnum {
@@ -68,7 +69,7 @@ namespace RayType {
 
         Count
     };
-} //RayType
+} // namespace RayType
 
 namespace BottomLevelASType {
     enum MyEnum {
@@ -78,10 +79,10 @@ namespace BottomLevelASType {
 
         Count
     };
-} //BottomLevelASType
+} // namespace BottomLevelASType
 
 namespace TopLevelASType {
     enum MyEnum {
         One,
     };
-} //TopLevelASType
+} // namespace TopLevelASType

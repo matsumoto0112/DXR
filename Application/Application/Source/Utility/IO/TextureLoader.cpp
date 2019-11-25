@@ -9,8 +9,8 @@
 
 namespace {
     /**
-    * @brief RGBAのフォーマットに変換する
-    */
+     * @brief RGBAのフォーマットに変換する
+     */
     inline std::vector<BYTE> toRGBAFormat(int width, int height, int bpp, const BYTE* data) {
         const size_t size = width * height * 4;
         //もともとRGBAならそのまま配列にする
@@ -27,15 +27,15 @@ namespace {
         }
         return result;
     }
-}
+} // namespace
 
-namespace Framework::Utility::TextureLoader {
+namespace Framework::Utility {
     //テクスチャの読み込み
-    Desc::TextureDesc load(const std::filesystem::path& filepath) {
+    Desc::TextureDesc TextureLoader::load(const std::filesystem::path& filepath) {
         int w, h, bpp;
         BYTE* data = stbi_load(toString(filepath.c_str()).c_str(), &w, &h, &bpp, 0);
 
-        Desc::TextureDesc desc = { };
+        Desc::TextureDesc desc = {};
         desc.format = Desc::TextureFormat::R8G8B8A8;
         desc.pixels = toRGBAFormat(w, h, bpp, data);
         desc.width = w;
@@ -46,10 +46,10 @@ namespace Framework::Utility::TextureLoader {
         return desc;
     }
     //テクスチャをデータから作成
-    Desc::TextureDesc loadFromMemory(const std::vector<BYTE>& data) {
+    Desc::TextureDesc TextureLoader::loadFromMemory(const std::vector<BYTE>& data) {
         int w, h, bpp;
-        BYTE* texByte = stbi_load_from_memory(
-            reinterpret_cast<const stbi_uc*>(data.data()), static_cast<int>(data.size()), &w, &h, &bpp, 0);
+        BYTE* texByte = stbi_load_from_memory(reinterpret_cast<const stbi_uc*>(data.data()),
+            static_cast<int>(data.size()), &w, &h, &bpp, 0);
 
         Desc::TextureDesc desc = {};
         desc.format = Desc::TextureFormat::R8G8B8A8;
@@ -60,4 +60,4 @@ namespace Framework::Utility::TextureLoader {
         stbi_image_free(texByte);
         return desc;
     }
-} //Framework::Utility::TextureLoader
+} // namespace Framework::Utility

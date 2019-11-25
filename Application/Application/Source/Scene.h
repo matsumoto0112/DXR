@@ -80,8 +80,4 @@ private:
     Vec3 mLightPosition;
     Color mLightDiffuse;
     Color mLightAmbient;
-
-    //private:
-    //    std::unique_ptr<Framework::ImGUI::Window> mDebugWindow;
-    //    std::shared_ptr<Framework::ImGUI::Text> mFPSText;
 };

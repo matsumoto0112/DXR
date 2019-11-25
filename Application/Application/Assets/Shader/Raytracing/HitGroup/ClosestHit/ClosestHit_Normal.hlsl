@@ -14,9 +14,9 @@ inline float3 Normal(in MyAttr attr) {
 
     float3 binormal = cross(worldNormal, tangent);
 
-    float3 normalMap = SampleTexture(normal, samLinear, uv).rgb;
+    float3 normal = SampleTexture(normalMap, samLinear, uv).rgb;
 
-    float3 N = normalMap.x * tangent.xyz + normalMap.y * binormal.xyz + normalMap.z * worldNormal.xyz;
+    float3 N = normal.x * tangent.xyz + normal.y * binormal.xyz + normal.z * worldNormal.xyz;
 
     return N;
 }
@@ -33,7 +33,7 @@ void ClosestHit_Normal(inout RayPayload payload, in MyAttr attr) {
     float3 irradiance = dotNL * g_sceneCB.lightDiffuse.rgb;
     irradiance *= PI;
 
-    float3 diffuse = SampleTexture(albedo, samLinear, uv).rgb;
+    float3 diffuse = SampleTexture(albedoTex, samLinear, uv).rgb;
     float3 color = irradiance * DiffuseBRDF(diffuse, N, L);
 
     payload.color.rgb = color;
