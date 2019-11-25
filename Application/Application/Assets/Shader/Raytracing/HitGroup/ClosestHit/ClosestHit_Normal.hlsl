@@ -2,9 +2,9 @@
 #define SHADER_RAYTRACING_HITGROUP_CLOSESTHIT_CLOSESTHIT_CLOSESTHIT_NORMAL_HLSL
 
 #define HLSL
+#include "../../Util/PBR.hlsli"
 #include "../Helper.hlsli"
 #include "../Local.hlsli"
-#include "../../Util/PBR.hlsli"
 
 inline float3 Normal(in MyAttr attr) {
     float2 uv = GetUV(attr);
@@ -21,20 +21,23 @@ inline float3 Normal(in MyAttr attr) {
     return N;
 }
 
-[shader("closesthit")]
-void ClosestHit_Normal(inout RayPayload payload, in MyAttr attr) {
+[shader("closesthit")] void ClosestHit_Normal(inout RayPayload payload, in MyAttr attr) {
     float3 hitPosition = hitWorldPosition();
     float2 uv = GetUV(attr);
     float3 N = normalize(Normal(attr));
     float3 L = normalize(g_sceneCB.lightPosition.xyz);
+
+    float2 metallicRoughness = SampleTexture(metallicRoughnessMap, samLinear, uv).rg;
+    float3 albedoColor = SampleTexture(albedoTex, samLinear, uv).rgb;
 
     float dotNL = saturate(dot(N, L));
 
     float3 irradiance = dotNL * g_sceneCB.lightDiffuse.rgb;
     irradiance *= PI;
 
-    float3 diffuse = SampleTexture(albedoTex, samLinear, uv).rgb;
-    float3 color = irradiance * DiffuseBRDF(diffuse, N, L);
+    float3 diffuseColor = lerp(albedoColor, float3(0, 0, 0), metallicRoughness.r);
+    float3 color = float3(0, 0, 0);
+    color += irradiance * diffuseColor / PI;
 
     payload.color.rgb = color;
     payload.color.a = 1.0;

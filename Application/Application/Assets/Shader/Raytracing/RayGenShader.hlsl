@@ -5,10 +5,10 @@
 #include "Util/Global.hlsli"
 #include "Util/Helper.hlsli"
 
-[shader("raygeneration")]
-void RayGenShader() {
+[shader("raygeneration")] void RayGenShader() {
     //ƒJƒƒ‰‚©‚ç‚ÌƒŒƒC‚ğ¶¬
-    Ray ray = GenerateCameraRay(DispatchRaysIndex().xy, g_sceneCB.cameraPosition.xyz, g_sceneCB.projectionToWorld);
+    Ray ray = GenerateCameraRay(
+        DispatchRaysIndex().xy, g_sceneCB.cameraPosition.xyz, g_sceneCB.projectionToWorld);
 
     //”ò‚Î‚µ‚½æ‚ÌF‚ğæ“¾
     float4 color = RayCast(ray, 0);
