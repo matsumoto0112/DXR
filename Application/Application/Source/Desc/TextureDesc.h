@@ -12,9 +12,7 @@ namespace Framework::Desc {
      * @enum TextureFormat
      * @brief テクスチャのフォーマット
      */
-    enum class TextureFormat {
-        R8G8B8A8,
-    };
+    enum class TextureFormat { R8G8B8A8, UNKNOWN };
 
     /**
      * @struct TextureDesc

@@ -7,29 +7,29 @@ using Framework::Desc::HeapType;
 
 namespace {
     //ヒープの種類のテーブル
-    static const std::unordered_map<HeapType, D3D12_DESCRIPTOR_HEAP_TYPE> TYPES =
-    {
-        { HeapType::CBV_SRV_UAV, D3D12_DESCRIPTOR_HEAP_TYPE::D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV},
-        { HeapType::Sampler, D3D12_DESCRIPTOR_HEAP_TYPE::D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER},
-        { HeapType::RTV, D3D12_DESCRIPTOR_HEAP_TYPE::D3D12_DESCRIPTOR_HEAP_TYPE_RTV},
-        { HeapType::DSV, D3D12_DESCRIPTOR_HEAP_TYPE::D3D12_DESCRIPTOR_HEAP_TYPE_DSV},
+    static const std::unordered_map<HeapType, D3D12_DESCRIPTOR_HEAP_TYPE> TYPES = {
+        { HeapType::CBV_SRV_UAV,
+            D3D12_DESCRIPTOR_HEAP_TYPE::D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV },
+        { HeapType::Sampler, D3D12_DESCRIPTOR_HEAP_TYPE::D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER },
+        { HeapType::RTV, D3D12_DESCRIPTOR_HEAP_TYPE::D3D12_DESCRIPTOR_HEAP_TYPE_RTV },
+        { HeapType::DSV, D3D12_DESCRIPTOR_HEAP_TYPE::D3D12_DESCRIPTOR_HEAP_TYPE_DSV },
     };
     //ヒープのフラグのテーブル
-    static const std::unordered_map<HeapFlag, D3D12_DESCRIPTOR_HEAP_FLAGS> FLAGS =
-    {
-        { HeapFlag::None,D3D12_DESCRIPTOR_HEAP_FLAGS::D3D12_DESCRIPTOR_HEAP_FLAG_NONE },
-        { HeapFlag::ShaderVisible,D3D12_DESCRIPTOR_HEAP_FLAGS::D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE },
+    static const std::unordered_map<HeapFlag, D3D12_DESCRIPTOR_HEAP_FLAGS> FLAGS = {
+        { HeapFlag::None, D3D12_DESCRIPTOR_HEAP_FLAGS::D3D12_DESCRIPTOR_HEAP_FLAG_NONE },
+        { HeapFlag::ShaderVisible,
+            D3D12_DESCRIPTOR_HEAP_FLAGS::D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE },
     };
-}
+} // namespace
 
 namespace Framework::DX {
     //コンストラクタ
     DescriptorTable::DescriptorTable(ID3D12Device* device, const Desc::DescriptorTableDesc& desc)
-        :mHeap(nullptr), mDescriptorSize(0) {
+        : mHeap(nullptr), mDescriptorSize(0) {
         create(device, desc);
     }
     //デストラクタ
-    DescriptorTable::~DescriptorTable() { }
+    DescriptorTable::~DescriptorTable() {}
     //ヒープの作成
     void DescriptorTable::create(ID3D12Device* device, const Desc::DescriptorTableDesc& desc) {
         D3D12_DESCRIPTOR_HEAP_DESC heapDesc = {};
@@ -49,10 +49,12 @@ namespace Framework::DX {
     }
     //CPUハンドル
     CD3DX12_CPU_DESCRIPTOR_HANDLE DescriptorTable::getCPUHandle(UINT index) {
-        return CD3DX12_CPU_DESCRIPTOR_HANDLE(mHeap->GetCPUDescriptorHandleForHeapStart(), index, mDescriptorSize);
+        return CD3DX12_CPU_DESCRIPTOR_HANDLE(
+            mHeap->GetCPUDescriptorHandleForHeapStart(), index, mDescriptorSize);
     }
     //GPUハンドル
     CD3DX12_GPU_DESCRIPTOR_HANDLE DescriptorTable::getGPUHandle(UINT index) {
-        return CD3DX12_GPU_DESCRIPTOR_HANDLE(mHeap->GetGPUDescriptorHandleForHeapStart(), index, mDescriptorSize);
+        return CD3DX12_GPU_DESCRIPTOR_HANDLE(
+            mHeap->GetGPUDescriptorHandleForHeapStart(), index, mDescriptorSize);
     }
-} //Framework::DX
+} // namespace Framework::DX

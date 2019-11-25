@@ -6,47 +6,48 @@
 using Framework::Desc::TextureFormat;
 
 namespace {
-    static const std::unordered_map<TextureFormat, DXGI_FORMAT> FORMATS =
-    {
-        { TextureFormat::R8G8B8A8,DXGI_FORMAT::DXGI_FORMAT_R8G8B8A8_UNORM },
+    static constexpr UINT BYTES_PER_PIXEL = 4; // 1ピクセルのバイト数
+    //フォーマット変換マップ
+    static const std::unordered_map<TextureFormat, DXGI_FORMAT> FORMATS = {
+        { TextureFormat::R8G8B8A8, DXGI_FORMAT::DXGI_FORMAT_R8G8B8A8_UNORM },
+        { TextureFormat::UNKNOWN, DXGI_FORMAT::DXGI_FORMAT_UNKNOWN },
     };
-}
+} // namespace
 
 namespace Framework::DX {
+    //コンストラクタ
+    Texture2D::Texture2D() : mWidth(0), mHeight(0), mFormat(TextureFormat::UNKNOWN) {}
+    //コンストラクタ
+    Texture2D::Texture2D(ID3D12Device* device, const Desc::TextureDesc& desc) {
+        createBuffer(device, desc);
+    }
+    //デストラクタ
+    Texture2D::~Texture2D() {}
+    //バッファを作成する
+    void Texture2D::createBuffer(ID3D12Device* device, const Desc::TextureDesc& desc) {
+        mWidth = desc.width;
+        mHeight = desc.height;
+        mFormat = desc.format;
 
-    Texture2D::Texture2D(ID3D12Device* device, const Desc::TextureDesc& desc)
-        :mWidth(desc.width), mHeight(desc.height), mFormat(desc.format) {
-            //テクスチャリソースを作成する
-        CD3DX12_RESOURCE_DESC texDesc = CD3DX12_RESOURCE_DESC::Tex2D(
-            FORMATS.at(desc.format), desc.width, desc.height, 1);
-        D3D12_HEAP_PROPERTIES heapProp = {};
-        heapProp.Type = D3D12_HEAP_TYPE::D3D12_HEAP_TYPE_CUSTOM;
-        heapProp.CPUPageProperty = D3D12_CPU_PAGE_PROPERTY::D3D12_CPU_PAGE_PROPERTY_WRITE_BACK;
-        heapProp.MemoryPoolPreference = D3D12_MEMORY_POOL::D3D12_MEMORY_POOL_L0;
-        heapProp.VisibleNodeMask = 1;
-        heapProp.CreationNodeMask = 1;
+        //テクスチャリソースを作成する
+        CD3DX12_RESOURCE_DESC texDesc
+            = CD3DX12_RESOURCE_DESC::Tex2D(FORMATS.at(desc.format), desc.width, desc.height, 1);
+        CD3DX12_HEAP_PROPERTIES props(D3D12_CPU_PAGE_PROPERTY::D3D12_CPU_PAGE_PROPERTY_WRITE_BACK,
+            D3D12_MEMORY_POOL::D3D12_MEMORY_POOL_L0);
 
-        MY_THROW_IF_FAILED(device->CreateCommittedResource(
-            &heapProp,
-            D3D12_HEAP_FLAGS::D3D12_HEAP_FLAG_NONE,
-            &texDesc,
-            D3D12_RESOURCE_STATES::D3D12_RESOURCE_STATE_GENERIC_READ,
-            nullptr,
-            IID_PPV_ARGS(&mResource)));
+        MY_THROW_IF_FAILED(
+            device->CreateCommittedResource(&props, D3D12_HEAP_FLAGS::D3D12_HEAP_FLAG_NONE,
+                &texDesc, D3D12_RESOURCE_STATES::D3D12_RESOURCE_STATE_GENERIC_READ, nullptr,
+                IID_PPV_ARGS(&mResource)));
         mResource->SetName(desc.name.c_str());
 
         //テクスチャデータを書き込む
-        D3D12_BOX box = { 0,0,0,desc.width ,desc.height,1 };
+        D3D12_BOX box = { 0, 0, 0, desc.width, desc.height, 1 };
         UINT row = desc.width * 4;
         UINT slice = row * desc.height;
-        MY_THROW_IF_FAILED(mResource->WriteToSubresource(
-            0,
-            &box,
-            desc.pixels.data(), row, slice));
+        MY_THROW_IF_FAILED(mResource->WriteToSubresource(0, &box, desc.pixels.data(), row, slice));
     }
-
-    Texture2D::~Texture2D() { }
-
+    //シェーダーリソースビューを作成
     void Texture2D::createSRV(ID3D12Device* device) {
         //シェーダーリソースビューを作成する
         D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
@@ -61,4 +62,4 @@ namespace Framework::DX {
         device->CreateShaderResourceView(mResource.Get(), &srvDesc, mCPUHandle);
     }
 
-} //Framework::DX
+} // namespace Framework::DX

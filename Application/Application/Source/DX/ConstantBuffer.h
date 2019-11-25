@@ -1,3 +1,8 @@
+/**
+ * @file ConstantBuffer.h
+ * @brief コンスタントバッファ
+ */
+
 #pragma once
 #include "DX/Util/GPUUploadBuffer.h"
 #include "Utility/Debug.h"
@@ -23,9 +28,9 @@ namespace Framework::DX {
          * @brief バッファを作成する
          * @param device デバイス
          * @param numInstances 総インスタンス数
-         * @param resourceName リソース名
+         * @param name リソース名
          */
-        void create(ID3D12Device* device, UINT numInstances = 1, LPCWSTR resourceName = nullptr);
+        void create(ID3D12Device* device, UINT numInstances, LPCWSTR name);
         /**
          * @brief ステージングの内容をGPUにコピーする
          * @param instanceIndex コピーするインデックス
@@ -62,13 +67,12 @@ namespace Framework::DX {
     inline ConstantBuffer<T>::~ConstantBuffer() {}
     //バッファの作成
     template <class T>
-    inline void ConstantBuffer<T>::create(
-        ID3D12Device* device, UINT numInstances, LPCWSTR resourceName) {
+    inline void ConstantBuffer<T>::create(ID3D12Device* device, UINT numInstances, LPCWSTR name) {
         mNumInstances = numInstances;
         mAlignedInstanceSize
             = Math::MathUtil::alignPow2(sizeof(T), D3D12_CONSTANT_BUFFER_DATA_PLACEMENT_ALIGNMENT);
         UINT bufferSize = mNumInstances * mAlignedInstanceSize;
-        allocate(device, bufferSize, resourceName);
+        allocate(device, bufferSize, name);
         mMappedConstantData = getMapCPUWriteOnly();
     }
     //GPUにデータをコピーする

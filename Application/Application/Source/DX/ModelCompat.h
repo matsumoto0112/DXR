@@ -5,8 +5,8 @@
 
 namespace Framework::DX {
     /**
-    * @brief 頂点構造体
-    */
+     * @brief 頂点構造体
+     */
     struct Vertex {
         Math::Vector3 position;
         Math::Vector3 normal;
@@ -15,4 +15,4 @@ namespace Framework::DX {
     };
 
     using Index = UINT16;
-} //Framework::DX
+} // namespace Framework::DX

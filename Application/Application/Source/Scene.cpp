@@ -1,7 +1,6 @@
 #include "Scene.h"
 #include <DirectXMath.h>
 #include <numeric>
-#include "DX/GLBModel.h"
 #include "DX/Raytracing/Helper.h"
 #include "DX/Raytracing/Shader/ShaderTable.h"
 #include "ImGui/ImGuiManager.h"
@@ -307,15 +306,15 @@ void Scene::render() {
     ID3D12DescriptorHeap* heaps[] = { mDescriptorTable->getHeap() };
     commandList->SetDescriptorHeaps(_countof(heaps), heaps);
     commandList->SetComputeRootDescriptorTable(
-        GlobalRootSignature::Slot::RenderTarget, mRaytracingOutput.mGPUHandle);
+        GlobalRootSignature::Slot::RenderTarget, mRaytracingOutput.getGPUHandle());
     commandList->SetComputeRootShaderResourceView(GlobalRootSignature::Slot::AccelerationStructure,
         mTLASBuffer.buffer->GetGPUVirtualAddress());
     commandList->SetComputeRootConstantBufferView(
         GlobalRootSignature::Slot::SceneConstant, mSceneCB.gpuVirtualAddress());
     commandList->SetComputeRootDescriptorTable(
-        GlobalRootSignature::Slot::IndexBuffer, mResourcesIndexBuffer.mGPUHandle);
+        GlobalRootSignature::Slot::IndexBuffer, mResourcesIndexBuffer.getGPUHandle());
     commandList->SetComputeRootDescriptorTable(
-        GlobalRootSignature::Slot::VertexBuffer, mResourcesVertexBuffer.mGPUHandle);
+        GlobalRootSignature::Slot::VertexBuffer, mResourcesVertexBuffer.getGPUHandle());
 
     D3D12_DISPATCH_RAYS_DESC dispatchDesc = {};
     dispatchDesc.RayGenerationShaderRecord.StartAddress = mRayGenTable->GetGPUVirtualAddress();
@@ -340,19 +339,18 @@ void Scene::render() {
     preCopyBarriers[0] = CD3DX12_RESOURCE_BARRIER::Transition(mDeviceResource->getRenderTarget(),
         D3D12_RESOURCE_STATES::D3D12_RESOURCE_STATE_RENDER_TARGET,
         D3D12_RESOURCE_STATES::D3D12_RESOURCE_STATE_COPY_DEST);
-    preCopyBarriers[1] = CD3DX12_RESOURCE_BARRIER::Transition(mRaytracingOutput.mResource.Get(),
+    preCopyBarriers[1] = CD3DX12_RESOURCE_BARRIER::Transition(mRaytracingOutput.getResource(),
         D3D12_RESOURCE_STATES::D3D12_RESOURCE_STATE_UNORDERED_ACCESS,
         D3D12_RESOURCE_STATES::D3D12_RESOURCE_STATE_COPY_SOURCE);
     commandList->ResourceBarrier(_countof(preCopyBarriers), preCopyBarriers);
 
-    commandList->CopyResource(
-        mDeviceResource->getRenderTarget(), mRaytracingOutput.mResource.Get());
+    commandList->CopyResource(mDeviceResource->getRenderTarget(), mRaytracingOutput.getResource());
 
     D3D12_RESOURCE_BARRIER postCopyBarriers[2];
     postCopyBarriers[0] = CD3DX12_RESOURCE_BARRIER::Transition(mDeviceResource->getRenderTarget(),
         D3D12_RESOURCE_STATES::D3D12_RESOURCE_STATE_COPY_DEST,
         D3D12_RESOURCE_STATES::D3D12_RESOURCE_STATE_RENDER_TARGET);
-    postCopyBarriers[1] = CD3DX12_RESOURCE_BARRIER::Transition(mRaytracingOutput.mResource.Get(),
+    postCopyBarriers[1] = CD3DX12_RESOURCE_BARRIER::Transition(mRaytracingOutput.getResource(),
         D3D12_RESOURCE_STATES::D3D12_RESOURCE_STATE_COPY_SOURCE,
         D3D12_RESOURCE_STATES::D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
     commandList->ResourceBarrier(_countof(postCopyBarriers), postCopyBarriers);
