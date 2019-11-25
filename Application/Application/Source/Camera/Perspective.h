@@ -4,9 +4,6 @@
  */
 
 #pragma once
-#include <d3d12.h>
-#include "Math/Matrix4x4.h"
-#include "Math/Vector3.h"
 
 namespace Framework::Camera {
     /**

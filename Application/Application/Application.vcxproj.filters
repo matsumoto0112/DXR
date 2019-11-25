@@ -98,7 +98,6 @@
     <ClInclude Include="Source\Utility\Singleton.h" />
     <ClInclude Include="Source\Utility\StringUtil.h" />
     <ClInclude Include="Source\Utility\Time.h" />
-    <ClInclude Include="Source\Utility\Typedef.h" />
     <ClInclude Include="Source\Window\Procedure\CreateProc.h" />
     <ClInclude Include="Source\Window\Procedure\DestroyProc.h" />
     <ClInclude Include="Source\Window\Procedure\ImGuiProc.h" />

@@ -5,7 +5,6 @@
 
 #pragma once
 #include "DX/Util/GPUUploadBuffer.h"
-#include "Utility/Debug.h"
 
 namespace Framework::DX {
     /**

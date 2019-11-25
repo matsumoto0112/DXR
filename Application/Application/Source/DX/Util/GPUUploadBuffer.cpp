@@ -1,5 +1,4 @@
 #include "GPUUploadBuffer.h"
-#include "Utility/Debug.h"
 
 namespace Framework::DX {
     //コンストラクタ

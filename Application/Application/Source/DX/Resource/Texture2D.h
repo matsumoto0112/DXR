@@ -1,8 +1,6 @@
 #pragma once
-#include <d3d12.h>
 #include "DX/Resource/IBuffer.h"
 #include "Desc/TextureDesc.h"
-#include "Utility/Typedef.h"
 
 namespace Framework::DX {
     /**

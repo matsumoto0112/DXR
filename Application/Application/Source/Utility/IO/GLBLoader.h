@@ -1,28 +1,24 @@
 #pragma once
-#include <filesystem>
-#include <string>
-#include <Windows.h>
-#include <GLTFSDK/GLTF.h>
-#include <GLTFSDK/GLBResourceReader.h>
 #include <GLTFSDK/Deserialize.h>
+#include <GLTFSDK/GLBResourceReader.h>
+#include <GLTFSDK/GLTF.h>
 #include "Desc/TextureDesc.h"
 #include "Math/Vector2.h"
 #include "Math/Vector3.h"
 #include "Math/Vector4.h"
-#include "Utility/Typedef.h"
 
 namespace Framework::Utility {
     /**
-    * @brief アルファの種類
-    */
+     * @brief アルファの種類
+     */
     enum class AlphaMode {
         Opaque,
         Blend,
         Mask,
     };
     /**
-    * @brief マテリアルデータ
-    */
+     * @brief マテリアルデータ
+     */
     struct Material {
         std::string name;
         int normalMapID;
@@ -31,7 +27,11 @@ namespace Framework::Utility {
         AlphaMode alphaMode;
 
         Material()
-            :name(""), normalMapID(-1), emissiveMapID(-1), metalRoughID(-1), alphaMode(AlphaMode::Opaque) { }
+            : name(""),
+              normalMapID(-1),
+              emissiveMapID(-1),
+              metalRoughID(-1),
+              alphaMode(AlphaMode::Opaque) {}
     };
 
     using IndexList = std::vector<UINT16>;
@@ -41,49 +41,50 @@ namespace Framework::Utility {
     using TangentList = std::vector<Math::Vector4>;
 
     /**
-    * @class GLBLoader
-    * @brief .glbファイルの読み込み
-    */
+     * @class GLBLoader
+     * @brief .glbファイルの読み込み
+     */
     class GLBLoader {
     public:
         /**
-        * @brief コンストラクタ
-        */
+         * @brief コンストラクタ
+         */
         GLBLoader(const std::filesystem::path& filepath);
         /**
-        * @brief デストラクタ
-        */
+         * @brief デストラクタ
+         */
         ~GLBLoader();
         /**
-        * @brief 画像データを取得する
-        */
+         * @brief 画像データを取得する
+         */
         std::vector<Desc::TextureDesc> getImageDatas() const;
         /**
-        * @brief マテリアルデータを取得する
-        */
+         * @brief マテリアルデータを取得する
+         */
         std::vector<Material> getMaterialDatas() const;
         /**
-        * @brief サブメッシュごとの頂点インデックスを取得する
-        */
+         * @brief サブメッシュごとの頂点インデックスを取得する
+         */
         std::vector<IndexList> getIndicesPerSubMeshes() const;
         /**
-        * @brief サブメッシュごとの頂点座標を取得する
-        */
+         * @brief サブメッシュごとの頂点座標を取得する
+         */
         std::vector<PositionList> getPositionsPerSubMeshes() const;
         /**
-        * @brief サブメッシュごとの法線を取得する
-        */
+         * @brief サブメッシュごとの法線を取得する
+         */
         std::vector<NormalList> getNormalsPerSubMeshes() const;
         /**
-        * @brief サブメッシュごとのタンジェントを取得する
-        */
+         * @brief サブメッシュごとのタンジェントを取得する
+         */
         std::vector<TangentList> getTangentsPerSubMeshes() const;
         /**
-        * @brief サブメッシュごとのUV座標を取得する
-        */
+         * @brief サブメッシュごとのUV座標を取得する
+         */
         std::vector<UVList> getUVsPerSubMeshes() const;
+
     private:
         UniquePtr<Microsoft::glTF::GLBResourceReader> mResourceReader;
         Microsoft::glTF::Document mDocument;
     };
-} //Framework::Utility
+} // namespace Framework::Utility

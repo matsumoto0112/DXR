@@ -2,11 +2,13 @@
 
 namespace Framework {
     //コンストラクタ
-    ImGuiManager::ImGuiManager(HWND hWnd, ID3D12Device* device, DXGI_FORMAT format)
-        :mHeap(nullptr) {
+    ImGuiManager::ImGuiManager(
+        HWND hWnd, ID3D12Device* device, DXGI_FORMAT format, bool enableImGui)
+        : mEnableImGui(enableImGui), mHeap(nullptr) {
         IMGUI_CHECKVERSION();
         ImGui::CreateContext();
-        ImGuiIO& io = ImGui::GetIO(); (void)io;
+        ImGuiIO& io = ImGui::GetIO();
+        (void)io;
         ImGui::StyleColorsDark();
         ImGui_ImplWin32_Init(hWnd);
         //ImGui用のヒープ確保
@@ -16,8 +18,7 @@ namespace Framework {
         desc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
         device->CreateDescriptorHeap(&desc, IID_PPV_ARGS(&mHeap));
 
-        ImGui_ImplDX12_Init(device, 3, format,
-            mHeap->GetCPUDescriptorHandleForHeapStart(),
+        ImGui_ImplDX12_Init(device, 3, format, mHeap->GetCPUDescriptorHandleForHeapStart(),
             mHeap->GetGPUDescriptorHandleForHeapStart());
     }
 
@@ -29,19 +30,18 @@ namespace Framework {
     }
 
     void ImGuiManager::beginFrame() {
-//#ifdef _DEBUG
         ImGui_ImplDX12_NewFrame();
         ImGui_ImplWin32_NewFrame();
         ImGui::NewFrame();
-//#endif
     }
 
     void ImGuiManager::endFrame(ID3D12GraphicsCommandList* commandList) {
-//#ifdef _DEBUG
-        commandList->SetDescriptorHeaps(1, mHeap.GetAddressOf());
-        ImGui::Render();
-        ImGui_ImplDX12_RenderDrawData(ImGui::GetDrawData(), commandList);
-//#endif
+        if (mEnableImGui) {
+            commandList->SetDescriptorHeaps(1, mHeap.GetAddressOf());
+            ImGui::Render();
+            ImGui_ImplDX12_RenderDrawData(ImGui::GetDrawData(), commandList);
+        }
+        ImGui::EndFrame();
     }
 
-} //Framework
+} // namespace Framework

@@ -1,13 +1,10 @@
 #include "Mouse.h"
-#include <algorithm>
 
 namespace Framework::Input {
     //コンストラクタ
-    Mouse::Mouse(HWND hWnd)
-        :mHWnd(hWnd) {
-#define CHECK_MOUSE_BUTTON_PRESS(key) { \
-        mCurrentMouseInfo[key] = GetKeyState(key) & 0x80; \
-        } 
+    Mouse::Mouse(HWND hWnd) : mHWnd(hWnd) {
+#define CHECK_MOUSE_BUTTON_PRESS(key) \
+    { mCurrentMouseInfo[key] = GetKeyState(key) & 0x80; }
 
         //最初に押下状態を調べ、マップを作成しておく
         CHECK_MOUSE_BUTTON_PRESS(MouseButton::Left);
@@ -15,7 +12,7 @@ namespace Framework::Input {
         CHECK_MOUSE_BUTTON_PRESS(MouseButton::Right);
     }
     //デストラクタ
-    Mouse::~Mouse() { }
+    Mouse::~Mouse() {}
     //更新
     void Mouse::update() {
         //前の座標を更新する
@@ -35,13 +32,9 @@ namespace Framework::Input {
         CHECK_MOUSE_BUTTON_PRESS(MouseButton::Right);
     }
     //マウスの今の座標を取得
-    const Math::Vector2& Mouse::getMousePosition() const {
-        return mPosition;
-    }
+    const Math::Vector2& Mouse::getMousePosition() const { return mPosition; }
     //マウスのボタンの押下状態を判定
-    bool Mouse::getMouse(MouseButton button) const {
-        return mCurrentMouseInfo.at(button);
-    }
+    bool Mouse::getMouse(MouseButton button) const { return mCurrentMouseInfo.at(button); }
     //マウスのボタンが押されたかどうか判定
     bool Mouse::getMouseDown(MouseButton button) const {
         return mCurrentMouseInfo.at(button) && mPrevMouseInfo.at(button);
@@ -51,11 +44,7 @@ namespace Framework::Input {
         return !mCurrentMouseInfo.at(button) && mPrevMouseInfo.at(button);
     }
     //マウスの前回からの移動量を取得
-    Math::Vector2 Mouse::getMove() const {
-        return mPosition - mPrevPosition;
-    }
+    Math::Vector2 Mouse::getMove() const { return mPosition - mPrevPosition; }
     //マウスが見えているかどうか判定する
-    bool Mouse::isMouseVisible() const {
-        return false;
-    }
-} //Framework::Input
+    bool Mouse::isMouseVisible() const { return false; }
+} // namespace Framework::Input

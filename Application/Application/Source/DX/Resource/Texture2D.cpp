@@ -1,7 +1,4 @@
 #include "Texture2D.h"
-#include <unordered_map>
-#include "Libs/d3dx12.h"
-#include "Utility/Debug.h"
 
 using Framework::Desc::TextureFormat;
 

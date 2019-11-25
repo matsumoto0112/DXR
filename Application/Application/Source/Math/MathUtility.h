@@ -1,21 +1,22 @@
-﻿#pragma once
-#undef max
-#undef min
-#include <algorithm>
+﻿/**
+ * @file MathUtility.h
+ * @brief 数学関係のユーティリティクラス
+ */
+
+#pragma once
 #include <cmath>
-#include <initializer_list>
-#include "Angle.h"
+#include "Math/Angle.h"
 
 namespace Framework::Math {
-    static constexpr float PI = 3.1415926536f; //!< 円周率
-    static constexpr float PI2 = PI * 2; //!< 2π
-    static constexpr float EPSILON = 0.001f; //!< 誤差
-
     /**
      * @class MathUtil
      * @brief 数学関係のユーティリティクラス
      */
     class MathUtil {
+    public:
+        static constexpr float PI = 3.1415926536f; //!< 円周率
+        static constexpr float PI2 = PI * 2; //!< 2π
+        static constexpr float EPSILON = 0.001f; //!< 誤差
     public:
         /**
          * @brief サイン

@@ -1,12 +1,16 @@
+/**
+ * @file KeyCoad.h
+ * @brief キーコード定義
+ */
+
 #pragma once
-#include <Windows.h>
 
 namespace Framework::Input {
     namespace KeyCode {
         /**
-        * @enum Enum
-        * @brief キー番号
-        */
+         * @enum Enum
+         * @brief キー番号
+         */
         enum Enum : int {
             Escape = VK_ESCAPE, //!< エスケープキー
             One = '1', //!< 1キー
@@ -66,5 +70,5 @@ namespace Framework::Input {
             Right = VK_RIGHT, //!< Rightキー
             Down = VK_DOWN, //!< Downキー
         };
-    } //KeyCode 
-} //Framework::Input
+    } // namespace KeyCode
+} // namespace Framework::Input

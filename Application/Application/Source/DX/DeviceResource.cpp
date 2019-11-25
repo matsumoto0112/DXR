@@ -1,6 +1,4 @@
 #include "DeviceResource.h"
-#include "Math/MathUtility.h"
-#include "Utility/Debug.h"
 
 namespace {
     static constexpr D3D_FEATURE_LEVEL MIN_FEATURE_LEVEL

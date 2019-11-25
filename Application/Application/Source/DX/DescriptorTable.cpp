@@ -1,6 +1,4 @@
 #include "DescriptorTable.h"
-#include <unordered_map>
-#include "Utility/Debug.h"
 
 using Framework::Desc::HeapFlag;
 using Framework::Desc::HeapType;

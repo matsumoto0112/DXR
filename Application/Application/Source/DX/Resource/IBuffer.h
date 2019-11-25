@@ -4,8 +4,6 @@
  */
 
 #pragma once
-#include <d3d12.h>
-#include "Utility/Typedef.h"
 
 namespace Framework::DX {
     /**

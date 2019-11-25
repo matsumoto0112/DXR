@@ -4,7 +4,6 @@
  */
 
 #pragma once
-#include <d3d12.h>
 #include "DX/DeviceResource.h"
 #include "Device/ISystemEventNotify.h"
 #include "ImGui/ImGuiManager.h"

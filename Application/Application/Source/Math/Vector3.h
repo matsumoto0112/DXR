@@ -1,10 +1,15 @@
+/**
+ * @file Vector3.h
+ * @brief 三次元ベクトル
+ */
+
 #pragma once
 
 namespace Framework::Math {
     /**
-    * @class Vector3
-    * @brief Vector3クラス
-    */
+     * @class Vector3
+     * @brief Vector3クラス
+     */
     class Vector3 {
     public:
         float x; //!< x
@@ -20,111 +25,111 @@ namespace Framework::Math {
         static const Vector3 BACK; //!< (0,0,-1)
     public:
         /**
-        * @brief コンストラクタ
-        */
+         * @brief コンストラクタ
+         */
         Vector3();
         /**
-        * @brief コンストラクタ
-        */
+         * @brief コンストラクタ
+         */
         Vector3(float x, float y, float z);
         /**
-        * @brief 同一の要素で初期化する
-        */
+         * @brief 同一の要素で初期化する
+         */
         Vector3(float s);
         /**
-        * @brief コピーコンストラクタ
-        */
+         * @brief コピーコンストラクタ
+         */
         Vector3(const Vector3& v);
         /**
-        * @brief 代入演算子
-        */
-        Vector3& operator =(const Vector3& a) &;
+         * @brief 代入演算子
+         */
+        Vector3& operator=(const Vector3& a) &;
         /**
-        * @brief 代入演算子
-        */
+         * @brief 代入演算子
+         */
         Vector3& operator=(Vector3&& v) & noexcept;
         /**
-        * @brief 単項プラス演算子
-        */
-        Vector3 operator +() const;
+         * @brief 単項プラス演算子
+         */
+        Vector3 operator+() const;
         /**
-        * @brief 単項マイナス演算子
-        */
-        Vector3 operator -() const;
+         * @brief 単項マイナス演算子
+         */
+        Vector3 operator-() const;
         /**
-        * @brief 加算代入演算子
-        */
-        Vector3& operator +=(const Vector3& a);
+         * @brief 加算代入演算子
+         */
+        Vector3& operator+=(const Vector3& a);
         /**
-        * @brief 減算代入演算子
-        */
-        Vector3& operator -=(const Vector3& a);
+         * @brief 減算代入演算子
+         */
+        Vector3& operator-=(const Vector3& a);
         /**
-        * @brief 乗算代入演算子
-        */
-        Vector3& operator *=(float a);
+         * @brief 乗算代入演算子
+         */
+        Vector3& operator*=(float a);
         /**
-        * @brief 除算代入演算子
-        */
-        Vector3& operator /=(float a);
+         * @brief 除算代入演算子
+         */
+        Vector3& operator/=(float a);
         /**
-        * @brief 大きさの2乗を返す
-        * @return ベクトルの大きさの2乗
-        */
+         * @brief 大きさの2乗を返す
+         * @return ベクトルの大きさの2乗
+         */
         float lengthSquared() const;
         /**
-        * @brief 大きさを返す
-        * @return ベクトルの大きさ
-        */
+         * @brief 大きさを返す
+         * @return ベクトルの大きさ
+         */
         float length() const;
         /**
-        * @brief 正規化ベクトルを取得する
-        */
+         * @brief 正規化ベクトルを取得する
+         */
         Vector3 normalized() const;
         /**
-        * @brief ベクトルを正規化する
-        */
+         * @brief ベクトルを正規化する
+         */
         static Vector3 normalize(const Vector3& v);
         /**
-        * @brief 内積
-        * @param a aベクトル
-        * @param b bベクトル
-        */
+         * @brief 内積
+         * @param a aベクトル
+         * @param b bベクトル
+         */
         static float dot(const Vector3& a, const Vector3& b);
         /**
-        * @brief 外積
-        * @param a aベクトル
-        * @param b bベクトル
-        */
+         * @brief 外積
+         * @param a aベクトル
+         * @param b bベクトル
+         */
         static Vector3 cross(const Vector3& a, const Vector3& b);
     };
     /**
-    * @brief 等価比較
-    */
-    bool operator ==(const Vector3& v1, const Vector3& v2);
+     * @brief 等価比較
+     */
+    bool operator==(const Vector3& v1, const Vector3& v2);
     /**
-    * @brief 等価比較
-    */
-    bool operator !=(const Vector3& v1, const Vector3& v2);
+     * @brief 等価比較
+     */
+    bool operator!=(const Vector3& v1, const Vector3& v2);
     /**
-    * @brief 加算
-    */
-    Vector3 operator +(const Vector3& v1, const Vector3& v2);
+     * @brief 加算
+     */
+    Vector3 operator+(const Vector3& v1, const Vector3& v2);
     /**
-    * @brief 減算
-    */
-    Vector3 operator -(const Vector3& v1, const Vector3& v2);
+     * @brief 減算
+     */
+    Vector3 operator-(const Vector3& v1, const Vector3& v2);
     /**
-    * @brief 乗算
-    */
-    Vector3 operator *(const Vector3& v, float s);
+     * @brief 乗算
+     */
+    Vector3 operator*(const Vector3& v, float s);
     /**
-    * @brief 乗算
-    */
-    Vector3 operator *(float s, const Vector3& v);
+     * @brief 乗算
+     */
+    Vector3 operator*(float s, const Vector3& v);
     /**
-    * @brief 除算
-    */
-    Vector3 operator /(const Vector3& v, float s);
+     * @brief 除算
+     */
+    Vector3 operator/(const Vector3& v, float s);
 
-} //Framework::Math
+} // namespace Framework::Math

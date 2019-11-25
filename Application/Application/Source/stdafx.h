@@ -11,7 +11,14 @@
 
 #define NOMINMAX
 #include <Windows.h>
+#include <algorithm>
+#include <array>
+#include <filesystem>
+#include <initializer_list>
+#include <iomanip>
+#include <sstream>
 #include <string>
+#include <unordered_map>
 #include <vector>
 
 #include <d3d12.h>
@@ -22,7 +29,7 @@
 #include <dxgidebug.h>
 #endif
 
-#include <GLTFSDK/GLTF.h>
+#include "Utility/Debug.h"
 
 #include "Math/MathUtility.h"
 #include "Math/Matrix4x4.h"

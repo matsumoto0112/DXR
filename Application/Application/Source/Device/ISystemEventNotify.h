@@ -4,8 +4,6 @@
  */
 
 #pragma once
-#include <Windows.h>
-
 namespace Framework::Device {
     /**
      * @brief システムイベント処理数値

@@ -4,10 +4,7 @@
  */
 
 #pragma once
-#include <d3d12.h>
 #include "Desc/DescriptorTableDesc.h"
-#include "Libs/d3dx12.h"
-#include "Utility/Typedef.h"
 
 namespace Framework::DX {
     /**

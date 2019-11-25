@@ -1,12 +1,10 @@
 #include "Keyboard.h"
-#include "KeyCode.h"
 
 namespace Framework::Input {
     //コンストラクタ
-    Keyboard::Keyboard(HWND hWnd)
-        :mCurrentKeys(), mPrevKeys() { }
+    Keyboard::Keyboard(HWND hWnd) : mCurrentKeys(), mPrevKeys() {}
     //デストラクタ
-    Keyboard::~Keyboard() { }
+    Keyboard::~Keyboard() {}
     //更新
     void Keyboard::update() {
         //前フレームのキーの情報をコピーする
@@ -15,9 +13,7 @@ namespace Framework::Input {
         GetKeyboardState(mCurrentKeys.data());
     }
     //キーの押下情報の取得
-    bool Keyboard::getKey(KeyCode key) const {
-        return checkKeyDown(mCurrentKeys, key);
-    }
+    bool Keyboard::getKey(KeyCode key) const { return checkKeyDown(mCurrentKeys, key); }
     //キーの押した瞬間かどうかを取得
     bool Keyboard::getKeyDown(KeyCode key) const {
         bool prev = checkKeyDown(mPrevKeys, key);
@@ -35,4 +31,4 @@ namespace Framework::Input {
         return (keys[key] & 0x80) != 0;
     }
 
-} //Framework::Input
+} // namespace Framework::Input

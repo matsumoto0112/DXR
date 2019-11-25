@@ -1,10 +1,5 @@
 #pragma once
-#include <d3d12.h>
-#include <dxgi1_6.h>
-#include <array>
 #include "DX/DescriptorTable.h"
-#include "Libs/d3dx12.h"
-#include "Utility/Typedef.h"
 #include "Window/Window.h"
 
 namespace Framework::DX {

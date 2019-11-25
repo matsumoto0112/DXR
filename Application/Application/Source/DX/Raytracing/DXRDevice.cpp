@@ -1,5 +1,4 @@
 #include "DXRDevice.h"
-#include "Utility/Debug.h"
 
 namespace Framework::DX {
     //コンストラクタ

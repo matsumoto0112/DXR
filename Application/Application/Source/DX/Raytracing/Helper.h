@@ -1,7 +1,4 @@
 #pragma once
-#include <d3d12.h>
-#include <iomanip>
-#include <sstream>
 #include "DX/Util/GPUUploadBuffer.h"
 
 namespace Framework::DX {

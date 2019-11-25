@@ -1,30 +1,34 @@
-#pragma once
+/**
+ * @file Keyboard.h
+ * @brief キーボード入力管理
+ */
 
-#include <array>
+#pragma once
 #include "KeyCode.h"
 
 namespace Framework::Input {
     /**
-    * @class Keyboard
-    * @brief キーボード入力管理クラス
-    */
+     * @class Keyboard
+     * @brief キーボード入力管理クラス
+     */
     class Keyboard {
         static constexpr int KEY_MAX = 256; //!< キー最大数
         using KeyInfo = std::array<BYTE, KEY_MAX>;
         using KeyCode = KeyCode::Enum;
+
     public:
         /**
-        * @brief コンストラクタ
-        * @param hWnd ウィンドウハンドル
-        */
+         * @brief コンストラクタ
+         * @param hWnd ウィンドウハンドル
+         */
         Keyboard(HWND hWnd);
         /**
-        * @brief デストラクタ
-        */
+         * @brief デストラクタ
+         */
         ~Keyboard();
         /**
-        * @brief 更新
-        */
+         * @brief 更新
+         */
         void update();
         /**
         * @brief キーを押しているか
@@ -47,16 +51,17 @@ namespace Framework::Input {
         それ以外の場合はfalse
         */
         bool getKeyUp(KeyCode key) const;
+
     private:
         KeyInfo mCurrentKeys; //!< 今updateで取得したキー情報
         KeyInfo mPrevKeys; //!< 前updateで取得したキー情報
     private:
         /**
-        * @brief キーを押しているか
-        * @param keys 判定に使うキー配列
-        * @param key 判定するキー
-        */
+         * @brief キーを押しているか
+         * @param keys 判定に使うキー配列
+         * @param key 判定するキー
+         */
         bool checkKeyDown(const KeyInfo& keys, KeyCode key) const;
     };
 
-} //Framework::Input
+} // namespace Framework::Input
