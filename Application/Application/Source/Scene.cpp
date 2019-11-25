@@ -293,7 +293,8 @@ void Scene::render() {
     offset += FLOOR_COUNT;
     UINT root = Framework::Math::MathUtil::sqrt(SPHERE_COUNT);
     for (UINT n = 0; n < SPHERE_COUNT; n++) {
-        XMMATRIX transform = XMMatrixTranslation((n / root) * 5, 3, (n % root) * 5);
+        XMMATRIX transform
+            = XMMatrixTranslation(((n - root / 2) / root) * 20, 3, ((n - root / 2) % root) * 20);
         instanceDesc[n + offset].InstanceID = 0;
         instanceDesc[n + offset].InstanceMask = 0xff;
         instanceDesc[n + offset].Flags

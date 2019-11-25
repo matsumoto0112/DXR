@@ -1,33 +1,34 @@
 /**
-* @file Helper.hlsli
-* @brief ヘルパー関数、構造体定義
-*/
+ * @file Helper.hlsli
+ * @brief ヘルパー関数、構造体定義
+ */
 
 #ifndef SHADER_RAYTRACING_UTIL_HELPER_HLSLI
 #define SHADER_RAYTRACING_UTIL_HELPER_HLSLI
 
 #define HLSL
-#include "GlobalCompat.h"
 #include "Global.hlsli"
+#include "GlobalCompat.h"
 
 static const float PI = 3.141592654f;
 static const float T_MIN = 0.0001;
 static const float T_MAX = 10000.0;
 
 /**
-* @brief レイ
-*/
+ * @brief レイ
+ */
 struct Ray {
     float3 origin; //!< 視点
     float3 direction; //!< 方向
 };
 
 /**
-* @brief カメラからのレイを飛ばす
-*/
-inline Ray GenerateCameraRay(in uint2 index, in float3 cameraPosition, in float4x4 projectionToWorld) {
+ * @brief カメラからのレイを飛ばす
+ */
+inline Ray GenerateCameraRay(in uint2 index, in float3 cameraPosition,
+    in float4x4 projectionToWorld, float2 offset = float2(0.5, 0.5)) {
     //スクリーン座標を計算する
-    float2 xy = index + float2(0.5, 0.5);
+    float2 xy = index + offset;
     float2 screenPos = xy / DispatchRaysDimensions().xy * 2.0 - 1.0;
     screenPos.y = -screenPos.y;
 
@@ -42,9 +43,9 @@ inline Ray GenerateCameraRay(in uint2 index, in float3 cameraPosition, in float4
 }
 
 /**
-* @brief インデックスを読み込む
-* @details インデックスは2バイトで登録されているがシェーダー内では4バイト単位でしか読み込めないため
-*/
+ * @brief インデックスを読み込む
+ * @details インデックスは2バイトで登録されているがシェーダー内では4バイト単位でしか読み込めないため
+ */
 static inline uint3 LoadIndices(uint offsetBytes, ByteAddressBuffer Indices) {
     uint3 indices;
 
@@ -55,8 +56,7 @@ static inline uint3 LoadIndices(uint offsetBytes, ByteAddressBuffer Indices) {
         indices.x = four16BitIndices.x & 0xffff;
         indices.y = (four16BitIndices.x >> 16) & 0xffff;
         indices.z = four16BitIndices.y & 0xffff;
-    }
-    else {
+    } else {
         indices.x = (four16BitIndices.x >> 16) & 0xffff;
         indices.y = four16BitIndices.y & 0xffff;
         indices.z = (four16BitIndices.y >> 16) & 0xffff;
@@ -64,23 +64,17 @@ static inline uint3 LoadIndices(uint offsetBytes, ByteAddressBuffer Indices) {
     return indices;
 }
 
-
+/**
+ * @brief 衝突点のワールド座標を取得する
+ */
+inline float3 hitWorldPosition() { return WorldRayOrigin() + WorldRayDirection() * RayTCurrent(); }
 
 /**
-* @brief 衝突点のワールド座標を取得する
-*/
-inline float3 hitWorldPosition() {
-    return WorldRayOrigin() + WorldRayDirection() * RayTCurrent();
-}
-
-/**
-* @brief レイを飛ばし、当たったオブジェクトの色を取得する
-*/
+ * @brief レイを飛ばし、当たったオブジェクトの色を取得する
+ */
 inline float4 RayCast(in Ray ray, in uint currentRecursionNum) {
     //再帰回数制限
-    if (currentRecursionNum >= MAX_RAY_RECURSION_DEPTH) {
-        return float4(0, 0, 0, 0);
-    }
+    if (currentRecursionNum >= MAX_RAY_RECURSION_DEPTH) { return float4(0, 0, 0, 0); }
 
     RayDesc rayDesc;
     rayDesc.Origin = ray.origin;
@@ -88,17 +82,9 @@ inline float4 RayCast(in Ray ray, in uint currentRecursionNum) {
     rayDesc.TMin = T_MIN;
     rayDesc.TMax = T_MAX;
 
-    RayPayload payload = { float4(0,0,0,0),currentRecursionNum + 1 };
+    RayPayload payload = { float4(0, 0, 0, 0), currentRecursionNum + 1 };
 
-    TraceRay(
-        g_scene,
-        RAY_FLAG_CULL_BACK_FACING_TRIANGLES,
-        ~0,
-        0,
-        1,
-        0,
-        rayDesc,
-        payload);
+    TraceRay(g_scene, RAY_FLAG_CULL_BACK_FACING_TRIANGLES, ~0, 0, 1, 0, rayDesc, payload);
 
     return payload.color;
 }
@@ -107,6 +93,5 @@ inline float4 RayCast(in Ray ray, in uint currentRecursionNum) {
 inline static float4 SampleTexture(in Texture2D tex, in SamplerState sampler, in float2 uv) {
     return tex.SampleLevel(sampler, uv, 0.0);
 }
-
 
 #endif //! SHADER_RAYTRACING_UTIL_HELPER_HLSLI

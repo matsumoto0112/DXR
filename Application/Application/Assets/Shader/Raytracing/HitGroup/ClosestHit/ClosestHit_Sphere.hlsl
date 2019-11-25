@@ -39,6 +39,16 @@ inline float3 Normal(in MyAttr attr) {
     float3 color = float3(0, 0, 0);
     color += irradiance * diffuseColor / PI;
 
+    float3 currentRayDirection = WorldRayDirection();
+    //二次レイキャスト
+    Ray secondRay;
+    secondRay.origin = hitPosition;
+    secondRay.direction = reflect(currentRayDirection, N);
+
+    //反射色の取得
+    float3 reflectColor = RayCast(secondRay, payload.recursionCount).rgb;
+    color.rgb += reflectColor;
+
     payload.color.rgb = color;
     payload.color.a = 1.0;
 }
