@@ -1,40 +1,45 @@
+/**
+ * @file DXRDevice.h
+ * @brief DXR用デバイス管理
+ */
+
 #pragma once
 #include "DX/DeviceResource.h"
 
 namespace Framework::DX {
     /**
-    * @class DXRDevice
-    * @brief DXR用デバイス
-    */
+     * @class DXRDevice
+     * @brief DXR用デバイス
+     */
     class DXRDevice {
     public:
         /**
-        * @brief コンストラクタ
-        */
-        DXRDevice(DeviceResource* deviceResource);
+         * @brief コンストラクタ
+         */
+        DXRDevice();
         /**
-        * @brief デストラクタ
-        */
+         * @brief デストラクタ
+         */
         ~DXRDevice();
         /**
-        * @brief デバイスのリセット
-        */
+         * @brief デバイスのリセット
+         */
         void reset();
         /**
-        * @brief デバイスの再生成
-        */
-        void recreate();
+         * @brief デバイスの生成
+         */
+        void create(ID3D12Device* device, ID3D12GraphicsCommandList* commandList);
         /**
-        * @brief デバイスの取得
-        */
+         * @brief デバイスの取得
+         */
         ID3D12Device5* getDXRDevice() const { return mDXRDevice.Get(); }
         /**
-        * @brief コマンドリストの取得
-        */
+         * @brief コマンドリストの取得
+         */
         ID3D12GraphicsCommandList5* getDXRCommandList() const { return mDXRCommandList.Get(); }
+
     private:
-        DeviceResource* mDeviceResource;
-        ComPtr<ID3D12Device5> mDXRDevice;
-        ComPtr<ID3D12GraphicsCommandList5> mDXRCommandList;
+        ComPtr<ID3D12Device5> mDXRDevice; //!< DXRに対応したデバイス
+        ComPtr<ID3D12GraphicsCommandList5> mDXRCommandList; //!< DXRに対応したコマンドリスト
     };
-} //Framework::DX
+} // namespace Framework::DX

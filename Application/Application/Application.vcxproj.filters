@@ -67,7 +67,6 @@
     <ClInclude Include="Source\DX\GLBModel.h" />
     <ClInclude Include="Source\DX\Model.h" />
     <ClInclude Include="Source\DX\ModelCompat.h" />
-    <ClInclude Include="Source\DX\Util\DXHelper.h" />
     <ClInclude Include="Source\DX\Util\GPUUploadBuffer.h" />
     <ClInclude Include="Source\DX\Raytracing\DXRDevice.h" />
     <ClInclude Include="Source\DX\Raytracing\Helper.h" />
@@ -132,6 +131,8 @@
     <ClInclude Include="Source\Device\GameDevice.h" />
     <ClInclude Include="Source\Device\ISystemEventNotify.h" />
     <ClInclude Include="Source\Camera\Perspective.h" />
+    <ClInclude Include="Source\DX\Raytracing\Shader\ShaderRecord.h" />
+    <ClInclude Include="Source\DX\Raytracing\Shader\ShaderTable.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />

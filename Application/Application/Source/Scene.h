@@ -30,8 +30,8 @@ struct AccelerationBuffer {
 
 class Scene {
 public:
-    Scene(Framework::DX::DeviceResource* device,
-        Framework::Input::InputManager* inputManager, UINT width, UINT height);
+    Scene(Framework::DX::DeviceResource* device, Framework::Input::InputManager* inputManager,
+        UINT width, UINT height);
     ~Scene();
     void create();
     void reset();
@@ -48,7 +48,7 @@ private:
 private:
     Framework::DX::DeviceResource* mDeviceResource;
     Framework::Input::InputManager* mInputManager;
-    std::unique_ptr<Framework::DX::DXRDevice> mDXRDevice;
+    Framework::DX::DXRDevice mDXRDevice;
     std::array<AccelerationBuffer, BottomLevelASType::Count> mBLASBuffers;
     AccelerationBuffer mTLASBuffer;
     ComPtr<ID3D12Resource> mRayGenTable;

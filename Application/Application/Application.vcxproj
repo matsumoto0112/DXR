@@ -141,6 +141,8 @@
     <ClInclude Include="Source\DX\ModelCompat.h" />
     <ClInclude Include="Source\DX\Raytracing\DXRDevice.h" />
     <ClInclude Include="Source\DX\Raytracing\Helper.h" />
+    <ClInclude Include="Source\DX\Raytracing\Shader\ShaderRecord.h" />
+    <ClInclude Include="Source\DX\Raytracing\Shader\ShaderTable.h" />
     <ClInclude Include="Source\DX\Resource\IBuffer.h" />
     <ClInclude Include="Source\DX\Resource\Texture2D.h" />
     <ClInclude Include="Source\Game.h" />
@@ -180,7 +182,6 @@
     <ClInclude Include="Source\stdafx.h" />
     <ClInclude Include="Source\targetvar.h" />
     <ClInclude Include="Source\Typedef.h" />
-    <ClInclude Include="Source\DX\Util\DXHelper.h" />
     <ClInclude Include="Source\DX\Util\GPUUploadBuffer.h" />
     <ClInclude Include="Source\Utility\Color4.h" />
     <ClInclude Include="Source\Utility\Debug.h" />
