@@ -133,5 +133,6 @@
     <FxCompile Include="Assets\Shader\Raytracing\MissShader\Shadow.hlsl" />
     <FxCompile Include="Assets\Shader\Raytracing\HitGroup\ClosestHit\ClosestHit_Plane.hlsl" />
     <FxCompile Include="Assets\Shader\Raytracing\HitGroup\ClosestHit\ClosestHit_Normal.hlsl" />
+    <FxCompile Include="Assets\Shader\Raytracing\HitGroup\ClosestHit\ClosestHit_Sphere.hlsl" />
   </ItemGroup>
 </Project>

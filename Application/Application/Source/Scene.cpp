@@ -12,6 +12,7 @@
 
 #include "CompiledShaders/ClosestHit_Normal.hlsl.h"
 #include "CompiledShaders/ClosestHit_Plane.hlsl.h"
+#include "CompiledShaders/ClosestHit_Sphere.hlsl.h"
 #include "CompiledShaders/Miss.hlsl.h"
 #include "CompiledShaders/RayGenShader.hlsl.h"
 #include "CompiledShaders/Shadow.hlsl.h"
@@ -28,20 +29,24 @@ namespace {
     static const std::wstring MISS_SHADOW_SHADER_NAME = L"Shadow";
     static const std::wstring CLOSEST_HIT_NORMAL_NAME = L"ClosestHit_Normal";
     static const std::wstring CLOSEST_HIT_PLANE_NAME = L"ClosestHit_Plane";
+    static const std::wstring CLOSEST_HIT_SPHERE_NAME = L"ClosestHit_Sphere";
     static const std::wstring RAY_GEN_NAME = L"RayGenShader";
-    static const std::wstring HIT_GROUP_SPHERE_NAME = L"HitGroup_Sphere";
+    static const std::wstring HIT_GROUP_UFO_NAME = L"HitGroup_UFO";
     static const std::wstring HIT_GROUP_QUAD_NAME = L"HitGroup_Quad";
     static const std::wstring HIT_GROUP_FLOOR_NAME = L"HitGroup_Floor";
+    static const std::wstring HIT_GROUP_SPHERE_NAME = L"HitGroup_Sphere";
 
     static const std::unordered_map<BottomLevelASType::MyEnum, std::wstring> MODEL_NAMES = {
-        { BottomLevelASType::UFO, L"igloo.glb" },
+        { BottomLevelASType::UFO, L"UFO.glb" },
+        { BottomLevelASType::Sphere, L"sphere.glb" },
         { BottomLevelASType::Floor, L"floor.glb" },
     };
 
-    static constexpr UINT TRIANGLE_COUNT = 1;
+    static constexpr UINT UFO_COUNT = 0;
     static constexpr UINT QUAD_COUNT = 0;
     static constexpr UINT FLOOR_COUNT = 1;
-    static constexpr UINT TLAS_NUM = TRIANGLE_COUNT + QUAD_COUNT + FLOOR_COUNT;
+    static constexpr UINT SPHERE_COUNT = 100;
+    static constexpr UINT TLAS_NUM = UFO_COUNT + QUAD_COUNT + FLOOR_COUNT + SPHERE_COUNT;
 
     inline void createBuffer(ID3D12Device* device, ID3D12Resource** resource, void* data,
         UINT64 size, LPCWSTR name = nullptr) {
@@ -80,9 +85,10 @@ namespace {
             for (size_t j = 0; j < positions[i].size(); j++) {
                 Framework::DX::Vertex v;
                 v.position = positions[i][j];
-                v.normal = normals.empty() ? Vec3(0, 0, 0) : normals[i][j];
-                v.uv = uvs.empty() ? Vec2(0, 0) : uvs[i][j];
-                v.tangent = tangents.empty() ? Vec4(0, 0, 0, 0) : tangents[i][j];
+                v.normal = normals.empty() || normals[i].empty() ? Vec3(0, 0, 0) : normals[i][j];
+                v.uv = uvs.empty() || uvs[i].empty() ? Vec2(0, 0) : uvs[i][j];
+                v.tangent
+                    = tangents.empty() || tangents[i].empty() ? Vec4(0, 0, 0, 0) : tangents[i][j];
                 res.emplace_back(v);
             }
         }
@@ -129,6 +135,12 @@ namespace {
         Plane_MetallicRoughnessMap,
         Plane_EmissiveMap,
         Plane_OcclusionMap,
+
+        Sphere_AlbedoTexture,
+        Sphere_NormalMap,
+        Sphere_MetallicRoughnessMap,
+        Sphere_EmissiveMap,
+        Sphere_OcclusionMap,
     };
     std::unordered_map<ModelTextureType, UINT> mTextureIDs;
 
@@ -229,7 +241,7 @@ void Scene::render() {
 
     std::vector<D3D12_RAYTRACING_INSTANCE_DESC> instanceDesc(TLAS_NUM);
     UINT offset = 0;
-    for (UINT n = 0; n < TRIANGLE_COUNT; n++) {
+    for (UINT n = 0; n < UFO_COUNT; n++) {
         Rad rotX = mQuadRotate.toRadians() * 0.37f;
         Rad rotY = mQuadRotate.toRadians() * 1.45f;
         Rad rotZ = mQuadRotate.toRadians() * 0.73f;
@@ -248,7 +260,7 @@ void Scene::render() {
             reinterpret_cast<XMFLOAT3X4*>(instanceDesc[n + offset].Transform), transform);
     }
 
-    offset += TRIANGLE_COUNT;
+    offset += UFO_COUNT;
     for (UINT n = 0; n < QUAD_COUNT; n++) {
         XMMATRIX transform = XMMatrixScaling(1, 1, 1)
             * XMMatrixRotationRollPitchYaw(0, mQuadRotate.toRadians().getRad(), 0)
@@ -275,6 +287,21 @@ void Scene::render() {
             = LocalRootSignature::HitGroupIndex::Floor;
         instanceDesc[n + offset].AccelerationStructure
             = mBLASBuffers[BottomLevelASType::Floor].buffer->GetGPUVirtualAddress();
+        XMStoreFloat3x4(
+            reinterpret_cast<XMFLOAT3X4*>(instanceDesc[n + offset].Transform), transform);
+    }
+    offset += FLOOR_COUNT;
+    UINT root = Framework::Math::MathUtil::sqrt(SPHERE_COUNT);
+    for (UINT n = 0; n < SPHERE_COUNT; n++) {
+        XMMATRIX transform = XMMatrixTranslation((n / root) * 5, 3, (n % root) * 5);
+        instanceDesc[n + offset].InstanceID = 0;
+        instanceDesc[n + offset].InstanceMask = 0xff;
+        instanceDesc[n + offset].Flags
+            = D3D12_RAYTRACING_INSTANCE_FLAGS::D3D12_RAYTRACING_INSTANCE_FLAG_NONE;
+        instanceDesc[n + offset].InstanceContributionToHitGroupIndex
+            = LocalRootSignature::HitGroupIndex::Sphere;
+        instanceDesc[n + offset].AccelerationStructure
+            = mBLASBuffers[BottomLevelASType::Sphere].buffer->GetGPUVirtualAddress();
         XMStoreFloat3x4(
             reinterpret_cast<XMFLOAT3X4*>(instanceDesc[n + offset].Transform), transform);
     }
@@ -467,6 +494,8 @@ void Scene::createDeviceDependentResources() {
                 CLOSEST_HIT_NORMAL_NAME);
             exportShader(
                 (void*)g_pClosestHit_Plane, _countof(g_pClosestHit_Plane), CLOSEST_HIT_PLANE_NAME);
+            exportShader((void*)g_pClosestHit_Sphere, _countof(g_pClosestHit_Sphere),
+                CLOSEST_HIT_SPHERE_NAME);
             exportShader((void*)g_pRayGenShader, _countof(g_pRayGenShader), RAY_GEN_NAME);
             exportShader((void*)g_pShadow, _countof(g_pShadow), MISS_SHADOW_SHADER_NAME);
         }
@@ -486,12 +515,14 @@ void Scene::createDeviceDependentResources() {
                       hitGroup->SetHitGroupType(type);
                   };
 
-            bindHitGroup(HIT_GROUP_SPHERE_NAME,
-                D3D12_HIT_GROUP_TYPE::D3D12_HIT_GROUP_TYPE_TRIANGLES, CLOSEST_HIT_NORMAL_NAME);
+            bindHitGroup(HIT_GROUP_UFO_NAME, D3D12_HIT_GROUP_TYPE::D3D12_HIT_GROUP_TYPE_TRIANGLES,
+                CLOSEST_HIT_NORMAL_NAME);
             bindHitGroup(HIT_GROUP_QUAD_NAME, D3D12_HIT_GROUP_TYPE::D3D12_HIT_GROUP_TYPE_TRIANGLES,
                 CLOSEST_HIT_NORMAL_NAME);
             bindHitGroup(HIT_GROUP_FLOOR_NAME, D3D12_HIT_GROUP_TYPE::D3D12_HIT_GROUP_TYPE_TRIANGLES,
                 CLOSEST_HIT_PLANE_NAME);
+            bindHitGroup(HIT_GROUP_SPHERE_NAME,
+                D3D12_HIT_GROUP_TYPE::D3D12_HIT_GROUP_TYPE_TRIANGLES, CLOSEST_HIT_SPHERE_NAME);
         }
         {
             CD3DX12_RAYTRACING_SHADER_CONFIG_SUBOBJECT* config
@@ -518,13 +549,16 @@ void Scene::createDeviceDependentResources() {
             bindLocalRootSignature(mMissLocalRootSignature.Get(), MISS_SHADER_NAME);
             bindLocalRootSignature(
                 mHitGroupLocalRootSignature[LocalRootSignature::HitGroup::Normal].Get(),
-                HIT_GROUP_SPHERE_NAME);
+                HIT_GROUP_UFO_NAME);
             bindLocalRootSignature(
                 mHitGroupLocalRootSignature[LocalRootSignature::HitGroup::Normal].Get(),
                 HIT_GROUP_QUAD_NAME);
             bindLocalRootSignature(
                 mHitGroupLocalRootSignature[LocalRootSignature::HitGroup::Normal].Get(),
                 HIT_GROUP_FLOOR_NAME);
+            bindLocalRootSignature(
+                mHitGroupLocalRootSignature[LocalRootSignature::HitGroup::Normal].Get(),
+                HIT_GROUP_SPHERE_NAME);
         }
         {
             CD3DX12_GLOBAL_ROOT_SIGNATURE_SUBOBJECT* global
@@ -662,7 +696,7 @@ void Scene::createDeviceDependentResources() {
                     mTextureIDs[nextID] = nextID;
                 }
                 nextID = ModelTextureType(nextID + 1);
-                if (material.emissiveMapID == -1) {
+                if (material.occlusionMapID == -1) {
                     mTextureIDs[nextID] = mTextureIDs[ModelTextureType::Default_OcclusionMap];
                 } else {
                     auto occlusion = textureDatas[material.occlusionMapID];
@@ -761,6 +795,33 @@ void Scene::createDeviceDependentResources() {
                 if (!materialList.empty()) material = loader.getMaterialDatas()[0];
                 auto descs = loader.getImageDatas();
                 loadTextures(material, descs, ModelTextureType::Plane_AlbedoTexture);
+            }
+            {
+                Framework::Utility::GLBLoader loader(
+                    modelPath / MODEL_NAMES.at(BottomLevelASType::Sphere));
+                auto indices = toLinearList(loader.getIndicesPerSubMeshes());
+                auto vertices = toLinearVertices(loader.getPositionsPerSubMeshes(),
+                    loader.getNormalsPerSubMeshes(), loader.getUVsPerSubMeshes(),
+                    loader.getTangentsPerSubMeshes());
+
+                createBuffer(mDeviceResource->getDevice(),
+                    &mIndexBuffer[BottomLevelASType::Sphere].mResource, indices.data(),
+                    indices.size() * sizeof(indices[0]), L"IndexBuffer");
+                createBuffer(mDeviceResource->getDevice(),
+                    &mVertexBuffer[BottomLevelASType::Sphere].mResource, vertices.data(),
+                    vertices.size() * sizeof(vertices[0]), L"VertexBuffer");
+
+                resourceIndices.insert(resourceIndices.end(), indices.begin(), indices.end());
+                resourceVertices.insert(resourceVertices.end(), vertices.begin(), vertices.end());
+                mIndexOffsets[LocalRootSignature::HitGroupIndex::Sphere] = (UINT)indices.size();
+                mVertexOffsets[LocalRootSignature::HitGroupIndex::Sphere] = (UINT)vertices.size();
+
+                auto materialList = loader.getMaterialDatas();
+                GlbMaterial material = {};
+                if (!materialList.empty()) material = loader.getMaterialDatas()[0];
+                auto descs = loader.getImageDatas();
+
+                loadTextures(material, descs, ModelTextureType::Sphere_AlbedoTexture);
             }
         }
         {
@@ -909,7 +970,7 @@ void Scene::createDeviceDependentResources() {
         void* missShadowShaderID
             = stateObjectProp->GetShaderIdentifier(MISS_SHADOW_SHADER_NAME.c_str());
         void* hitGroup_SphereShaderID
-            = stateObjectProp->GetShaderIdentifier(HIT_GROUP_SPHERE_NAME.c_str());
+            = stateObjectProp->GetShaderIdentifier(HIT_GROUP_UFO_NAME.c_str());
         void* hitGroup_QuadShaderID
             = stateObjectProp->GetShaderIdentifier(HIT_GROUP_QUAD_NAME.c_str());
         void* hitGroup_FloorShaderID
@@ -956,7 +1017,7 @@ void Scene::createDeviceDependentResources() {
                 root.occlusion
                     = mTextures[mTextureIDs[ModelTextureType(offset + 4)]]->getGPUHandle();
             };
-            UINT num = 3;
+            UINT num = 4;
             UINT recordSize = shaderIDSize + sizeof(RootArgument);
             ShaderTable table(device, num, recordSize, L"HitGroupShaderTable");
             {
@@ -983,6 +1044,15 @@ void Scene::createDeviceDependentResources() {
                 rootArguments.cb.vertexOffset
                     = std::get<1>(getOffset(LocalRootSignature::HitGroupIndex::Floor));
                 setRootArgumentTexture(rootArguments, ModelTextureType::Plane_AlbedoTexture);
+                table.push_back(ShaderRecord(
+                    hitGroup_FloorShaderID, shaderIDSize, &rootArguments, sizeof(RootArgument)));
+            }
+            {
+                rootArguments.cb.indexOffset
+                    = std::get<0>(getOffset(LocalRootSignature::HitGroupIndex::Sphere));
+                rootArguments.cb.vertexOffset
+                    = std::get<1>(getOffset(LocalRootSignature::HitGroupIndex::Sphere));
+                setRootArgumentTexture(rootArguments, ModelTextureType::Sphere_AlbedoTexture);
                 table.push_back(ShaderRecord(
                     hitGroup_FloorShaderID, shaderIDSize, &rootArguments, sizeof(RootArgument)));
             }

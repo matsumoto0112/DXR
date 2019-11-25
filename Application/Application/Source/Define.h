@@ -53,6 +53,7 @@ namespace LocalRootSignature {
             UFO,
             Quad,
             Floor,
+            Sphere,
 
             Count
         };
@@ -76,6 +77,7 @@ namespace BottomLevelASType {
         UFO,
         Quad,
         Floor,
+        Sphere,
 
         Count
     };
