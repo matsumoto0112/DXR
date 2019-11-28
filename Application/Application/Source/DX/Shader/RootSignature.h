@@ -1,6 +1,6 @@
 /**
  * @file RootSignature.h
- * @brief
+ * @brief ルートシグネチャクラス
  */
 
 #pragma once
@@ -12,6 +12,9 @@ namespace Framework::DX {
      */
     class RootSignature {
     public:
+        /**
+         * @brief
+         */
         enum Flags {
             None,
             Global,
@@ -27,10 +30,10 @@ namespace Framework::DX {
          * @brief
          */
         ~RootSignature();
-        void create(ID3D12Device* device, Flags flag,
-            const std::vector<CD3DX12_ROOT_PARAMETER>& parameters,
-            const std::vector<CD3DX12_STATIC_SAMPLER_DESC>& samplers = {});
-        ID3D12RootSignature* getRootSignature() const { return mRootSignature.Get(); }
+        void create(ID3D12Device* device, const CD3DX12_ROOT_SIGNATURE_DESC& desc);
+        ID3D12RootSignature* getRootSignature() const {
+            return mRootSignature.Get();
+        }
 
     private:
         ComPtr<ID3D12RootSignature> mRootSignature;
