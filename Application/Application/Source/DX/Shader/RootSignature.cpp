@@ -2,24 +2,9 @@
 #include "Math/MathUtility.h"
 #include "Utility\StringUtil.h"
 
-namespace {
-    static constexpr D3D12_ROOT_SIGNATURE_FLAGS toFlags(Framework::DX::RootSignature::Flags flag) {
-        switch (flag) {
-        case Framework::DX::RootSignature::None:
-            return D3D12_ROOT_SIGNATURE_FLAGS::D3D12_ROOT_SIGNATURE_FLAG_NONE;
-        case Framework::DX::RootSignature::Global:
-            return D3D12_ROOT_SIGNATURE_FLAGS::D3D12_ROOT_SIGNATURE_FLAG_NONE;
-        case Framework::DX::RootSignature::Local:
-            return D3D12_ROOT_SIGNATURE_FLAGS::D3D12_ROOT_SIGNATURE_FLAG_LOCAL_ROOT_SIGNATURE;
-        default: return D3D12_ROOT_SIGNATURE_FLAGS::D3D12_ROOT_SIGNATURE_FLAG_NONE;
-        }
-    }
-} // namespace
-
 namespace Framework::DX {
-    RootSignature::RootSignature() {}
-    RootSignature::~RootSignature() {}
-    void RootSignature::create(ID3D12Device* device, const CD3DX12_ROOT_SIGNATURE_DESC& desc) {
+    //コンストラクタ
+    RootSignature::RootSignature(ID3D12Device* device, const CD3DX12_ROOT_SIGNATURE_DESC& desc) {
         ComPtr<ID3DBlob> blob, error;
         MY_THROW_IF_FAILED_LOG(
             D3D12SerializeRootSignature(
@@ -28,4 +13,6 @@ namespace Framework::DX {
         MY_THROW_IF_FAILED(device->CreateRootSignature(
             1, blob->GetBufferPointer(), blob->GetBufferSize(), IID_PPV_ARGS(&mRootSignature)));
     }
+    //デストラクタ
+    RootSignature::~RootSignature() {}
 } // namespace Framework::DX

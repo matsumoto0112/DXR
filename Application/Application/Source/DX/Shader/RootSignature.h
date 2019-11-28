@@ -13,29 +13,21 @@ namespace Framework::DX {
     class RootSignature {
     public:
         /**
-         * @brief
+         * @brief コンストラクタ
          */
-        enum Flags {
-            None,
-            Global,
-            Local,
-        };
-
-    public:
+        RootSignature(ID3D12Device* device, const CD3DX12_ROOT_SIGNATURE_DESC& desc);
         /**
-         * @brief
-         */
-        RootSignature();
-        /**
-         * @brief
+         * @brief デストラクタ
          */
         ~RootSignature();
-        void create(ID3D12Device* device, const CD3DX12_ROOT_SIGNATURE_DESC& desc);
+        /**
+         * @brief ルートシグネチャの取得
+         */
         ID3D12RootSignature* getRootSignature() const {
             return mRootSignature.Get();
         }
 
     private:
-        ComPtr<ID3D12RootSignature> mRootSignature;
+        ComPtr<ID3D12RootSignature> mRootSignature; //!< ルートシグネチャ
     };
 } // namespace Framework::DX
