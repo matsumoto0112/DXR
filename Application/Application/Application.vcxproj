@@ -145,7 +145,6 @@
     <ClInclude Include="Source\DX\ModelCompat.h" />
     <ClInclude Include="Source\DX\Raytracing\DXRDevice.h" />
     <ClInclude Include="Source\DX\Raytracing\DXRPipelineStateObject.h" />
-    <ClInclude Include="Source\DX\Raytracing\Helper.h" />
     <ClInclude Include="Source\DX\Raytracing\Shader\ShaderRecord.h" />
     <ClInclude Include="Source\DX\Raytracing\Shader\ShaderTable.h" />
     <ClInclude Include="Source\DX\Resource\IBuffer.h" />

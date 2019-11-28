@@ -63,7 +63,6 @@
     <ClInclude Include="Source\DX\ModelCompat.h" />
     <ClInclude Include="Source\DX\Util\GPUUploadBuffer.h" />
     <ClInclude Include="Source\DX\Raytracing\DXRDevice.h" />
-    <ClInclude Include="Source\DX\Raytracing\Helper.h" />
     <ClInclude Include="Source\DX\Resource\IBuffer.h" />
     <ClInclude Include="Source\DX\Resource\Texture2D.h" />
     <ClInclude Include="Source\ImGui\ImGuiInclude.h" />

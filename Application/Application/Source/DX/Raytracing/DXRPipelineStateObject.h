@@ -37,10 +37,18 @@ namespace Framework::DX {
         template <class... T>
         void exportShader(void* shaderCode, size_t byteLength, const T&... names);
         void bindHitGroup(const HitGroupDesc& desc);
-        void setConfig(UINT payloadSize, UINT attributeSize);
+        void setConfig(UINT payloadSize, UINT attributeSize, UINT maxRecursionDepth);
         void bindLocalRootSignature(
             const RootSignature& localRootSignature, const std::wstring& targetShaderName);
-        //private:
+        void bindGlobalRootSignature(const RootSignature& rootSignature);
+
+        void create(ID3D12Device5* device);
+
+        ID3D12StateObject* getStateObject() const {
+            return mPipelineStateObject.Get();
+        }
+
+    private:
         CD3DX12_STATE_OBJECT_DESC mPipelineStateObjectDesc;
         ComPtr<ID3D12StateObject> mPipelineStateObject;
     };

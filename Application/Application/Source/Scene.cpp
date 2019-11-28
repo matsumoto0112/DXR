@@ -1,7 +1,6 @@
 #include "Scene.h"
 #include <DirectXMath.h>
 #include <numeric>
-#include "DX/Raytracing/Helper.h"
 #include "DX/Raytracing/Shader/ShaderTable.h"
 #include "ImGui/ImGuiManager.h"
 #include "Utility/Debug.h"
@@ -349,7 +348,7 @@ void Scene::render() {
     dispatchDesc.Height = mHeight;
     dispatchDesc.Depth = 1;
 
-    dxrCommandList->SetPipelineState1(mDXRStateObject->mPipelineStateObject.Get());
+    dxrCommandList->SetPipelineState1(mDXRStateObject->getStateObject());
     dxrCommandList->DispatchRays(&dispatchDesc);
 
     D3D12_RESOURCE_BARRIER preCopyBarriers[2];
@@ -462,34 +461,22 @@ void Scene::createDeviceDependentResources() {
         D3D12_HIT_GROUP_TYPE::D3D12_HIT_GROUP_TYPE_TRIANGLES, CLOSEST_HIT_PLANE_NAME });
     mDXRStateObject->bindHitGroup({ HIT_GROUP_SPHERE_NAME,
         D3D12_HIT_GROUP_TYPE::D3D12_HIT_GROUP_TYPE_TRIANGLES, CLOSEST_HIT_SPHERE_NAME });
+
     UINT payloadSize
         = Framework::Math::MathUtil::mymax<UINT>({ sizeof(RayPayload), sizeof(ShadowPayload) });
     UINT attrSize = sizeof(float) * 2;
-    mDXRStateObject->setConfig(payloadSize, attrSize);
+    UINT maxRecursionDepth = MAX_RAY_RECURSION_DEPTH;
+    mDXRStateObject->setConfig(payloadSize, attrSize, maxRecursionDepth);
 
     mDXRStateObject->bindLocalRootSignature(*mMissLocalRootSignature, MISS_SHADER_NAME);
     mDXRStateObject->bindLocalRootSignature(*mHitGroupLocalRootSignature, HIT_GROUP_UFO_NAME);
     mDXRStateObject->bindLocalRootSignature(*mHitGroupLocalRootSignature, HIT_GROUP_QUAD_NAME);
     mDXRStateObject->bindLocalRootSignature(*mHitGroupLocalRootSignature, HIT_GROUP_FLOOR_NAME);
     mDXRStateObject->bindLocalRootSignature(*mHitGroupLocalRootSignature, HIT_GROUP_SPHERE_NAME);
-    {
-        CD3DX12_GLOBAL_ROOT_SIGNATURE_SUBOBJECT* global
-            = mDXRStateObject->mPipelineStateObjectDesc
-                  .CreateSubobject<CD3DX12_GLOBAL_ROOT_SIGNATURE_SUBOBJECT>();
-        global->SetRootSignature(mGlobalRootSignature->getRootSignature());
-    }
-    {
-        CD3DX12_RAYTRACING_PIPELINE_CONFIG_SUBOBJECT* config
-            = mDXRStateObject->mPipelineStateObjectDesc
-                  .CreateSubobject<CD3DX12_RAYTRACING_PIPELINE_CONFIG_SUBOBJECT>();
-        UINT maxRecursionDepth = MAX_RAY_RECURSION_DEPTH;
-        config->Config(maxRecursionDepth);
-    }
 
-    PrintStateObjectDesc(mDXRStateObject->mPipelineStateObjectDesc);
-    MY_THROW_IF_FAILED(
-        mDXRDevice.getDXRDevice()->CreateStateObject(mDXRStateObject->mPipelineStateObjectDesc,
-            IID_PPV_ARGS(&mDXRStateObject->mPipelineStateObject)));
+    mDXRStateObject->bindGlobalRootSignature(*mGlobalRootSignature);
+
+    mDXRStateObject->create(mDXRDevice.getDXRDevice());
 }
 {
     using namespace Framework::Desc;
@@ -873,7 +860,8 @@ auto getOffset = [&mIndexOffsets, &mVertexOffsets](LocalRootSignature::HitGroupI
 {
     ID3D12Device* device = mDeviceResource->getDevice();
     ComPtr<ID3D12StateObjectProperties> stateObjectProp;
-    MY_THROW_IF_FAILED(mDXRStateObject->mPipelineStateObject.As(&stateObjectProp));
+    MY_THROW_IF_FAILED(
+        mDXRStateObject->getStateObject()->QueryInterface(IID_PPV_ARGS(&stateObjectProp)));
     void* rayGenShaderID = stateObjectProp->GetShaderIdentifier(RAY_GEN_NAME.c_str());
     void* missShaderID = stateObjectProp->GetShaderIdentifier(MISS_SHADER_NAME.c_str());
     void* missShadowShaderID
