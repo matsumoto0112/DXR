@@ -30,15 +30,25 @@ namespace Framework::Utility {
         /**
          * @brief FPSを取得する
          */
-        double getFPS() const { return mFPS; }
+        double getFPS() const {
+            return mFPS;
+        }
         /**
          * @brief 前フレームからの差分時間を取得する
          */
-        double getDeltaTime() const { return mDiffTime; }
+        double getDeltaTime() const {
+            return mDiffTime;
+        }
         /**
          * @brief サンプル数を設定する
          */
         void setSampleCount(UINT sample = 10);
+        /**
+         * @brief 計測開始時からの経過時間
+         */
+        double getTime() const {
+            return mTime;
+        }
 
     private:
         /**
@@ -55,5 +65,6 @@ namespace Framework::Utility {
         UINT mSampleCount; //!< サンプリング数
         double mFPS; //!< 現在のFPS
         double mDiffTime; //!< 前フレームからの差分時間(秒)
+        double mTime; //!< 計測開始時からの経過時間
     };
 } // namespace Framework::Utility

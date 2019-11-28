@@ -2,7 +2,7 @@
 
 namespace Framework::Utility {
     //コンストラクタ
-    Time::Time(UINT sampleNum) {
+    Time::Time(UINT sampleNum) : mTime(0.0) {
         setSampleCount(sampleNum);
         LARGE_INTEGER freq;
         QueryPerformanceFrequency(&freq);
@@ -22,6 +22,7 @@ namespace Framework::Utility {
 
         mSumTimes += diff - mDifTimes.front();
         mDiffTime = diff / 1000.0;
+        mTime += mDiffTime;
     }
     //サンプリング数を設定
     void Time::setSampleCount(UINT sample) {

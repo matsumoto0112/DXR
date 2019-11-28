@@ -5,8 +5,7 @@
 #include "../Util/Global.hlsli"
 #include "Local.hlsli"
 
-[shader("miss")]
-void Miss(inout RayPayload payload) {
+[shader("miss")] void Miss(inout RayPayload payload) {
     payload.color = l_missCB.back;
 }
 

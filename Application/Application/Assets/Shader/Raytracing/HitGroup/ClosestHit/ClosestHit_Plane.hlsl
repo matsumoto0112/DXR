@@ -12,9 +12,9 @@ void ClosestHit_Plane(inout RayPayload payload, in MyAttr attr) {
     float3 N = GetNormal(attr);
     float3 L = normalize(g_sceneCB.lightPosition.xyz - hitPosition);
 
-    ////‰e‚É‚©‚©‚Á‚Ä‚¢‚é‚©”»’è
-    //Ray shadowRay = { hitPosition,L };
-    //float factor = ShadowRayCast(shadowRay,payload.recursionCount) ? 0.1 : 1.0;
+    //‰e‚É‚©‚©‚Á‚Ä‚¢‚é‚©”»’è
+    Ray shadowRay = { hitPosition,L };
+    float factor = ShadowRayCast(shadowRay,payload.recursionCount) ? 0.1 : 1.0;
 
     float2 uv = GetUV(attr);
 
@@ -35,7 +35,7 @@ void ClosestHit_Plane(inout RayPayload payload, in MyAttr attr) {
     float3 reflectColor = RayCast(secondRay, payload.recursionCount).rgb;
     color.rgb += reflectColor;
 
-    //color.rgb *= factor;
+    color.rgb *= factor;
     color = saturate(color);
 
     payload.color = color;

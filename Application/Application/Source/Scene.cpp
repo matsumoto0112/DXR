@@ -228,6 +228,7 @@ void Scene::update() {
     mSceneCB->lightPosition = Vec4(mLightPosition, 1.0f);
     mSceneCB->lightDiffuse = mLightDiffuse;
     mSceneCB->lightAmbient = mLightAmbient;
+    mSceneCB->globalTime = static_cast<float>(mTime.getTime());
 
     if (mInputManager->getKeyboard()->getKey(Framework::Input::KeyCode::LShift)) {
         mQuadRotate += 1.0f;
@@ -290,7 +291,7 @@ void Scene::render() {
             reinterpret_cast<XMFLOAT3X4*>(instanceDesc[n + offset].Transform), transform);
     }
     offset += FLOOR_COUNT;
-    UINT root = Framework::Math::MathUtil::sqrt(SPHERE_COUNT);
+    UINT root = static_cast<UINT>(Framework::Math::MathUtil::sqrt(SPHERE_COUNT));
     for (UINT n = 0; n < SPHERE_COUNT; n++) {
         XMMATRIX transform
             = XMMatrixTranslation(((n - root / 2) / root) * 20, 3, ((n - root / 2) % root) * 20);
@@ -883,7 +884,7 @@ auto getOffset = [&mIndexOffsets, &mVertexOffsets](LocalRootSignature::HitGroupI
         struct RootArgument {
             MissConstant cb;
         } rootArgument;
-        rootArgument.cb.back = Color(0.0f, 0.7f, 0.7f, 1);
+        rootArgument.cb.back = Color(0.0f, 0.6f, 0.6f, 1.0f);
         UINT num = 2;
         UINT recordSize = shaderIDSize + sizeof(RootArgument);
         ShaderTable table(device, num, recordSize, L"MissShaderTable");

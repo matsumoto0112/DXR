@@ -47,7 +47,7 @@ inline float3 Normal(in MyAttr attr) {
 
     //”½ËF‚Ìæ“¾
     float3 reflectColor = RayCast(secondRay, payload.recursionCount).rgb;
-    color.rgb += reflectColor;
+    //color.rgb += reflectColor;
 
     payload.color.rgb = color;
     payload.color.a = 1.0;
