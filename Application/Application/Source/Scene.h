@@ -1,7 +1,7 @@
 #pragma once
 #include "Assets/Shader/Raytracing/Util/GlobalCompat.h"
 #include "DX/ConstantBuffer.h"
-#include "DX/CountingDescriptorTable.h"
+#include "DX/DescriptorTable.h"
 #include "DX/DeviceResource.h"
 #include "DX/Raytracing/DXRDevice.h"
 #include "DX/Raytracing/DXRPipelineStateObject.h"
@@ -65,7 +65,7 @@ private:
     std::unique_ptr<Framework::DX::RootSignature> mGlobalRootSignature;
     std::unique_ptr<Framework::DX::RootSignature> mMissLocalRootSignature;
     std::unique_ptr<Framework::DX::RootSignature> mHitGroupLocalRootSignature;
-    std::unique_ptr<Framework::DX::CountingDescriptorTable> mDescriptorTable;
+    std::unique_ptr<Framework::DX::DescriptorTable> mDescriptorTable;
     Framework::DX::IBuffer mResourcesIndexBuffer;
     std::unique_ptr<Framework::DX::VertexBuffer> mResourcesVertexBuffer;
     Framework::DX::IBuffer mRaytracingOutput;

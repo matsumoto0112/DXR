@@ -88,3 +88,37 @@ namespace TopLevelASType {
         One,
     };
 } // namespace TopLevelASType
+
+namespace DescriptorHeapIndex {
+    enum MyEnum {
+        DefaultTexture_Albedo,
+        DefaultTexture_NormalMap,
+        DefaultTexture_MetallicRoughnessMap,
+        DefaultTexture_EmissiveMap,
+        DefaultTexture_OcclusionMap,
+
+        UFO_Albedo,
+        UFO_NormalMap,
+        UFO_MetallicRoughnessMap,
+        UFO_EmissiveMap,
+        UFO_OcclusionMap,
+
+        Quad_Albedo,
+
+        Plane_Albedo,
+        Plane_NormalMap,
+        Plane_MetallicRoughnessMap,
+        Plane_EmissiveMap,
+        Plane_OcclusionMap,
+
+        Sphere_Albedo,
+        Sphere_NormalMap,
+        Sphere_MetallicRoughnessMap,
+        Sphere_EmissiveMap,
+        Sphere_OcclusionMap,
+
+        ResourceIndexBuffer,
+        ResourceVertexBuffer,
+        RaytracingOutput,
+    };
+}

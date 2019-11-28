@@ -155,7 +155,7 @@ Scene::Scene(Framework::DX::DeviceResource* device, Framework::Input::InputManag
       mHeight(height) {
     Framework::Desc::DescriptorTableDesc desc = { L"ResourceTable", 10000,
         Framework::Desc::HeapType::CBV_SRV_UAV, Framework::Desc::HeapFlag::ShaderVisible };
-    mDescriptorTable = std::make_unique<CountingDescriptorTable>(device->getDevice(), desc);
+    mDescriptorTable = std::make_unique<DescriptorTable>(device->getDevice(), desc);
     mCameraPosition = Vec3(0, 0, -10);
     mLightPosition = Vec3(0, 100, -100);
     mLightDiffuse = Color4(1.0f, 1.0f, 1.0f, 1.0f);
@@ -525,89 +525,108 @@ auto getOffset = [&mIndexOffsets, &mVertexOffsets](LocalRootSignature::HitGroupI
                 desc.name = name;
                 return desc;
             };
-            auto createDefaultTexture
-                = [&](const std::wstring& name, ModelTextureType texType, const Color4& col) {
-                      std::shared_ptr<Texture2D> texture
-                          = std::make_shared<Texture2D>(device, createUnitTexture(col, name));
-                      mDescriptorTable->allocate(texture.get());
-                      texture->createSRV(device);
-                      mTextures[texType] = texture;
-                      mTextureIDs[texType] = texType;
-                  };
+            auto createDefaultTexture = [&](const std::wstring& name, ModelTextureType texType,
+                                            const Color4& col, UINT heapIndex) {
+                std::shared_ptr<Texture2D> texture
+                    = std::make_shared<Texture2D>(device, createUnitTexture(col, name));
 
-            createDefaultTexture(
-                L"DefaultAlbedo", ModelTextureType::Default_AlbedoTexture, Color4(1, 1, 1, 1));
+                texture->setCPUHandle(mDescriptorTable->getCPUHandle(heapIndex));
+                texture->setGPUHandle(mDescriptorTable->getGPUHandle(heapIndex));
+                texture->createSRV(device);
+                mTextures[texType] = texture;
+                mTextureIDs[texType] = texType;
+            };
+
+            createDefaultTexture(L"DefaultAlbedo", ModelTextureType::Default_AlbedoTexture,
+                Color4(1, 1, 1, 1), DescriptorHeapIndex::DefaultTexture_Albedo);
             createDefaultTexture(L"DefaultNormal", ModelTextureType::Default_NormalMap,
-                Color4(0.5f, 0.5f, 1.0f, 1.0f));
+                Color4(0.5f, 0.5f, 1.0f, 1.0f), DescriptorHeapIndex::DefaultTexture_NormalMap);
             createDefaultTexture(L"DefaultMetallicRoughness",
-                ModelTextureType::Default_MetallicRoughnessMap, Color4(0, 0, 0, 1));
-            createDefaultTexture(
-                L"DefaultEmissive", ModelTextureType::Default_EmissiveMap, Color4(0, 0, 0, 1));
-            createDefaultTexture(
-                L"DefaultOcculusion", ModelTextureType::Default_OcclusionMap, Color4(1, 1, 1, 1));
+                ModelTextureType::Default_MetallicRoughnessMap, Color4(0, 0, 0, 1),
+                DescriptorHeapIndex::DefaultTexture_MetallicRoughnessMap);
+            createDefaultTexture(L"DefaultEmissive", ModelTextureType::Default_EmissiveMap,
+                Color4(0, 0, 0, 1), DescriptorHeapIndex::DefaultTexture_EmissiveMap);
+            createDefaultTexture(L"DefaultOcculusion", ModelTextureType::Default_OcclusionMap,
+                Color4(1, 1, 1, 1), DescriptorHeapIndex::DefaultTexture_OcclusionMap);
         }
 
-        auto loadTextures = [&](const GlbMaterial& material,
-                                const std::vector<Framework::Desc::TextureDesc>& textureDatas,
-                                ModelTextureType idOffset) {
-            ModelTextureType nextID = idOffset;
-            if (textureDatas.empty()) {
-                mTextureIDs[nextID] = mTextureIDs[ModelTextureType::Default_AlbedoTexture];
-            } else {
-                auto albedo = textureDatas[0];
-                auto texture = std::make_shared<Texture2D>(device, albedo);
-                mDescriptorTable->allocate(texture.get());
+        auto loadTextureIfExist = [&](bool expr, ModelTextureType type,
+                                      const std::vector<Framework::Desc::TextureDesc>& textureDatas,
+                                      UINT descID, UINT heapIndex, ModelTextureType defaultID) {
+            if (expr) {
+                Framework::Desc::TextureDesc desc = textureDatas[descID];
+                auto texture = std::make_shared<Texture2D>(device, desc);
+                texture->setCPUHandle(mDescriptorTable->getCPUHandle(heapIndex));
+                texture->setGPUHandle(mDescriptorTable->getGPUHandle(heapIndex));
                 texture->createSRV(device);
-                mTextures[nextID] = texture;
-                mTextureIDs[nextID] = nextID;
-            }
-            nextID = ModelTextureType(nextID + 1);
-            if (material.normalMapID == -1) {
-                mTextureIDs[nextID] = mTextureIDs[ModelTextureType::Default_NormalMap];
+                mTextures[type] = texture;
+                mTextureIDs[type] = type;
             } else {
-                auto normal = textureDatas[material.normalMapID];
-                auto texture = std::make_shared<Texture2D>(device, normal);
-                mDescriptorTable->allocate(texture.get());
-                texture->createSRV(device);
-                mTextures[nextID] = texture;
-                mTextureIDs[nextID] = nextID;
-            }
-
-            nextID = ModelTextureType(nextID + 1);
-            if (material.metallicRoughnessMapID == -1) {
-                mTextureIDs[nextID] = mTextureIDs[ModelTextureType::Default_MetallicRoughnessMap];
-            } else {
-                auto metalRough = textureDatas[material.metallicRoughnessMapID];
-                auto texture = std::make_shared<Texture2D>(device, metalRough);
-                mDescriptorTable->allocate(texture.get());
-                texture->createSRV(device);
-                mTextures[nextID] = texture;
-                mTextureIDs[nextID] = nextID;
-            }
-
-            nextID = ModelTextureType(nextID + 1);
-            if (material.emissiveMapID == -1) {
-                mTextureIDs[nextID] = mTextureIDs[ModelTextureType::Default_EmissiveMap];
-            } else {
-                auto emissive = textureDatas[material.emissiveMapID];
-                auto texture = std::make_shared<Texture2D>(device, emissive);
-                mDescriptorTable->allocate(texture.get());
-                texture->createSRV(device);
-                mTextures[nextID] = texture;
-                mTextureIDs[nextID] = nextID;
-            }
-            nextID = ModelTextureType(nextID + 1);
-            if (material.occlusionMapID == -1) {
-                mTextureIDs[nextID] = mTextureIDs[ModelTextureType::Default_OcclusionMap];
-            } else {
-                auto occlusion = textureDatas[material.occlusionMapID];
-                auto texture = std::make_shared<Texture2D>(device, occlusion);
-                mDescriptorTable->allocate(texture.get());
-                texture->createSRV(device);
-                mTextures[nextID] = texture;
-                mTextureIDs[nextID] = nextID;
+                mTextureIDs[type] = mTextureIDs[defaultID];
             }
         };
+
+        //auto loadTextures = [&](const GlbMaterial& material,
+        //                        const std::vector<Framework::Desc::TextureDesc>& textureDatas,
+        //                        ModelTextureType idOffset) {
+        //    ModelTextureType nextID = idOffset;
+        //    if (textureDatas.empty()) {
+        //        mTextureIDs[nextID] = mTextureIDs[ModelTextureType::Default_AlbedoTexture];
+        //    } else {
+        //        auto albedo = textureDatas[0];
+        //        auto texture = std::make_shared<Texture2D>(device, albedo);
+        //        mDescriptorTable->allocate(texture.get());
+        //        texture->createSRV(device);
+        //        mTextures[nextID] = texture;
+        //        mTextureIDs[nextID] = nextID;
+        //    }
+        //    nextID = ModelTextureType(nextID + 1);
+        //    if (material.normalMapID == -1) {
+        //        mTextureIDs[nextID] = mTextureIDs[ModelTextureType::Default_NormalMap];
+        //    } else {
+        //        auto normal = textureDatas[material.normalMapID];
+        //        auto texture = std::make_shared<Texture2D>(device, normal);
+        //        mDescriptorTable->allocate(texture.get());
+        //        texture->createSRV(device);
+        //        mTextures[nextID] = texture;
+        //        mTextureIDs[nextID] = nextID;
+        //    }
+
+        //    nextID = ModelTextureType(nextID + 1);
+        //    if (material.metallicRoughnessMapID == -1) {
+        //        mTextureIDs[nextID] = mTextureIDs[ModelTextureType::Default_MetallicRoughnessMap];
+        //    } else {
+        //        auto metalRough = textureDatas[material.metallicRoughnessMapID];
+        //        auto texture = std::make_shared<Texture2D>(device, metalRough);
+        //        mDescriptorTable->allocate(texture.get());
+        //        texture->createSRV(device);
+        //        mTextures[nextID] = texture;
+        //        mTextureIDs[nextID] = nextID;
+        //    }
+
+        //    nextID = ModelTextureType(nextID + 1);
+        //    if (material.emissiveMapID == -1) {
+        //        mTextureIDs[nextID] = mTextureIDs[ModelTextureType::Default_EmissiveMap];
+        //    } else {
+        //        auto emissive = textureDatas[material.emissiveMapID];
+        //        auto texture = std::make_shared<Texture2D>(device, emissive);
+        //        mDescriptorTable->allocate(texture.get());
+        //        texture->createSRV(device);
+        //        mTextures[nextID] = texture;
+        //        mTextureIDs[nextID] = nextID;
+        //    }
+        //    nextID = ModelTextureType(nextID + 1);
+        //    if (material.occlusionMapID == -1) {
+        //        mTextureIDs[nextID] = mTextureIDs[ModelTextureType::Default_OcclusionMap];
+        //    } else {
+        //        auto occlusion = textureDatas[material.occlusionMapID];
+        //        auto texture = std::make_shared<Texture2D>(device, occlusion);
+        //        mDescriptorTable->allocate(texture.get());
+        //        texture->createSRV(device);
+        //        mTextures[nextID] = texture;
+        //        mTextureIDs[nextID] = nextID;
+        //    }
+        //};
 
         {
             Framework::Utility::GLBLoader loader(
@@ -634,7 +653,21 @@ auto getOffset = [&mIndexOffsets, &mVertexOffsets](LocalRootSignature::HitGroupI
             if (!materialList.empty()) material = loader.getMaterialDatas()[0];
             auto descs = loader.getImageDatas();
 
-            loadTextures(material, descs, ModelTextureType::UFO_AlbedoTexture);
+            loadTextureIfExist(!descs.empty(), ModelTextureType::UFO_AlbedoTexture, descs, 0,
+                DescriptorHeapIndex::UFO_Albedo, ModelTextureType::Default_AlbedoTexture);
+            loadTextureIfExist(material.normalMapID != -1, ModelTextureType::UFO_NormalMap, descs,
+                material.normalMapID, DescriptorHeapIndex::UFO_NormalMap,
+                ModelTextureType::Default_NormalMap);
+            loadTextureIfExist(material.metallicRoughnessMapID != -1,
+                ModelTextureType::UFO_MetallicRoughness, descs, material.metallicRoughnessMapID,
+                DescriptorHeapIndex::UFO_MetallicRoughnessMap,
+                ModelTextureType::Default_MetallicRoughnessMap);
+            loadTextureIfExist(material.emissiveMapID != -1, ModelTextureType::UFO_EmissiveMap,
+                descs, material.emissiveMapID, DescriptorHeapIndex::UFO_EmissiveMap,
+                ModelTextureType::Default_EmissiveMap);
+            loadTextureIfExist(material.occlusionMapID != -1, ModelTextureType::UFO_OcclusionMap,
+                descs, material.occlusionMapID, DescriptorHeapIndex::UFO_OcclusionMap,
+                ModelTextureType::Default_OcclusionMap);
         }
         {
             std::vector<Index> indices = { 0, 1, 2, 0, 2, 3 };
@@ -659,7 +692,9 @@ auto getOffset = [&mIndexOffsets, &mVertexOffsets](LocalRootSignature::HitGroupI
             Framework::Desc::TextureDesc desc
                 = Framework::Utility::TextureLoader::load(texPath / "back2.png");
             auto texture = std::make_shared<Texture2D>(device, desc);
-            mDescriptorTable->allocate(texture.get());
+
+            texture->setCPUHandle(mDescriptorTable->getCPUHandle(DescriptorHeapIndex::Quad_Albedo));
+            texture->setGPUHandle(mDescriptorTable->getGPUHandle(DescriptorHeapIndex::Quad_Albedo));
             texture->createSRV(device);
             mTextures[ModelTextureType::Quad_AlbedoTexture] = texture;
             mTextureIDs[ModelTextureType::Quad_AlbedoTexture]
@@ -694,9 +729,24 @@ auto getOffset = [&mIndexOffsets, &mVertexOffsets](LocalRootSignature::HitGroupI
             GlbMaterial material = {};
             if (!materialList.empty()) material = loader.getMaterialDatas()[0];
             auto descs = loader.getImageDatas();
-            loadTextures(material, descs, ModelTextureType::Plane_AlbedoTexture);
+            loadTextureIfExist(!descs.empty(), ModelTextureType::Plane_AlbedoTexture, descs, 0,
+                DescriptorHeapIndex::Plane_Albedo, ModelTextureType::Default_AlbedoTexture);
+            loadTextureIfExist(material.normalMapID != -1, ModelTextureType::Plane_NormalMap, descs,
+                material.normalMapID, DescriptorHeapIndex::Plane_NormalMap,
+                ModelTextureType::Default_NormalMap);
+            loadTextureIfExist(material.metallicRoughnessMapID != -1,
+                ModelTextureType::Plane_MetallicRoughnessMap, descs,
+                material.metallicRoughnessMapID, DescriptorHeapIndex::Plane_MetallicRoughnessMap,
+                ModelTextureType::Default_MetallicRoughnessMap);
+            loadTextureIfExist(material.emissiveMapID != -1, ModelTextureType::Plane_EmissiveMap,
+                descs, material.emissiveMapID, DescriptorHeapIndex::Plane_EmissiveMap,
+                ModelTextureType::Default_EmissiveMap);
+            loadTextureIfExist(material.occlusionMapID != -1, ModelTextureType::Plane_OcclusionMap,
+                descs, material.occlusionMapID, DescriptorHeapIndex::Plane_OcclusionMap,
+                ModelTextureType::Default_OcclusionMap);
         }
         {
+
             Framework::Utility::GLBLoader loader(
                 modelPath / MODEL_NAMES.at(BottomLevelASType::Sphere));
             auto indices = toLinearList(loader.getIndicesPerSubMeshes());
@@ -721,7 +771,21 @@ auto getOffset = [&mIndexOffsets, &mVertexOffsets](LocalRootSignature::HitGroupI
             if (!materialList.empty()) material = loader.getMaterialDatas()[0];
             auto descs = loader.getImageDatas();
 
-            loadTextures(material, descs, ModelTextureType::Sphere_AlbedoTexture);
+            loadTextureIfExist(!descs.empty(), ModelTextureType::Sphere_AlbedoTexture, descs, 0,
+                DescriptorHeapIndex::Sphere_Albedo, ModelTextureType::Default_AlbedoTexture);
+            loadTextureIfExist(material.normalMapID != -1, ModelTextureType::Sphere_NormalMap,
+                descs, material.normalMapID, DescriptorHeapIndex::Sphere_NormalMap,
+                ModelTextureType::Default_NormalMap);
+            loadTextureIfExist(material.metallicRoughnessMapID != -1,
+                ModelTextureType::Sphere_MetallicRoughnessMap, descs,
+                material.metallicRoughnessMapID, DescriptorHeapIndex::Sphere_MetallicRoughnessMap,
+                ModelTextureType::Default_MetallicRoughnessMap);
+            loadTextureIfExist(material.emissiveMapID != -1, ModelTextureType::Sphere_EmissiveMap,
+                descs, material.emissiveMapID, DescriptorHeapIndex::Sphere_EmissiveMap,
+                ModelTextureType::Default_EmissiveMap);
+            loadTextureIfExist(material.occlusionMapID != -1, ModelTextureType::Sphere_OcclusionMap,
+                descs, material.occlusionMapID, DescriptorHeapIndex::Sphere_OcclusionMap,
+                ModelTextureType::Default_OcclusionMap);
         }
     }
     {
@@ -840,7 +904,10 @@ auto getOffset = [&mIndexOffsets, &mVertexOffsets](LocalRootSignature::HitGroupI
             srvDesc.Format = DXGI_FORMAT::DXGI_FORMAT_R32_TYPELESS;
             srvDesc.Buffer.Flags = D3D12_BUFFER_SRV_FLAGS::D3D12_BUFFER_SRV_FLAG_RAW;
             srvDesc.Buffer.StructureByteStride = 0;
-            mDescriptorTable->allocate(&mResourcesIndexBuffer);
+            mResourcesIndexBuffer.setCPUHandle(
+                mDescriptorTable->getCPUHandle(DescriptorHeapIndex::ResourceIndexBuffer));
+            mResourcesIndexBuffer.setGPUHandle(
+                mDescriptorTable->getGPUHandle(DescriptorHeapIndex::ResourceIndexBuffer));
             device->CreateShaderResourceView(
                 mResourcesIndexBuffer.mResource.Get(), &srvDesc, mResourcesIndexBuffer.mCPUHandle);
         }
@@ -853,7 +920,10 @@ auto getOffset = [&mIndexOffsets, &mVertexOffsets](LocalRootSignature::HitGroupI
             srvDesc.Format = DXGI_FORMAT::DXGI_FORMAT_UNKNOWN;
             srvDesc.Buffer.Flags = D3D12_BUFFER_SRV_FLAGS::D3D12_BUFFER_SRV_FLAG_NONE;
             srvDesc.Buffer.StructureByteStride = sizeof(resourceVertices[0]);
-            mDescriptorTable->allocate(mResourcesVertexBuffer.get());
+            mResourcesVertexBuffer->setCPUHandle(
+                mDescriptorTable->getCPUHandle(DescriptorHeapIndex::ResourceVertexBuffer));
+            mResourcesVertexBuffer->setGPUHandle(
+                mDescriptorTable->getGPUHandle(DescriptorHeapIndex::ResourceVertexBuffer));
             device->CreateShaderResourceView(mResourcesVertexBuffer->getResource(), &srvDesc,
                 mResourcesVertexBuffer->getCPUHandle());
         }
@@ -974,7 +1044,10 @@ void Scene::createWindowDependentResources() {
             IID_PPV_ARGS(&mRaytracingOutput.mResource)));
     mRaytracingOutput.mResource->SetName(L"RaytracingOutput");
 
-    mDescriptorTable->allocate(&mRaytracingOutput);
+    mRaytracingOutput.setCPUHandle(
+        mDescriptorTable->getCPUHandle(DescriptorHeapIndex::RaytracingOutput));
+    mRaytracingOutput.setGPUHandle(
+        mDescriptorTable->getGPUHandle(DescriptorHeapIndex::RaytracingOutput));
 
     D3D12_UNORDERED_ACCESS_VIEW_DESC uavDesc = {};
     uavDesc.ViewDimension = D3D12_UAV_DIMENSION::D3D12_UAV_DIMENSION_TEXTURE2D;

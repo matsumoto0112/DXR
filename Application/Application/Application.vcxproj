@@ -81,7 +81,6 @@
   <ItemGroup>
     <ClCompile Include="Source\Camera\Perspective.cpp" />
     <ClCompile Include="Source\Device\GameDevice.cpp" />
-    <ClCompile Include="Source\DX\CountingDescriptorTable.cpp" />
     <ClCompile Include="Source\DX\DescriptorTable.cpp" />
     <ClCompile Include="Source\DX\DeviceResource.cpp" />
     <ClCompile Include="Source\DX\Raytracing\DXRPipelineStateObject.cpp" />
@@ -140,7 +139,6 @@
     <ClInclude Include="Source\Device\GameDevice.h" />
     <ClInclude Include="Source\Device\ISystemEventNotify.h" />
     <ClInclude Include="Source\DX\ConstantBuffer.h" />
-    <ClInclude Include="Source\DX\CountingDescriptorTable.h" />
     <ClInclude Include="Source\DX\DescriptorTable.h" />
     <ClInclude Include="Source\DX\DeviceResource.h" />
     <ClInclude Include="Source\DX\ModelCompat.h" />

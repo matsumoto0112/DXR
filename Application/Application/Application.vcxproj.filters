@@ -4,7 +4,6 @@
     <ClCompile Include="Source\main.cpp" />
     <ClCompile Include="Source\stdafx.cpp" />
     <ClCompile Include="Source\Scene.cpp" />
-    <ClCompile Include="Source\DX\CountingDescriptorTable.cpp" />
     <ClCompile Include="Source\DX\DescriptorTable.cpp" />
     <ClCompile Include="Source\DX\DeviceResource.cpp" />
     <ClCompile Include="Source\DX\Util\GPUUploadBuffer.cpp" />
@@ -58,7 +57,6 @@
     <ClInclude Include="Assets\Shader\Raytracing\Util\HitGroupCompat.h" />
     <ClInclude Include="Assets\Shader\Raytracing\Util\PBR.hlsli" />
     <ClInclude Include="Source\DX\ConstantBuffer.h" />
-    <ClInclude Include="Source\DX\CountingDescriptorTable.h" />
     <ClInclude Include="Source\DX\DescriptorTable.h" />
     <ClInclude Include="Source\DX\DeviceResource.h" />
     <ClInclude Include="Source\DX\ModelCompat.h" />
