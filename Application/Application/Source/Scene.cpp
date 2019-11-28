@@ -331,7 +331,7 @@ void Scene::render() {
     commandList->SetComputeRootDescriptorTable(
         GlobalRootSignature::Slot::IndexBuffer, mResourcesIndexBuffer.getGPUHandle());
     commandList->SetComputeRootDescriptorTable(
-        GlobalRootSignature::Slot::VertexBuffer, mResourcesVertexBuffer.getGPUHandle());
+        GlobalRootSignature::Slot::VertexBuffer, mResourcesVertexBuffer->getGPUHandle());
 
     D3D12_DISPATCH_RAYS_DESC dispatchDesc = {};
     dispatchDesc.RayGenerationShaderRecord.StartAddress = mRayGenTable->GetGPUVirtualAddress();
@@ -826,9 +826,10 @@ auto getOffset = [&mIndexOffsets, &mVertexOffsets](LocalRootSignature::HitGroupI
 
         createBuffer(device, &mResourcesIndexBuffer.mResource, resourceIndices.data(),
             resourceIndices.size() * sizeof(resourceIndices[0]), L"ResourceIndex");
-        createBuffer(device, &mResourcesVertexBuffer.mResource, resourceVertices.data(),
-            resourceVertices.size() * sizeof(resourceVertices[0]), L"ResourceVertex");
-
+        //createBuffer(device, &mResourcesVertexBuffer.mResource, resourceVertices.data(),
+        //    resourceVertices.size() * sizeof(resourceVertices[0]), L"ResourceVertex");
+        mResourcesVertexBuffer
+            = std::make_unique<VertexBuffer>(device, resourceVertices, L"ResourceVertex");
         {
             UINT indexBufferSize
                 = (UINT)resourceIndices.size() * sizeof(resourceIndices[0]) / sizeof(float);
@@ -852,9 +853,9 @@ auto getOffset = [&mIndexOffsets, &mVertexOffsets](LocalRootSignature::HitGroupI
             srvDesc.Format = DXGI_FORMAT::DXGI_FORMAT_UNKNOWN;
             srvDesc.Buffer.Flags = D3D12_BUFFER_SRV_FLAGS::D3D12_BUFFER_SRV_FLAG_NONE;
             srvDesc.Buffer.StructureByteStride = sizeof(resourceVertices[0]);
-            mDescriptorTable->allocate(&mResourcesVertexBuffer);
-            device->CreateShaderResourceView(mResourcesVertexBuffer.mResource.Get(), &srvDesc,
-                mResourcesVertexBuffer.mCPUHandle);
+            mDescriptorTable->allocate(mResourcesVertexBuffer.get());
+            device->CreateShaderResourceView(mResourcesVertexBuffer->getResource(), &srvDesc,
+                mResourcesVertexBuffer->getCPUHandle());
         }
     }
 }

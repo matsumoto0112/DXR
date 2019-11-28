@@ -6,6 +6,7 @@
 #include "DX/Raytracing/DXRDevice.h"
 #include "DX/Raytracing/DXRPipelineStateObject.h"
 #include "DX/Resource/Texture2D.h"
+#include "DX/Resource/VertexBuffer.h"
 #include "DX/Shader/RootSignature.h"
 #include "Define.h"
 #include "Device/ISystemEventNotify.h"
@@ -64,10 +65,9 @@ private:
     std::unique_ptr<Framework::DX::RootSignature> mGlobalRootSignature;
     std::unique_ptr<Framework::DX::RootSignature> mMissLocalRootSignature;
     std::unique_ptr<Framework::DX::RootSignature> mHitGroupLocalRootSignature;
-    //ComPtr<ID3D12StateObject> mDXRStateObject;
     std::unique_ptr<Framework::DX::CountingDescriptorTable> mDescriptorTable;
     Framework::DX::IBuffer mResourcesIndexBuffer;
-    Framework::DX::IBuffer mResourcesVertexBuffer;
+    std::unique_ptr<Framework::DX::VertexBuffer> mResourcesVertexBuffer;
     Framework::DX::IBuffer mRaytracingOutput;
     std::vector<std::shared_ptr<Framework::DX::Texture2D>> mTextures;
 
