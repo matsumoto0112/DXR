@@ -6,6 +6,7 @@
 #pragma once
 
 namespace Framework::DX {
+    struct RootSignatureDesc;
     /**
      * @class RootSignature
      * @brief ルートシグネチャ
@@ -13,9 +14,19 @@ namespace Framework::DX {
     class RootSignature {
     public:
         /**
+         * @brief ルートシグネチャのフラグ
+         */
+        enum class Flags {
+            None,
+            Local,
+            Global,
+        };
+
+    public:
+        /**
          * @brief コンストラクタ
          */
-        RootSignature(ID3D12Device* device, const CD3DX12_ROOT_SIGNATURE_DESC& desc);
+        RootSignature(ID3D12Device* device, const RootSignatureDesc& desc);
         /**
          * @brief デストラクタ
          */
@@ -30,4 +41,14 @@ namespace Framework::DX {
     private:
         ComPtr<ID3D12RootSignature> mRootSignature; //!< ルートシグネチャ
     };
+
+    /**
+     * @brief ルートシグネチャディスク
+     */
+    struct RootSignatureDesc {
+        std::vector<CD3DX12_ROOT_PARAMETER> params;
+        std::vector<CD3DX12_STATIC_SAMPLER_DESC> samplers;
+        RootSignature::Flags flag;
+    };
+
 } // namespace Framework::DX

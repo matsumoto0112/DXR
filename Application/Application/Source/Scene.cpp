@@ -406,8 +406,7 @@ void Scene::createDeviceDependentResources() {
     sampler[0]
         = CD3DX12_STATIC_SAMPLER_DESC(0, D3D12_FILTER::D3D12_FILTER_COMPARISON_MIN_MAG_MIP_LINEAR);
 
-    CD3DX12_ROOT_SIGNATURE_DESC desc(
-        rootParams.size(), rootParams.data(), sampler.size(), sampler.data());
+    RootSignatureDesc desc{ rootParams, sampler, RootSignature::Flags::None };
     mGlobalRootSignature = std::make_unique<RootSignature>(mDeviceResource->getDevice(), desc);
 }
 //ミスシェーダー
@@ -416,8 +415,7 @@ void Scene::createDeviceDependentResources() {
     params[0].InitAsConstants(
         Framework::Math::MathUtil::alignPow2(sizeof(MissConstant), sizeof(UINT32)), 1);
 
-    CD3DX12_ROOT_SIGNATURE_DESC desc(params.size(), params.data(), 0, nullptr,
-        D3D12_ROOT_SIGNATURE_FLAGS::D3D12_ROOT_SIGNATURE_FLAG_LOCAL_ROOT_SIGNATURE);
+    RootSignatureDesc desc{ params, {}, RootSignature::Flags::Local };
     mMissLocalRootSignature = std::make_unique<RootSignature>(mDeviceResource->getDevice(), desc);
 }
 //ヒットグループシェーダー
@@ -439,8 +437,7 @@ void Scene::createDeviceDependentResources() {
     params[4].InitAsDescriptorTable(1, &range[4]);
 
     params[5].InitAsConstants(contSize, 1);
-    CD3DX12_ROOT_SIGNATURE_DESC desc(params.size(), params.data(), 0, nullptr,
-        D3D12_ROOT_SIGNATURE_FLAGS::D3D12_ROOT_SIGNATURE_FLAG_LOCAL_ROOT_SIGNATURE);
+    RootSignatureDesc desc{ params, {}, RootSignature::Flags::Local };
     mHitGroupLocalRootSignature
         = std::make_unique<RootSignature>(mDeviceResource->getDevice(), desc);
 }
