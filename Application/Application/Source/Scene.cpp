@@ -466,31 +466,12 @@ void Scene::createDeviceDependentResources() {
         = Framework::Math::MathUtil::mymax<UINT>({ sizeof(RayPayload), sizeof(ShadowPayload) });
     UINT attrSize = sizeof(float) * 2;
     mDXRStateObject->setConfig(payloadSize, attrSize);
-    {
-        auto bindLocalRootSignature = [](CD3DX12_STATE_OBJECT_DESC& pipeline,
-                                          ID3D12RootSignature* rootSig,
-                                          const std::wstring& exportShader) {
-            CD3DX12_LOCAL_ROOT_SIGNATURE_SUBOBJECT* local
-                = pipeline.CreateSubobject<CD3DX12_LOCAL_ROOT_SIGNATURE_SUBOBJECT>();
-            local->SetRootSignature(rootSig);
 
-            CD3DX12_SUBOBJECT_TO_EXPORTS_ASSOCIATION_SUBOBJECT* asso
-                = pipeline.CreateSubobject<CD3DX12_SUBOBJECT_TO_EXPORTS_ASSOCIATION_SUBOBJECT>();
-            asso->SetSubobjectToAssociate(*local);
-            asso->AddExport(exportShader.c_str());
-        };
-
-        bindLocalRootSignature(mDXRStateObject->mPipelineStateObjectDesc,
-            mMissLocalRootSignature->getRootSignature(), MISS_SHADER_NAME);
-        bindLocalRootSignature(mDXRStateObject->mPipelineStateObjectDesc,
-            mHitGroupLocalRootSignature->getRootSignature(), HIT_GROUP_UFO_NAME);
-        bindLocalRootSignature(mDXRStateObject->mPipelineStateObjectDesc,
-            mHitGroupLocalRootSignature->getRootSignature(), HIT_GROUP_QUAD_NAME);
-        bindLocalRootSignature(mDXRStateObject->mPipelineStateObjectDesc,
-            mHitGroupLocalRootSignature->getRootSignature(), HIT_GROUP_FLOOR_NAME);
-        bindLocalRootSignature(mDXRStateObject->mPipelineStateObjectDesc,
-            mHitGroupLocalRootSignature->getRootSignature(), HIT_GROUP_SPHERE_NAME);
-    }
+    mDXRStateObject->bindLocalRootSignature(*mMissLocalRootSignature, MISS_SHADER_NAME);
+    mDXRStateObject->bindLocalRootSignature(*mHitGroupLocalRootSignature, HIT_GROUP_UFO_NAME);
+    mDXRStateObject->bindLocalRootSignature(*mHitGroupLocalRootSignature, HIT_GROUP_QUAD_NAME);
+    mDXRStateObject->bindLocalRootSignature(*mHitGroupLocalRootSignature, HIT_GROUP_FLOOR_NAME);
+    mDXRStateObject->bindLocalRootSignature(*mHitGroupLocalRootSignature, HIT_GROUP_SPHERE_NAME);
     {
         CD3DX12_GLOBAL_ROOT_SIGNATURE_SUBOBJECT* global
             = mDXRStateObject->mPipelineStateObjectDesc

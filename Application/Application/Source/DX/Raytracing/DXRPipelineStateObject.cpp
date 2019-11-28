@@ -1,4 +1,5 @@
 #include "DXRPipelineStateObject.h"
+#include "DX/Shader/RootSignature.h"
 
 namespace Framework::DX {
 
@@ -23,5 +24,17 @@ namespace Framework::DX {
             = mPipelineStateObjectDesc
                   .CreateSubobject<CD3DX12_RAYTRACING_SHADER_CONFIG_SUBOBJECT>();
         config->Config(payloadSize, attributeSize);
+    }
+    void DXRPipelineStateObject::bindLocalRootSignature(
+        const RootSignature& localRootSignature, const std::wstring& targetShaderName) {
+        CD3DX12_LOCAL_ROOT_SIGNATURE_SUBOBJECT* local
+            = mPipelineStateObjectDesc.CreateSubobject<CD3DX12_LOCAL_ROOT_SIGNATURE_SUBOBJECT>();
+        local->SetRootSignature(localRootSignature.getRootSignature());
+
+        CD3DX12_SUBOBJECT_TO_EXPORTS_ASSOCIATION_SUBOBJECT* asso
+            = mPipelineStateObjectDesc
+                  .CreateSubobject<CD3DX12_SUBOBJECT_TO_EXPORTS_ASSOCIATION_SUBOBJECT>();
+        asso->SetSubobjectToAssociate(*local);
+        asso->AddExport(targetShaderName.c_str());
     }
 } // namespace Framework::DX
