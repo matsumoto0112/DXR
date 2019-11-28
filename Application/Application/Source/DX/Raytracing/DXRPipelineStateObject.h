@@ -4,16 +4,20 @@ namespace Framework::DX {
     class RootSignature;
     /**
      * @class DXRPipelineStateObject
-     * @brief discription
+     * @brief レイトレーシング用パイプライン
      */
     class DXRPipelineStateObject {
     public:
+        /**
+         * @struct HitGroupDesc
+         * @brief ヒットグループディスク
+         */
         struct HitGroupDesc {
-            std::wstring name;
-            D3D12_HIT_GROUP_TYPE type;
-            std::wstring closestHitName;
-            std::wstring anyHitName;
-            std::wstring intersectionName;
+            std::wstring name; //!< ヒットグループ名
+            D3D12_HIT_GROUP_TYPE type; //!< ヒットグループの種類
+            std::wstring closestHitName; //!< closesthitシェーダー名
+            std::wstring anyHitName; //!< anyhitシェーダー名
+            std::wstring intersectionName; //!< intersectionシェーダー名
 
             HitGroupDesc(const std::wstring& name, D3D12_HIT_GROUP_TYPE type,
                 const std::wstring& closestHitName = L"", const std::wstring& anyHitName = L"",
@@ -27,19 +31,40 @@ namespace Framework::DX {
 
     public:
         /**
-         * @brief
+         * @brief コンストラクタ
          */
         DXRPipelineStateObject();
         /**
-         * @brief
+         * @brief デストラクタ
          */
         ~DXRPipelineStateObject();
+
+        /**
+         * @brief シェーダーファイルからシェーダーを取り出す
+         * @param shaderCode シェーダーコード
+         * @param byteLength シェーダーコードの長さ
+         * @param names 取り出すシェーダーのエントリーポイント名
+         */
         template <class... T>
         void exportShader(void* shaderCode, size_t byteLength, const T&... names);
+        /**
+         * @brief ヒットグループを結びつける
+         */
         void bindHitGroup(const HitGroupDesc& desc);
+        /**
+         * @brief レイトレーシングの設定を行う
+         */
         void setConfig(UINT payloadSize, UINT attributeSize, UINT maxRecursionDepth);
+        /**
+         * @brief ローカルルートシグネチャのバインドをする
+         * @param localRootSignature ローカルルートシグネチャ
+         * @param targetShaderName 対象となるシェーダー名
+         */
         void bindLocalRootSignature(
             const RootSignature& localRootSignature, const std::wstring& targetShaderName);
+        /**
+         * @brief グローバルルートシグネチャのバインドをする
+         */
         void bindGlobalRootSignature(const RootSignature& rootSignature);
 
         void create(ID3D12Device5* device);
