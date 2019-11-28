@@ -44,6 +44,7 @@
     <ClCompile Include="Source\Device\GameDevice.cpp" />
     <ClCompile Include="Source\Camera\Perspective.cpp" />
     <ClCompile Include="Source\DX\Shader\RootSignature.cpp" />
+    <ClCompile Include="Source\DX\Raytracing\DXRPipelineStateObject.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Source\stdafx.h" />
@@ -118,6 +119,7 @@
     <ClInclude Include="Source\DX\Raytracing\Shader\ShaderRecord.h" />
     <ClInclude Include="Source\DX\Raytracing\Shader\ShaderTable.h" />
     <ClInclude Include="Source\DX\Shader\RootSignature.h" />
+    <ClInclude Include="Source\DX\Raytracing\DXRPipelineStateObject.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />

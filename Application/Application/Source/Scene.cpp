@@ -349,7 +349,7 @@ void Scene::render() {
     dispatchDesc.Height = mHeight;
     dispatchDesc.Depth = 1;
 
-    dxrCommandList->SetPipelineState1(mDXRStateObject.Get());
+    dxrCommandList->SetPipelineState1(mDXRStateObject->mPipelineStateObject.Get());
     dxrCommandList->DispatchRays(&dispatchDesc);
 
     D3D12_RESOURCE_BARRIER preCopyBarriers[2];
@@ -443,34 +443,21 @@ void Scene::createDeviceDependentResources() {
 }
 }
 {
-    CD3DX12_STATE_OBJECT_DESC pipeline{
-        D3D12_STATE_OBJECT_TYPE::D3D12_STATE_OBJECT_TYPE_RAYTRACING_PIPELINE
-    };
-    {
-        auto exportShader = [&pipeline](void* shaderFile, SIZE_T shaderSize, const auto&... names) {
-            CD3DX12_DXIL_LIBRARY_SUBOBJECT* lib
-                = pipeline.CreateSubobject<CD3DX12_DXIL_LIBRARY_SUBOBJECT>();
-            lib->SetDXILLibrary(&CD3DX12_SHADER_BYTECODE(shaderFile, shaderSize));
-            for (auto&& name : std::initializer_list<std::wstring>{ names... }) {
-                lib->DefineExport(name.c_str());
-            }
-        };
-
-        exportShader((void*)g_pMiss, _countof(g_pMiss), MISS_SHADER_NAME);
-        exportShader(
-            (void*)g_pClosestHit_Normal, _countof(g_pClosestHit_Normal), CLOSEST_HIT_NORMAL_NAME);
-        exportShader(
-            (void*)g_pClosestHit_Plane, _countof(g_pClosestHit_Plane), CLOSEST_HIT_PLANE_NAME);
-        exportShader(
-            (void*)g_pClosestHit_Sphere, _countof(g_pClosestHit_Sphere), CLOSEST_HIT_SPHERE_NAME);
-        exportShader((void*)g_pRayGenShader, _countof(g_pRayGenShader), RAY_GEN_NAME);
-        exportShader((void*)g_pShadow, _countof(g_pShadow), MISS_SHADOW_SHADER_NAME);
-    }
+    mDXRStateObject = std::make_unique<DXRPipelineStateObject>();
+    mDXRStateObject->exportShader((void*)g_pMiss, _countof(g_pMiss), MISS_SHADER_NAME);
+    mDXRStateObject->exportShader(
+        (void*)g_pClosestHit_Normal, _countof(g_pClosestHit_Normal), CLOSEST_HIT_NORMAL_NAME);
+    mDXRStateObject->exportShader(
+        (void*)g_pClosestHit_Plane, _countof(g_pClosestHit_Plane), CLOSEST_HIT_PLANE_NAME);
+    mDXRStateObject->exportShader(
+        (void*)g_pClosestHit_Sphere, _countof(g_pClosestHit_Sphere), CLOSEST_HIT_SPHERE_NAME);
+    mDXRStateObject->exportShader((void*)g_pRayGenShader, _countof(g_pRayGenShader), RAY_GEN_NAME);
+    mDXRStateObject->exportShader((void*)g_pShadow, _countof(g_pShadow), MISS_SHADOW_SHADER_NAME);
     {
         auto bindHitGroup
-            = [&pipeline](const std::wstring& hitGroupName, D3D12_HIT_GROUP_TYPE type,
-                  const std::wstring& closestHit = L"", const std::wstring& anyHit = L"",
-                  const std::wstring& intersection = L"") {
+            = [](CD3DX12_STATE_OBJECT_DESC& pipeline, const std::wstring& hitGroupName,
+                  D3D12_HIT_GROUP_TYPE type, const std::wstring& closestHit = L"",
+                  const std::wstring& anyHit = L"", const std::wstring& intersection = L"") {
                   CD3DX12_HIT_GROUP_SUBOBJECT* hitGroup
                       = pipeline.CreateSubobject<CD3DX12_HIT_GROUP_SUBOBJECT>();
                   if (!closestHit.empty()) hitGroup->SetClosestHitShaderImport(closestHit.c_str());
@@ -481,25 +468,27 @@ void Scene::createDeviceDependentResources() {
                   hitGroup->SetHitGroupType(type);
               };
 
-        bindHitGroup(HIT_GROUP_UFO_NAME, D3D12_HIT_GROUP_TYPE::D3D12_HIT_GROUP_TYPE_TRIANGLES,
-            CLOSEST_HIT_NORMAL_NAME);
-        bindHitGroup(HIT_GROUP_QUAD_NAME, D3D12_HIT_GROUP_TYPE::D3D12_HIT_GROUP_TYPE_TRIANGLES,
-            CLOSEST_HIT_NORMAL_NAME);
-        bindHitGroup(HIT_GROUP_FLOOR_NAME, D3D12_HIT_GROUP_TYPE::D3D12_HIT_GROUP_TYPE_TRIANGLES,
-            CLOSEST_HIT_PLANE_NAME);
-        bindHitGroup(HIT_GROUP_SPHERE_NAME, D3D12_HIT_GROUP_TYPE::D3D12_HIT_GROUP_TYPE_TRIANGLES,
-            CLOSEST_HIT_SPHERE_NAME);
+        bindHitGroup(mDXRStateObject->mPipelineStateObjectDesc, HIT_GROUP_UFO_NAME,
+            D3D12_HIT_GROUP_TYPE::D3D12_HIT_GROUP_TYPE_TRIANGLES, CLOSEST_HIT_NORMAL_NAME);
+        bindHitGroup(mDXRStateObject->mPipelineStateObjectDesc, HIT_GROUP_QUAD_NAME,
+            D3D12_HIT_GROUP_TYPE::D3D12_HIT_GROUP_TYPE_TRIANGLES, CLOSEST_HIT_NORMAL_NAME);
+        bindHitGroup(mDXRStateObject->mPipelineStateObjectDesc, HIT_GROUP_FLOOR_NAME,
+            D3D12_HIT_GROUP_TYPE::D3D12_HIT_GROUP_TYPE_TRIANGLES, CLOSEST_HIT_PLANE_NAME);
+        bindHitGroup(mDXRStateObject->mPipelineStateObjectDesc, HIT_GROUP_SPHERE_NAME,
+            D3D12_HIT_GROUP_TYPE::D3D12_HIT_GROUP_TYPE_TRIANGLES, CLOSEST_HIT_SPHERE_NAME);
     }
     {
         CD3DX12_RAYTRACING_SHADER_CONFIG_SUBOBJECT* config
-            = pipeline.CreateSubobject<CD3DX12_RAYTRACING_SHADER_CONFIG_SUBOBJECT>();
+            = mDXRStateObject->mPipelineStateObjectDesc
+                  .CreateSubobject<CD3DX12_RAYTRACING_SHADER_CONFIG_SUBOBJECT>();
         UINT payloadSize
             = Framework::Math::MathUtil::mymax<UINT>({ sizeof(RayPayload), sizeof(ShadowPayload) });
         UINT attrSize = sizeof(float) * 2;
         config->Config(payloadSize, attrSize);
     }
     {
-        auto bindLocalRootSignature = [&pipeline](ID3D12RootSignature* rootSig,
+        auto bindLocalRootSignature = [](CD3DX12_STATE_OBJECT_DESC& pipeline,
+                                          ID3D12RootSignature* rootSig,
                                           const std::wstring& exportShader) {
             CD3DX12_LOCAL_ROOT_SIGNATURE_SUBOBJECT* local
                 = pipeline.CreateSubobject<CD3DX12_LOCAL_ROOT_SIGNATURE_SUBOBJECT>();
@@ -511,30 +500,35 @@ void Scene::createDeviceDependentResources() {
             asso->AddExport(exportShader.c_str());
         };
 
-        bindLocalRootSignature(mMissLocalRootSignature->getRootSignature(), MISS_SHADER_NAME);
-        bindLocalRootSignature(mHitGroupLocalRootSignature->getRootSignature(), HIT_GROUP_UFO_NAME);
-        bindLocalRootSignature(
+        bindLocalRootSignature(mDXRStateObject->mPipelineStateObjectDesc,
+            mMissLocalRootSignature->getRootSignature(), MISS_SHADER_NAME);
+        bindLocalRootSignature(mDXRStateObject->mPipelineStateObjectDesc,
+            mHitGroupLocalRootSignature->getRootSignature(), HIT_GROUP_UFO_NAME);
+        bindLocalRootSignature(mDXRStateObject->mPipelineStateObjectDesc,
             mHitGroupLocalRootSignature->getRootSignature(), HIT_GROUP_QUAD_NAME);
-        bindLocalRootSignature(
+        bindLocalRootSignature(mDXRStateObject->mPipelineStateObjectDesc,
             mHitGroupLocalRootSignature->getRootSignature(), HIT_GROUP_FLOOR_NAME);
-        bindLocalRootSignature(
+        bindLocalRootSignature(mDXRStateObject->mPipelineStateObjectDesc,
             mHitGroupLocalRootSignature->getRootSignature(), HIT_GROUP_SPHERE_NAME);
     }
     {
         CD3DX12_GLOBAL_ROOT_SIGNATURE_SUBOBJECT* global
-            = pipeline.CreateSubobject<CD3DX12_GLOBAL_ROOT_SIGNATURE_SUBOBJECT>();
+            = mDXRStateObject->mPipelineStateObjectDesc
+                  .CreateSubobject<CD3DX12_GLOBAL_ROOT_SIGNATURE_SUBOBJECT>();
         global->SetRootSignature(mGlobalRootSignature->getRootSignature());
     }
     {
         CD3DX12_RAYTRACING_PIPELINE_CONFIG_SUBOBJECT* config
-            = pipeline.CreateSubobject<CD3DX12_RAYTRACING_PIPELINE_CONFIG_SUBOBJECT>();
+            = mDXRStateObject->mPipelineStateObjectDesc
+                  .CreateSubobject<CD3DX12_RAYTRACING_PIPELINE_CONFIG_SUBOBJECT>();
         UINT maxRecursionDepth = MAX_RAY_RECURSION_DEPTH;
         config->Config(maxRecursionDepth);
     }
 
-    PrintStateObjectDesc(pipeline);
+    PrintStateObjectDesc(mDXRStateObject->mPipelineStateObjectDesc);
     MY_THROW_IF_FAILED(
-        mDXRDevice.getDXRDevice()->CreateStateObject(pipeline, IID_PPV_ARGS(&mDXRStateObject)));
+        mDXRDevice.getDXRDevice()->CreateStateObject(mDXRStateObject->mPipelineStateObjectDesc,
+            IID_PPV_ARGS(&mDXRStateObject->mPipelineStateObject)));
 }
 {
     using namespace Framework::Desc;
@@ -918,7 +912,7 @@ auto getOffset = [&mIndexOffsets, &mVertexOffsets](LocalRootSignature::HitGroupI
 {
     ID3D12Device* device = mDeviceResource->getDevice();
     ComPtr<ID3D12StateObjectProperties> stateObjectProp;
-    MY_THROW_IF_FAILED(mDXRStateObject.As(&stateObjectProp));
+    MY_THROW_IF_FAILED(mDXRStateObject->mPipelineStateObject.As(&stateObjectProp));
     void* rayGenShaderID = stateObjectProp->GetShaderIdentifier(RAY_GEN_NAME.c_str());
     void* missShaderID = stateObjectProp->GetShaderIdentifier(MISS_SHADER_NAME.c_str());
     void* missShadowShaderID

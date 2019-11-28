@@ -84,6 +84,7 @@
     <ClCompile Include="Source\DX\CountingDescriptorTable.cpp" />
     <ClCompile Include="Source\DX\DescriptorTable.cpp" />
     <ClCompile Include="Source\DX\DeviceResource.cpp" />
+    <ClCompile Include="Source\DX\Raytracing\DXRPipelineStateObject.cpp" />
     <ClCompile Include="Source\DX\Shader\RootSignature.cpp" />
     <ClCompile Include="Source\Game.cpp" />
     <ClCompile Include="Source\ImGui\ImGuiManager.cpp" />
@@ -143,6 +144,7 @@
     <ClInclude Include="Source\DX\DeviceResource.h" />
     <ClInclude Include="Source\DX\ModelCompat.h" />
     <ClInclude Include="Source\DX\Raytracing\DXRDevice.h" />
+    <ClInclude Include="Source\DX\Raytracing\DXRPipelineStateObject.h" />
     <ClInclude Include="Source\DX\Raytracing\Helper.h" />
     <ClInclude Include="Source\DX\Raytracing\Shader\ShaderRecord.h" />
     <ClInclude Include="Source\DX\Raytracing\Shader\ShaderTable.h" />
