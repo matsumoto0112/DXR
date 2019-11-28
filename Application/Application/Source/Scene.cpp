@@ -462,15 +462,10 @@ void Scene::createDeviceDependentResources() {
         D3D12_HIT_GROUP_TYPE::D3D12_HIT_GROUP_TYPE_TRIANGLES, CLOSEST_HIT_PLANE_NAME });
     mDXRStateObject->bindHitGroup({ HIT_GROUP_SPHERE_NAME,
         D3D12_HIT_GROUP_TYPE::D3D12_HIT_GROUP_TYPE_TRIANGLES, CLOSEST_HIT_SPHERE_NAME });
-    {
-        CD3DX12_RAYTRACING_SHADER_CONFIG_SUBOBJECT* config
-            = mDXRStateObject->mPipelineStateObjectDesc
-                  .CreateSubobject<CD3DX12_RAYTRACING_SHADER_CONFIG_SUBOBJECT>();
-        UINT payloadSize
-            = Framework::Math::MathUtil::mymax<UINT>({ sizeof(RayPayload), sizeof(ShadowPayload) });
-        UINT attrSize = sizeof(float) * 2;
-        config->Config(payloadSize, attrSize);
-    }
+    UINT payloadSize
+        = Framework::Math::MathUtil::mymax<UINT>({ sizeof(RayPayload), sizeof(ShadowPayload) });
+    UINT attrSize = sizeof(float) * 2;
+    mDXRStateObject->setConfig(payloadSize, attrSize);
     {
         auto bindLocalRootSignature = [](CD3DX12_STATE_OBJECT_DESC& pipeline,
                                           ID3D12RootSignature* rootSig,

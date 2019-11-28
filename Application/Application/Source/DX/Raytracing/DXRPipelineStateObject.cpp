@@ -18,4 +18,10 @@ namespace Framework::DX {
         hitGroup->SetHitGroupExport(desc.name.c_str());
         hitGroup->SetHitGroupType(desc.type);
     }
+    void DXRPipelineStateObject::setConfig(UINT payloadSize, UINT attributeSize) {
+        CD3DX12_RAYTRACING_SHADER_CONFIG_SUBOBJECT* config
+            = mPipelineStateObjectDesc
+                  .CreateSubobject<CD3DX12_RAYTRACING_SHADER_CONFIG_SUBOBJECT>();
+        config->Config(payloadSize, attributeSize);
+    }
 } // namespace Framework::DX

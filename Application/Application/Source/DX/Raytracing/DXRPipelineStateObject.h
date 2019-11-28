@@ -36,6 +36,7 @@ namespace Framework::DX {
         template <class... T>
         void exportShader(void* shaderCode, size_t byteLength, const T&... names);
         void bindHitGroup(const HitGroupDesc& desc);
+        void setConfig(UINT payloadSize, UINT attributeSize);
         //private:
         CD3DX12_STATE_OBJECT_DESC mPipelineStateObjectDesc;
         ComPtr<ID3D12StateObject> mPipelineStateObject;
