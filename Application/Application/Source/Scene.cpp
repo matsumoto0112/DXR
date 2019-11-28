@@ -500,7 +500,7 @@ auto getOffset = [&mIndexOffsets, &mVertexOffsets](LocalRootSignature::HitGroupI
 {
     ID3D12Device* device = mDeviceResource->getDevice();
     std::array<IBuffer, BottomLevelASType::Count> mIndexBuffer;
-    std::array<IBuffer, BottomLevelASType::Count> mVertexBuffer;
+    std::array<std::unique_ptr<VertexBuffer>, BottomLevelASType::Count> mVertexBuffer;
 
     std::vector<Framework::DX::Vertex> resourceVertices;
     std::vector<Index> resourceIndices;
@@ -566,68 +566,6 @@ auto getOffset = [&mIndexOffsets, &mVertexOffsets](LocalRootSignature::HitGroupI
             }
         };
 
-        //auto loadTextures = [&](const GlbMaterial& material,
-        //                        const std::vector<Framework::Desc::TextureDesc>& textureDatas,
-        //                        ModelTextureType idOffset) {
-        //    ModelTextureType nextID = idOffset;
-        //    if (textureDatas.empty()) {
-        //        mTextureIDs[nextID] = mTextureIDs[ModelTextureType::Default_AlbedoTexture];
-        //    } else {
-        //        auto albedo = textureDatas[0];
-        //        auto texture = std::make_shared<Texture2D>(device, albedo);
-        //        mDescriptorTable->allocate(texture.get());
-        //        texture->createSRV(device);
-        //        mTextures[nextID] = texture;
-        //        mTextureIDs[nextID] = nextID;
-        //    }
-        //    nextID = ModelTextureType(nextID + 1);
-        //    if (material.normalMapID == -1) {
-        //        mTextureIDs[nextID] = mTextureIDs[ModelTextureType::Default_NormalMap];
-        //    } else {
-        //        auto normal = textureDatas[material.normalMapID];
-        //        auto texture = std::make_shared<Texture2D>(device, normal);
-        //        mDescriptorTable->allocate(texture.get());
-        //        texture->createSRV(device);
-        //        mTextures[nextID] = texture;
-        //        mTextureIDs[nextID] = nextID;
-        //    }
-
-        //    nextID = ModelTextureType(nextID + 1);
-        //    if (material.metallicRoughnessMapID == -1) {
-        //        mTextureIDs[nextID] = mTextureIDs[ModelTextureType::Default_MetallicRoughnessMap];
-        //    } else {
-        //        auto metalRough = textureDatas[material.metallicRoughnessMapID];
-        //        auto texture = std::make_shared<Texture2D>(device, metalRough);
-        //        mDescriptorTable->allocate(texture.get());
-        //        texture->createSRV(device);
-        //        mTextures[nextID] = texture;
-        //        mTextureIDs[nextID] = nextID;
-        //    }
-
-        //    nextID = ModelTextureType(nextID + 1);
-        //    if (material.emissiveMapID == -1) {
-        //        mTextureIDs[nextID] = mTextureIDs[ModelTextureType::Default_EmissiveMap];
-        //    } else {
-        //        auto emissive = textureDatas[material.emissiveMapID];
-        //        auto texture = std::make_shared<Texture2D>(device, emissive);
-        //        mDescriptorTable->allocate(texture.get());
-        //        texture->createSRV(device);
-        //        mTextures[nextID] = texture;
-        //        mTextureIDs[nextID] = nextID;
-        //    }
-        //    nextID = ModelTextureType(nextID + 1);
-        //    if (material.occlusionMapID == -1) {
-        //        mTextureIDs[nextID] = mTextureIDs[ModelTextureType::Default_OcclusionMap];
-        //    } else {
-        //        auto occlusion = textureDatas[material.occlusionMapID];
-        //        auto texture = std::make_shared<Texture2D>(device, occlusion);
-        //        mDescriptorTable->allocate(texture.get());
-        //        texture->createSRV(device);
-        //        mTextures[nextID] = texture;
-        //        mTextureIDs[nextID] = nextID;
-        //    }
-        //};
-
         {
             Framework::Utility::GLBLoader loader(
                 modelPath / MODEL_NAMES.at(BottomLevelASType::UFO));
@@ -639,9 +577,8 @@ auto getOffset = [&mIndexOffsets, &mVertexOffsets](LocalRootSignature::HitGroupI
             createBuffer(mDeviceResource->getDevice(),
                 &mIndexBuffer[BottomLevelASType::UFO].mResource, indices.data(),
                 indices.size() * sizeof(indices[0]), L"IndexBuffer");
-            createBuffer(mDeviceResource->getDevice(),
-                &mVertexBuffer[BottomLevelASType::UFO].mResource, vertices.data(),
-                vertices.size() * sizeof(vertices[0]), L"VertexBuffer");
+            mVertexBuffer[BottomLevelASType::UFO]
+                = std::make_unique<VertexBuffer>(device, vertices, L"VertexBuffer_UFO");
 
             resourceIndices.insert(resourceIndices.end(), indices.begin(), indices.end());
             resourceVertices.insert(resourceVertices.end(), vertices.begin(), vertices.end());
@@ -680,9 +617,8 @@ auto getOffset = [&mIndexOffsets, &mVertexOffsets](LocalRootSignature::HitGroupI
                 { Vec3(1, -1, 0), Vec3(0, 0, -1), Vec2(1, 1) },
                 { Vec3(-1, -1, 0), Vec3(0, 0, -1), Vec2(0, 1) },
             };
-            createBuffer(mDeviceResource->getDevice(),
-                &mVertexBuffer[BottomLevelASType::Quad].mResource, vertices.data(),
-                vertices.size() * sizeof(vertices[0]), L"VertexBuffer");
+            mVertexBuffer[BottomLevelASType::Quad]
+                = std::make_unique<VertexBuffer>(device, vertices, L"VertexBuffer_Quad");
 
             resourceIndices.insert(resourceIndices.end(), indices.begin(), indices.end());
             resourceVertices.insert(resourceVertices.end(), vertices.begin(), vertices.end());
@@ -716,9 +652,8 @@ auto getOffset = [&mIndexOffsets, &mVertexOffsets](LocalRootSignature::HitGroupI
             createBuffer(mDeviceResource->getDevice(),
                 &mIndexBuffer[BottomLevelASType::Floor].mResource, indices.data(),
                 indices.size() * sizeof(indices[0]), L"IndexBuffer");
-            createBuffer(mDeviceResource->getDevice(),
-                &mVertexBuffer[BottomLevelASType::Floor].mResource, vertices.data(),
-                vertices.size() * sizeof(vertices[0]), L"VertexBuffer");
+            mVertexBuffer[BottomLevelASType::Floor]
+                = std::make_unique<VertexBuffer>(device, vertices, L"VertexBuffer_Floor");
 
             resourceIndices.insert(resourceIndices.end(), indices.begin(), indices.end());
             resourceVertices.insert(resourceVertices.end(), vertices.begin(), vertices.end());
@@ -757,9 +692,8 @@ auto getOffset = [&mIndexOffsets, &mVertexOffsets](LocalRootSignature::HitGroupI
             createBuffer(mDeviceResource->getDevice(),
                 &mIndexBuffer[BottomLevelASType::Sphere].mResource, indices.data(),
                 indices.size() * sizeof(indices[0]), L"IndexBuffer");
-            createBuffer(mDeviceResource->getDevice(),
-                &mVertexBuffer[BottomLevelASType::Sphere].mResource, vertices.data(),
-                vertices.size() * sizeof(vertices[0]), L"VertexBuffer");
+            mVertexBuffer[BottomLevelASType::Sphere]
+                = std::make_unique<VertexBuffer>(device, vertices, L"VertexBuffer_Sphere");
 
             resourceIndices.insert(resourceIndices.end(), indices.begin(), indices.end());
             resourceVertices.insert(resourceVertices.end(), vertices.begin(), vertices.end());
@@ -807,10 +741,10 @@ auto getOffset = [&mIndexOffsets, &mVertexOffsets](LocalRootSignature::HitGroupI
             geometryDesc.Triangles.IndexFormat = DXGI_FORMAT::DXGI_FORMAT_R16_UINT;
             geometryDesc.Triangles.Transform3x4 = 0;
             geometryDesc.Triangles.VertexBuffer.StartAddress
-                = mVertexBuffer[i].mResource->GetGPUVirtualAddress();
+                = mVertexBuffer[i]->getResource()->GetGPUVirtualAddress();
             geometryDesc.Triangles.VertexBuffer.StrideInBytes = sizeof(Framework::DX::Vertex);
             geometryDesc.Triangles.VertexCount
-                = static_cast<UINT>(mVertexBuffer[i].mResource->GetDesc().Width)
+                = static_cast<UINT>(mVertexBuffer[i]->getResource()->GetDesc().Width)
                 / sizeof(Framework::DX::Vertex);
             geometryDesc.Triangles.VertexFormat = DXGI_FORMAT::DXGI_FORMAT_R32G32B32_FLOAT;
             geometryDesc.Flags
@@ -890,8 +824,6 @@ auto getOffset = [&mIndexOffsets, &mVertexOffsets](LocalRootSignature::HitGroupI
 
         createBuffer(device, &mResourcesIndexBuffer.mResource, resourceIndices.data(),
             resourceIndices.size() * sizeof(resourceIndices[0]), L"ResourceIndex");
-        //createBuffer(device, &mResourcesVertexBuffer.mResource, resourceVertices.data(),
-        //    resourceVertices.size() * sizeof(resourceVertices[0]), L"ResourceVertex");
         mResourcesVertexBuffer
             = std::make_unique<VertexBuffer>(device, resourceVertices, L"ResourceVertex");
         {

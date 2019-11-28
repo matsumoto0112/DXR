@@ -29,7 +29,7 @@ namespace Framework::DX {
     template <class T>
     inline VertexBuffer::VertexBuffer(
         ID3D12Device* device, const std::vector<T>& vertices, const std::wstring& name) {
-        UINT size = vertices.size() * sizeof(T);
+        UINT size = static_cast<UINT>(vertices.size() * sizeof(T));
         CD3DX12_HEAP_PROPERTIES heapProps(D3D12_HEAP_TYPE::D3D12_HEAP_TYPE_UPLOAD);
         CD3DX12_RESOURCE_DESC bufferDesc = CD3DX12_RESOURCE_DESC::Buffer(size);
         MY_THROW_IF_FAILED(
