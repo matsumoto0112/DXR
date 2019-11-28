@@ -453,30 +453,15 @@ void Scene::createDeviceDependentResources() {
         (void*)g_pClosestHit_Sphere, _countof(g_pClosestHit_Sphere), CLOSEST_HIT_SPHERE_NAME);
     mDXRStateObject->exportShader((void*)g_pRayGenShader, _countof(g_pRayGenShader), RAY_GEN_NAME);
     mDXRStateObject->exportShader((void*)g_pShadow, _countof(g_pShadow), MISS_SHADOW_SHADER_NAME);
-    {
-        auto bindHitGroup
-            = [](CD3DX12_STATE_OBJECT_DESC& pipeline, const std::wstring& hitGroupName,
-                  D3D12_HIT_GROUP_TYPE type, const std::wstring& closestHit = L"",
-                  const std::wstring& anyHit = L"", const std::wstring& intersection = L"") {
-                  CD3DX12_HIT_GROUP_SUBOBJECT* hitGroup
-                      = pipeline.CreateSubobject<CD3DX12_HIT_GROUP_SUBOBJECT>();
-                  if (!closestHit.empty()) hitGroup->SetClosestHitShaderImport(closestHit.c_str());
-                  if (!anyHit.empty()) hitGroup->SetAnyHitShaderImport(anyHit.c_str());
-                  if (!intersection.empty())
-                      hitGroup->SetIntersectionShaderImport(intersection.c_str());
-                  hitGroup->SetHitGroupExport(hitGroupName.c_str());
-                  hitGroup->SetHitGroupType(type);
-              };
 
-        bindHitGroup(mDXRStateObject->mPipelineStateObjectDesc, HIT_GROUP_UFO_NAME,
-            D3D12_HIT_GROUP_TYPE::D3D12_HIT_GROUP_TYPE_TRIANGLES, CLOSEST_HIT_NORMAL_NAME);
-        bindHitGroup(mDXRStateObject->mPipelineStateObjectDesc, HIT_GROUP_QUAD_NAME,
-            D3D12_HIT_GROUP_TYPE::D3D12_HIT_GROUP_TYPE_TRIANGLES, CLOSEST_HIT_NORMAL_NAME);
-        bindHitGroup(mDXRStateObject->mPipelineStateObjectDesc, HIT_GROUP_FLOOR_NAME,
-            D3D12_HIT_GROUP_TYPE::D3D12_HIT_GROUP_TYPE_TRIANGLES, CLOSEST_HIT_PLANE_NAME);
-        bindHitGroup(mDXRStateObject->mPipelineStateObjectDesc, HIT_GROUP_SPHERE_NAME,
-            D3D12_HIT_GROUP_TYPE::D3D12_HIT_GROUP_TYPE_TRIANGLES, CLOSEST_HIT_SPHERE_NAME);
-    }
+    mDXRStateObject->bindHitGroup({ HIT_GROUP_UFO_NAME,
+        D3D12_HIT_GROUP_TYPE::D3D12_HIT_GROUP_TYPE_TRIANGLES, CLOSEST_HIT_NORMAL_NAME });
+    mDXRStateObject->bindHitGroup({ HIT_GROUP_QUAD_NAME,
+        D3D12_HIT_GROUP_TYPE::D3D12_HIT_GROUP_TYPE_TRIANGLES, CLOSEST_HIT_NORMAL_NAME });
+    mDXRStateObject->bindHitGroup({ HIT_GROUP_FLOOR_NAME,
+        D3D12_HIT_GROUP_TYPE::D3D12_HIT_GROUP_TYPE_TRIANGLES, CLOSEST_HIT_PLANE_NAME });
+    mDXRStateObject->bindHitGroup({ HIT_GROUP_SPHERE_NAME,
+        D3D12_HIT_GROUP_TYPE::D3D12_HIT_GROUP_TYPE_TRIANGLES, CLOSEST_HIT_SPHERE_NAME });
     {
         CD3DX12_RAYTRACING_SHADER_CONFIG_SUBOBJECT* config
             = mDXRStateObject->mPipelineStateObjectDesc

@@ -7,6 +7,24 @@ namespace Framework::DX {
      */
     class DXRPipelineStateObject {
     public:
+        struct HitGroupDesc {
+            std::wstring name;
+            D3D12_HIT_GROUP_TYPE type;
+            std::wstring closestHitName;
+            std::wstring anyHitName;
+            std::wstring intersectionName;
+
+            HitGroupDesc(const std::wstring& name, D3D12_HIT_GROUP_TYPE type,
+                const std::wstring& closestHitName = L"", const std::wstring& anyHitName = L"",
+                const std::wstring& intersectionName = L"")
+                : name(name),
+                  type(type),
+                  closestHitName(closestHitName),
+                  anyHitName(anyHitName),
+                  intersectionName(intersectionName) {}
+        };
+
+    public:
         /**
          * @brief
          */
@@ -17,7 +35,7 @@ namespace Framework::DX {
         ~DXRPipelineStateObject();
         template <class... T>
         void exportShader(void* shaderCode, size_t byteLength, const T&... names);
-
+        void bindHitGroup(const HitGroupDesc& desc);
         //private:
         CD3DX12_STATE_OBJECT_DESC mPipelineStateObjectDesc;
         ComPtr<ID3D12StateObject> mPipelineStateObject;
