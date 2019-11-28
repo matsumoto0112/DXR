@@ -843,22 +843,11 @@ auto getOffset = [&mIndexOffsets, &mVertexOffsets](LocalRootSignature::HitGroupI
             device->CreateShaderResourceView(
                 mResourcesIndexBuffer.mResource.Get(), &srvDesc, mResourcesIndexBuffer.mCPUHandle);
         }
-        {
-            UINT vertexBufferSize = (UINT)resourceVertices.size();
-            D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
-            srvDesc.ViewDimension = D3D12_SRV_DIMENSION::D3D12_SRV_DIMENSION_BUFFER;
-            srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
-            srvDesc.Buffer.NumElements = vertexBufferSize;
-            srvDesc.Format = DXGI_FORMAT::DXGI_FORMAT_UNKNOWN;
-            srvDesc.Buffer.Flags = D3D12_BUFFER_SRV_FLAGS::D3D12_BUFFER_SRV_FLAG_NONE;
-            srvDesc.Buffer.StructureByteStride = sizeof(resourceVertices[0]);
-            mResourcesVertexBuffer->setCPUHandle(
-                mDescriptorTable->getCPUHandle(DescriptorHeapIndex::ResourceVertexBuffer));
-            mResourcesVertexBuffer->setGPUHandle(
-                mDescriptorTable->getGPUHandle(DescriptorHeapIndex::ResourceVertexBuffer));
-            device->CreateShaderResourceView(mResourcesVertexBuffer->getResource(), &srvDesc,
-                mResourcesVertexBuffer->getCPUHandle());
-        }
+        mResourcesVertexBuffer->setCPUHandle(
+            mDescriptorTable->getCPUHandle(DescriptorHeapIndex::ResourceVertexBuffer));
+        mResourcesVertexBuffer->setGPUHandle(
+            mDescriptorTable->getGPUHandle(DescriptorHeapIndex::ResourceVertexBuffer));
+        mResourcesVertexBuffer->createSRV(device);
     }
 }
 {
