@@ -2,13 +2,16 @@
 #include "DX/Util/Helper.h"
 
 namespace Framework::DX {
+    //コンストラクタ
     IndexBuffer::IndexBuffer(ID3D12Device* device, const std::vector<Index>& indices,
         D3D12_PRIMITIVE_TOPOLOGY_TYPE topologyType, const std::wstring& name)
         : mIndexCount(static_cast<UINT>(indices.size())), mTopologyType(topologyType) {
         mResource = createUploadBuffer(device, mIndexCount * sizeof(Index), name);
         writeToResource(mResource.Get(), indices.data(), mIndexCount * sizeof(Index));
     }
+    //デストラクタ
     IndexBuffer::~IndexBuffer() {}
+    //シェーダーリソースビューを作成する
     void IndexBuffer::createSRV(ID3D12Device* device) {
         D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
         srvDesc.ViewDimension = D3D12_SRV_DIMENSION::D3D12_SRV_DIMENSION_BUFFER;

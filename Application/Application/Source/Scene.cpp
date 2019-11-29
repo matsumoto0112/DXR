@@ -499,7 +499,7 @@ auto getOffset = [&mIndexOffsets, &mVertexOffsets](LocalRootSignature::HitGroupI
 
 {
     ID3D12Device* device = mDeviceResource->getDevice();
-    std::array<IBuffer, BottomLevelASType::Count> mIndexBuffer;
+    std::array<std::unique_ptr<IndexBuffer>, BottomLevelASType::Count> mIndexBuffer;
     std::array<std::unique_ptr<VertexBuffer>, BottomLevelASType::Count> mVertexBuffer;
 
     std::vector<Framework::DX::Vertex> resourceVertices;
@@ -574,9 +574,9 @@ auto getOffset = [&mIndexOffsets, &mVertexOffsets](LocalRootSignature::HitGroupI
                 loader.getNormalsPerSubMeshes(), loader.getUVsPerSubMeshes(),
                 loader.getTangentsPerSubMeshes());
 
-            createBuffer(mDeviceResource->getDevice(),
-                &mIndexBuffer[BottomLevelASType::UFO].mResource, indices.data(),
-                indices.size() * sizeof(indices[0]), L"IndexBuffer");
+            mIndexBuffer[BottomLevelASType::UFO] = std::make_unique<IndexBuffer>(device, indices,
+                D3D12_PRIMITIVE_TOPOLOGY_TYPE::D3D12_PRIMITIVE_TOPOLOGY_TYPE_UNDEFINED,
+                L"IndexBuffer_UFO");
             mVertexBuffer[BottomLevelASType::UFO]
                 = std::make_unique<VertexBuffer>(device, vertices, L"VertexBuffer_UFO");
 
@@ -608,9 +608,9 @@ auto getOffset = [&mIndexOffsets, &mVertexOffsets](LocalRootSignature::HitGroupI
         }
         {
             std::vector<Index> indices = { 0, 1, 2, 0, 2, 3 };
-            createBuffer(mDeviceResource->getDevice(),
-                &mIndexBuffer[BottomLevelASType::Quad].mResource, indices.data(),
-                indices.size() * sizeof(indices[0]), L"IndexBuffer");
+            mIndexBuffer[BottomLevelASType::Quad] = std::make_unique<IndexBuffer>(device, indices,
+                D3D12_PRIMITIVE_TOPOLOGY_TYPE::D3D12_PRIMITIVE_TOPOLOGY_TYPE_UNDEFINED,
+                L"IndexBuffer_Quad");
             std::vector<Framework::DX::Vertex> vertices = {
                 { Vec3(-1, 1, 0), Vec3(0, 0, -1), Vec2(0, 0) },
                 { Vec3(1, 1, 0), Vec3(0, 0, -1), Vec2(1, 0) },
@@ -647,11 +647,12 @@ auto getOffset = [&mIndexOffsets, &mVertexOffsets](LocalRootSignature::HitGroupI
             Framework::Utility::GLBLoader loader(
                 modelPath / MODEL_NAMES.at(BottomLevelASType::Floor));
             auto indices = toLinearList(loader.getIndicesPerSubMeshes());
+            mIndexBuffer[BottomLevelASType::Floor] = std::make_unique<IndexBuffer>(device, indices,
+                D3D12_PRIMITIVE_TOPOLOGY_TYPE::D3D12_PRIMITIVE_TOPOLOGY_TYPE_UNDEFINED,
+                L"IndexBuffer_Floor");
+
             auto vertices = toLinearVertices(loader.getPositionsPerSubMeshes(),
                 loader.getNormalsPerSubMeshes(), loader.getUVsPerSubMeshes());
-            createBuffer(mDeviceResource->getDevice(),
-                &mIndexBuffer[BottomLevelASType::Floor].mResource, indices.data(),
-                indices.size() * sizeof(indices[0]), L"IndexBuffer");
             mVertexBuffer[BottomLevelASType::Floor]
                 = std::make_unique<VertexBuffer>(device, vertices, L"VertexBuffer_Floor");
 
@@ -685,13 +686,13 @@ auto getOffset = [&mIndexOffsets, &mVertexOffsets](LocalRootSignature::HitGroupI
             Framework::Utility::GLBLoader loader(
                 modelPath / MODEL_NAMES.at(BottomLevelASType::Sphere));
             auto indices = toLinearList(loader.getIndicesPerSubMeshes());
+            mIndexBuffer[BottomLevelASType::Sphere] = std::make_unique<IndexBuffer>(device, indices,
+                D3D12_PRIMITIVE_TOPOLOGY_TYPE::D3D12_PRIMITIVE_TOPOLOGY_TYPE_UNDEFINED,
+                L"IndexBuffer_Sphere");
+
             auto vertices = toLinearVertices(loader.getPositionsPerSubMeshes(),
                 loader.getNormalsPerSubMeshes(), loader.getUVsPerSubMeshes(),
                 loader.getTangentsPerSubMeshes());
-
-            createBuffer(mDeviceResource->getDevice(),
-                &mIndexBuffer[BottomLevelASType::Sphere].mResource, indices.data(),
-                indices.size() * sizeof(indices[0]), L"IndexBuffer");
             mVertexBuffer[BottomLevelASType::Sphere]
                 = std::make_unique<VertexBuffer>(device, vertices, L"VertexBuffer_Sphere");
 
@@ -735,9 +736,11 @@ auto getOffset = [&mIndexOffsets, &mVertexOffsets](LocalRootSignature::HitGroupI
             D3D12_RAYTRACING_GEOMETRY_DESC geometryDesc = {};
             geometryDesc.Type
                 = D3D12_RAYTRACING_GEOMETRY_TYPE::D3D12_RAYTRACING_GEOMETRY_TYPE_TRIANGLES;
-            geometryDesc.Triangles.IndexBuffer = mIndexBuffer[i].mResource->GetGPUVirtualAddress();
+            geometryDesc.Triangles.IndexBuffer
+                = mIndexBuffer[i]->getResource()->GetGPUVirtualAddress();
             geometryDesc.Triangles.IndexCount
-                = static_cast<UINT>(mIndexBuffer[i].mResource->GetDesc().Width) / sizeof(Index);
+                = static_cast<UINT>(mIndexBuffer[i]->getResource()->GetDesc().Width)
+                / sizeof(Index);
             geometryDesc.Triangles.IndexFormat = DXGI_FORMAT::DXGI_FORMAT_R16_UINT;
             geometryDesc.Triangles.Transform3x4 = 0;
             geometryDesc.Triangles.VertexBuffer.StartAddress
