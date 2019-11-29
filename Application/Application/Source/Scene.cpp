@@ -329,7 +329,7 @@ void Scene::render() {
     commandList->SetComputeRootConstantBufferView(
         GlobalRootSignature::Slot::SceneConstant, mSceneCB.gpuVirtualAddress());
     commandList->SetComputeRootDescriptorTable(
-        GlobalRootSignature::Slot::IndexBuffer, mResourcesIndexBuffer.getGPUHandle());
+        GlobalRootSignature::Slot::IndexBuffer, mResourcesIndexBuffer->getGPUHandle());
     commandList->SetComputeRootDescriptorTable(
         GlobalRootSignature::Slot::VertexBuffer, mResourcesVertexBuffer->getGPUHandle());
 
@@ -822,27 +822,17 @@ auto getOffset = [&mIndexOffsets, &mVertexOffsets](LocalRootSignature::HitGroupI
         mDeviceResource->executeCommandList();
         mDeviceResource->waitForGPU();
 
-        createBuffer(device, &mResourcesIndexBuffer.mResource, resourceIndices.data(),
-            resourceIndices.size() * sizeof(resourceIndices[0]), L"ResourceIndex");
+        mResourcesIndexBuffer = std::make_unique<IndexBuffer>(device, resourceIndices,
+            D3D12_PRIMITIVE_TOPOLOGY_TYPE::D3D12_PRIMITIVE_TOPOLOGY_TYPE_UNDEFINED,
+            L"ResourceIndex");
+        mResourcesIndexBuffer->setCPUHandle(
+            mDescriptorTable->getCPUHandle(DescriptorHeapIndex::ResourceIndexBuffer));
+        mResourcesIndexBuffer->setGPUHandle(
+            mDescriptorTable->getGPUHandle(DescriptorHeapIndex::ResourceIndexBuffer));
+        mResourcesIndexBuffer->createSRV(device);
+
         mResourcesVertexBuffer
             = std::make_unique<VertexBuffer>(device, resourceVertices, L"ResourceVertex");
-        {
-            UINT indexBufferSize
-                = (UINT)resourceIndices.size() * sizeof(resourceIndices[0]) / sizeof(float);
-            D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
-            srvDesc.ViewDimension = D3D12_SRV_DIMENSION::D3D12_SRV_DIMENSION_BUFFER;
-            srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
-            srvDesc.Buffer.NumElements = indexBufferSize;
-            srvDesc.Format = DXGI_FORMAT::DXGI_FORMAT_R32_TYPELESS;
-            srvDesc.Buffer.Flags = D3D12_BUFFER_SRV_FLAGS::D3D12_BUFFER_SRV_FLAG_RAW;
-            srvDesc.Buffer.StructureByteStride = 0;
-            mResourcesIndexBuffer.setCPUHandle(
-                mDescriptorTable->getCPUHandle(DescriptorHeapIndex::ResourceIndexBuffer));
-            mResourcesIndexBuffer.setGPUHandle(
-                mDescriptorTable->getGPUHandle(DescriptorHeapIndex::ResourceIndexBuffer));
-            device->CreateShaderResourceView(
-                mResourcesIndexBuffer.mResource.Get(), &srvDesc, mResourcesIndexBuffer.mCPUHandle);
-        }
         mResourcesVertexBuffer->setCPUHandle(
             mDescriptorTable->getCPUHandle(DescriptorHeapIndex::ResourceVertexBuffer));
         mResourcesVertexBuffer->setGPUHandle(
