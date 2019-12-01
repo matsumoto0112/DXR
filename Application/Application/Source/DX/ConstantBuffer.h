@@ -17,19 +17,15 @@ namespace Framework::DX {
     public:
         /**
          * @brief コンストラクタ
-         */
-        ConstantBuffer();
-        /**
-         * @brief デストラクタ
-         */
-        ~ConstantBuffer();
-        /**
-         * @brief バッファを作成する
          * @param device デバイス
          * @param numInstances 総インスタンス数
          * @param name リソース名
          */
-        void create(ID3D12Device* device, UINT numInstances, LPCWSTR name);
+        ConstantBuffer(ID3D12Device* device, UINT numInstances, const std::wstring& name);
+        /**
+         * @brief デストラクタ
+         */
+        ~ConstantBuffer();
         /**
          * @brief ステージングの内容をGPUにコピーする
          * @param instanceIndex コピーするインデックス
@@ -38,17 +34,20 @@ namespace Framework::DX {
         /**
          * @brief インスタンス数を取得する
          */
-        UINT numInstances() const { return mNumInstances; }
+        UINT numInstances() const {
+            return mNumInstances;
+        }
         /**
          * @brief GPUアドレスを取得する
          * @param instanceIndex 取得するインデックス
          */
         D3D12_GPU_VIRTUAL_ADDRESS gpuVirtualAddress(UINT instanceIndex = 0);
         /**
-         * @brief アロー演算子
-         * @details ステージングの内容にアクセスしやすくするため
+         * @brief ステージングの内容にアクセスする
          */
-        T* operator->() { return &mStaging; }
+        inline T& staging() {
+            return mStaging;
+        }
 
     private:
         uint8_t* mMappedConstantData; //!< メモリの書き込み範囲
@@ -59,21 +58,19 @@ namespace Framework::DX {
 
     //コンストラクタ
     template <class T>
-    inline ConstantBuffer<T>::ConstantBuffer()
-        : mMappedConstantData(nullptr), mAlignedInstanceSize(0), mNumInstances(0) {}
+    inline ConstantBuffer<T>::ConstantBuffer(
+        ID3D12Device* device, UINT numInstances, const std::wstring& name)
+        : mMappedConstantData(nullptr),
+          mAlignedInstanceSize(
+              Math::MathUtil::alignPow2(sizeof(T), D3D12_CONSTANT_BUFFER_DATA_PLACEMENT_ALIGNMENT)),
+          mNumInstances(numInstances) {
+        UINT bufferSize = mNumInstances * mAlignedInstanceSize;
+        allocate(device, bufferSize, name.c_str());
+        mMappedConstantData = getMapCPUWriteOnly();
+    }
     //デストラクタ
     template <class T>
     inline ConstantBuffer<T>::~ConstantBuffer() {}
-    //バッファの作成
-    template <class T>
-    inline void ConstantBuffer<T>::create(ID3D12Device* device, UINT numInstances, LPCWSTR name) {
-        mNumInstances = numInstances;
-        mAlignedInstanceSize
-            = Math::MathUtil::alignPow2(sizeof(T), D3D12_CONSTANT_BUFFER_DATA_PLACEMENT_ALIGNMENT);
-        UINT bufferSize = mNumInstances * mAlignedInstanceSize;
-        allocate(device, bufferSize, name);
-        mMappedConstantData = getMapCPUWriteOnly();
-    }
     //GPUにデータをコピーする
     template <class T>
     inline void ConstantBuffer<T>::copyStatingToGPU(UINT instanceIndex) {

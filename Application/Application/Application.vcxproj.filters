@@ -46,6 +46,7 @@
     <ClCompile Include="Source\DX\Raytracing\DXRPipelineStateObject.cpp" />
     <ClCompile Include="Source\DX\Resource\VertexBuffer.cpp" />
     <ClCompile Include="Source\DX\Resource\IndexBuffer.cpp" />
+    <ClCompile Include="Source\DX\Raytracing\BottomLevelAccelerationStructure.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Source\stdafx.h" />
@@ -122,6 +123,7 @@
     <ClInclude Include="Source\DX\Resource\VertexBuffer.h" />
     <ClInclude Include="Source\DX\Resource\IndexBuffer.h" />
     <ClInclude Include="Source\DX\Util\Helper.h" />
+    <ClInclude Include="Source\DX\Raytracing\BottomLevelAccelerationStructure.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />

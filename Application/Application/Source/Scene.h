@@ -3,6 +3,7 @@
 #include "DX/ConstantBuffer.h"
 #include "DX/DescriptorTable.h"
 #include "DX/DeviceResource.h"
+#include "DX/Raytracing/BottomLevelAccelerationStructure.h"
 #include "DX/Raytracing/DXRDevice.h"
 #include "DX/Raytracing/DXRPipelineStateObject.h"
 #include "DX/Resource/IndexBuffer.h"
@@ -53,14 +54,16 @@ private:
     Framework::DX::DeviceResource* mDeviceResource;
     Framework::Input::InputManager* mInputManager;
     Framework::DX::DXRDevice mDXRDevice;
-    std::array<AccelerationBuffer, BottomLevelASType::Count> mBLASBuffers;
+    std::array<std::unique_ptr<Framework::DX::BottomLevelAccelerationStructure>,
+        BottomLevelASType::Count>
+        mBLASBuffers;
     AccelerationBuffer mTLASBuffer;
     ComPtr<ID3D12Resource> mRayGenTable;
     UINT mMissStride;
     ComPtr<ID3D12Resource> mMissTable;
     UINT mHitGroupStride;
     ComPtr<ID3D12Resource> mHitGroupTable;
-    Framework::DX::ConstantBuffer<SceneConstantBuffer> mSceneCB;
+    std::unique_ptr<Framework::DX::ConstantBuffer<SceneConstantBuffer>> mSceneCB;
 
 private:
     std::unique_ptr<Framework::DX::RootSignature> mGlobalRootSignature;

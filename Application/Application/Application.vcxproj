@@ -83,6 +83,7 @@
     <ClCompile Include="Source\Device\GameDevice.cpp" />
     <ClCompile Include="Source\DX\DescriptorTable.cpp" />
     <ClCompile Include="Source\DX\DeviceResource.cpp" />
+    <ClCompile Include="Source\DX\Raytracing\BottomLevelAccelerationStructure.cpp" />
     <ClCompile Include="Source\DX\Raytracing\DXRPipelineStateObject.cpp" />
     <ClCompile Include="Source\DX\Resource\IndexBuffer.cpp" />
     <ClCompile Include="Source\DX\Resource\VertexBuffer.cpp" />
@@ -143,6 +144,7 @@
     <ClInclude Include="Source\DX\DescriptorTable.h" />
     <ClInclude Include="Source\DX\DeviceResource.h" />
     <ClInclude Include="Source\DX\ModelCompat.h" />
+    <ClInclude Include="Source\DX\Raytracing\BottomLevelAccelerationStructure.h" />
     <ClInclude Include="Source\DX\Raytracing\DXRDevice.h" />
     <ClInclude Include="Source\DX\Raytracing\DXRPipelineStateObject.h" />
     <ClInclude Include="Source\DX\Raytracing\Shader\ShaderRecord.h" />

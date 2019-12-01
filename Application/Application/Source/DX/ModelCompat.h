@@ -1,15 +1,21 @@
 #pragma once
 
+#ifdef HLSL
+#else
 namespace Framework::DX {
-    /**
-     * @brief 頂点構造体
-     */
-    struct Vertex {
-        Vec3 position;
-        Vec3 normal;
-        Vec2 uv;
-        Vec4 tangent;
-    };
+#endif
+/**
+ * @brief 頂点構造体
+ */
+struct Vertex {
+    Vec3 position;
+    Vec3 normal;
+    Vec2 uv;
+    Vec4 tangent;
+};
 
-    using Index = UINT16;
+#ifdef HLSL
+#else
 } // namespace Framework::DX
+using Index = UINT16;
+#endif

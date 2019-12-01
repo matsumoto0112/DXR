@@ -171,7 +171,8 @@ void Scene::create() {
     {
         ID3D12Device* device = mDeviceResource->getDevice();
         UINT backBufferCount = mDeviceResource->getBackBufferCount();
-        mSceneCB.create(device, backBufferCount, L"SceneConstantBuffer");
+        mSceneCB = std::make_unique<ConstantBuffer<SceneConstantBuffer>>(
+            device, backBufferCount, L"SceneConstantBuffer");
     }
 }
 
@@ -217,18 +218,18 @@ void Scene::update() {
     }
     ImGui::End();
 
-    mSceneCB->cameraPosition = Vec4(mCameraPosition, 1.0f);
+    mSceneCB->staging().cameraPosition = Vec4(mCameraPosition, 1.0f);
     const float aspect = static_cast<float>(mWidth) / static_cast<float>(mHeight);
 
     Mat4 view = Mat4::createRotation(mCameraRotation) * Mat4::createTranslate(mCameraPosition);
     view = view.inverse();
     Mat4 proj = Mat4::createProjection(Deg(45.0f), aspect, 0.1f, 100.0f);
     Mat4 vp = view * proj;
-    mSceneCB->projectionToWorld = vp.inverse();
-    mSceneCB->lightPosition = Vec4(mLightPosition, 1.0f);
-    mSceneCB->lightDiffuse = mLightDiffuse;
-    mSceneCB->lightAmbient = mLightAmbient;
-    mSceneCB->globalTime = static_cast<float>(mTime.getTime());
+    mSceneCB->staging().projectionToWorld = vp.inverse();
+    mSceneCB->staging().lightPosition = Vec4(mLightPosition, 1.0f);
+    mSceneCB->staging().lightDiffuse = mLightDiffuse;
+    mSceneCB->staging().lightAmbient = mLightAmbient;
+    mSceneCB->staging().globalTime = static_cast<float>(mTime.getTime());
 
     if (mInputManager->getKeyboard()->getKey(Framework::Input::KeyCode::LShift)) {
         mQuadRotate += 1.0f;
@@ -255,7 +256,7 @@ void Scene::render() {
         instanceDesc[n + offset].InstanceContributionToHitGroupIndex
             = LocalRootSignature::HitGroupIndex::UFO;
         instanceDesc[n + offset].AccelerationStructure
-            = mBLASBuffers[BottomLevelASType::UFO].buffer->GetGPUVirtualAddress();
+            = mBLASBuffers[BottomLevelASType::UFO]->getBuffer()->GetGPUVirtualAddress();
         XMStoreFloat3x4(
             reinterpret_cast<XMFLOAT3X4*>(instanceDesc[n + offset].Transform), transform);
     }
@@ -272,7 +273,7 @@ void Scene::render() {
         instanceDesc[n + offset].InstanceContributionToHitGroupIndex
             = LocalRootSignature::HitGroupIndex::Quad;
         instanceDesc[n + offset].AccelerationStructure
-            = mBLASBuffers[BottomLevelASType::Quad].buffer->GetGPUVirtualAddress();
+            = mBLASBuffers[BottomLevelASType::Quad]->getBuffer()->GetGPUVirtualAddress();
         XMStoreFloat3x4(
             reinterpret_cast<XMFLOAT3X4*>(instanceDesc[n + offset].Transform), transform);
     }
@@ -286,7 +287,7 @@ void Scene::render() {
         instanceDesc[n + offset].InstanceContributionToHitGroupIndex
             = LocalRootSignature::HitGroupIndex::Floor;
         instanceDesc[n + offset].AccelerationStructure
-            = mBLASBuffers[BottomLevelASType::Floor].buffer->GetGPUVirtualAddress();
+            = mBLASBuffers[BottomLevelASType::Floor]->getBuffer()->GetGPUVirtualAddress();
         XMStoreFloat3x4(
             reinterpret_cast<XMFLOAT3X4*>(instanceDesc[n + offset].Transform), transform);
     }
@@ -302,7 +303,7 @@ void Scene::render() {
         instanceDesc[n + offset].InstanceContributionToHitGroupIndex
             = LocalRootSignature::HitGroupIndex::Sphere;
         instanceDesc[n + offset].AccelerationStructure
-            = mBLASBuffers[BottomLevelASType::Sphere].buffer->GetGPUVirtualAddress();
+            = mBLASBuffers[BottomLevelASType::Sphere]->getBuffer()->GetGPUVirtualAddress();
         XMStoreFloat3x4(
             reinterpret_cast<XMFLOAT3X4*>(instanceDesc[n + offset].Transform), transform);
     }
@@ -312,13 +313,11 @@ void Scene::render() {
     topLevelBuildDesc.Inputs.InstanceDescs = mInstanceDescs->GetGPUVirtualAddress();
 
     dxrCommandList->BuildRaytracingAccelerationStructure(&topLevelBuildDesc, 0, nullptr);
-    mDeviceResource->getCommandList()->ResourceBarrier(
-        1, &CD3DX12_RESOURCE_BARRIER::UAV(mTLASBuffer.buffer.Get()));
 
     ID3D12GraphicsCommandList* commandList = mDeviceResource->getCommandList();
     UINT frameIndex = mDeviceResource->getCurrentFrameIndex();
     commandList->SetComputeRootSignature(mGlobalRootSignature->getRootSignature());
-    mSceneCB.copyStatingToGPU(frameIndex);
+    mSceneCB->copyStatingToGPU(frameIndex);
 
     ID3D12DescriptorHeap* heaps[] = { mDescriptorTable->getHeap() };
     commandList->SetDescriptorHeaps(_countof(heaps), heaps);
@@ -327,7 +326,7 @@ void Scene::render() {
     commandList->SetComputeRootShaderResourceView(GlobalRootSignature::Slot::AccelerationStructure,
         mTLASBuffer.buffer->GetGPUVirtualAddress());
     commandList->SetComputeRootConstantBufferView(
-        GlobalRootSignature::Slot::SceneConstant, mSceneCB.gpuVirtualAddress());
+        GlobalRootSignature::Slot::SceneConstant, mSceneCB->gpuVirtualAddress());
     commandList->SetComputeRootDescriptorTable(
         GlobalRootSignature::Slot::IndexBuffer, mResourcesIndexBuffer->getGPUHandle());
     commandList->SetComputeRootDescriptorTable(
@@ -728,64 +727,11 @@ auto getOffset = [&mIndexOffsets, &mVertexOffsets](LocalRootSignature::HitGroupI
         commandList->Reset(allocator, nullptr);
 
         for (int i = 0; i < BottomLevelASType::Count; i++) {
-            D3D12_RAYTRACING_GEOMETRY_DESC geometryDesc = {};
-            geometryDesc.Type
-                = D3D12_RAYTRACING_GEOMETRY_TYPE::D3D12_RAYTRACING_GEOMETRY_TYPE_TRIANGLES;
-            geometryDesc.Triangles.IndexBuffer
-                = mIndexBuffer[i]->getResource()->GetGPUVirtualAddress();
-            geometryDesc.Triangles.IndexCount
-                = static_cast<UINT>(mIndexBuffer[i]->getResource()->GetDesc().Width)
-                / sizeof(Index);
-            geometryDesc.Triangles.IndexFormat = DXGI_FORMAT::DXGI_FORMAT_R16_UINT;
-            geometryDesc.Triangles.Transform3x4 = 0;
-            geometryDesc.Triangles.VertexBuffer.StartAddress
-                = mVertexBuffer[i]->getResource()->GetGPUVirtualAddress();
-            geometryDesc.Triangles.VertexBuffer.StrideInBytes = sizeof(Framework::DX::Vertex);
-            geometryDesc.Triangles.VertexCount
-                = static_cast<UINT>(mVertexBuffer[i]->getResource()->GetDesc().Width)
-                / sizeof(Framework::DX::Vertex);
-            geometryDesc.Triangles.VertexFormat = DXGI_FORMAT::DXGI_FORMAT_R32G32B32_FLOAT;
-            geometryDesc.Flags
-                = D3D12_RAYTRACING_GEOMETRY_FLAGS::D3D12_RAYTRACING_GEOMETRY_FLAG_OPAQUE;
-
-            D3D12_RAYTRACING_ACCELERATION_STRUCTURE_BUILD_FLAGS buildFlags
-                = D3D12_RAYTRACING_ACCELERATION_STRUCTURE_BUILD_FLAGS::
-                    D3D12_RAYTRACING_ACCELERATION_STRUCTURE_BUILD_FLAG_PREFER_FAST_TRACE;
-
-            D3D12_BUILD_RAYTRACING_ACCELERATION_STRUCTURE_DESC
-            bottomLevelBuildDesc = {};
-            auto& bottomLevelInputs = bottomLevelBuildDesc.Inputs;
-            bottomLevelInputs.DescsLayout = D3D12_ELEMENTS_LAYOUT::D3D12_ELEMENTS_LAYOUT_ARRAY;
-            bottomLevelInputs.Flags = buildFlags;
-            bottomLevelInputs.NumDescs = 1;
-            bottomLevelInputs.Type = D3D12_RAYTRACING_ACCELERATION_STRUCTURE_TYPE::
-                D3D12_RAYTRACING_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL;
-            bottomLevelInputs.pGeometryDescs = &geometryDesc;
-
-            D3D12_RAYTRACING_ACCELERATION_STRUCTURE_PREBUILD_INFO
-            bottomLevelPreInfo = {};
-            dxrDevice->GetRaytracingAccelerationStructurePrebuildInfo(
-                &bottomLevelInputs, &bottomLevelPreInfo);
-            MY_THROW_IF_FALSE(bottomLevelPreInfo.ResultDataMaxSizeInBytes > 0);
-
-            allocateUAVBuffer(device, bottomLevelPreInfo.ScratchDataSizeInBytes,
-                &mBLASBuffers[i].scratch,
-                D3D12_RESOURCE_STATES::D3D12_RESOURCE_STATE_UNORDERED_ACCESS, L"ScratchResource");
-
-            D3D12_RESOURCE_STATES initResourceState
-                = D3D12_RESOURCE_STATES::D3D12_RESOURCE_STATE_RAYTRACING_ACCELERATION_STRUCTURE;
-            allocateUAVBuffer(device, bottomLevelPreInfo.ResultDataMaxSizeInBytes,
-                &mBLASBuffers[i].buffer, initResourceState, L"BottomLevelAS");
-
-            bottomLevelBuildDesc.ScratchAccelerationStructureData
-                = mBLASBuffers[i].scratch->GetGPUVirtualAddress();
-            bottomLevelBuildDesc.DestAccelerationStructureData
-                = mBLASBuffers[i].buffer->GetGPUVirtualAddress();
-
-            dxrCommandList->BuildRaytracingAccelerationStructure(&bottomLevelBuildDesc, 0, nullptr);
-            commandList->ResourceBarrier(
-                1, &CD3DX12_RESOURCE_BARRIER::UAV(mBLASBuffers[i].buffer.Get()));
+            mBLASBuffers[i] = std::make_unique<BottomLevelAccelerationStructure>(mDXRDevice,
+                *mVertexBuffer[i], static_cast<UINT>(sizeof(Vertex)), *mIndexBuffer[i],
+                static_cast<UINT>(sizeof(Index)));
         }
+
         D3D12_RAYTRACING_ACCELERATION_STRUCTURE_BUILD_FLAGS buildFlags
             = D3D12_RAYTRACING_ACCELERATION_STRUCTURE_BUILD_FLAGS::
                 D3D12_RAYTRACING_ACCELERATION_STRUCTURE_BUILD_FLAG_PREFER_FAST_TRACE;

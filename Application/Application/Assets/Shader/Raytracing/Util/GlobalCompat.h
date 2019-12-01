@@ -7,26 +7,18 @@
 #define SHADER_RAYTRACING_GLOBALCOMPAT_H
 
 #ifdef HLSL
+// clang-format off
 #include "Typedef.hlsli"
+#include "../../../../Source/DX/ModelCompat.h"
+// clang-format on
 #else
 #include <DirectXMath.h>
 #include <Windows.h>
 #include "DX/ModelCompat.h"
 #include "Typedef.h"
-typedef UINT16 Index;
 #endif
 
 static const UINT MAX_RAY_RECURSION_DEPTH = 2; //! 最大再帰回数
-
-/**
- * @brief 頂点構造体
- */
-struct Vertex {
-    Vec3 position; //!< 座標
-    Vec3 normal; //!< 法線
-    Vec2 uv; //!< UV座標
-    Vec4 tangent; //!< 接線
-};
 
 /**
  * @brief シーン全体の情報
