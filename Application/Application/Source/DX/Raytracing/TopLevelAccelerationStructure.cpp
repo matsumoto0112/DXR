@@ -33,44 +33,51 @@ namespace Framework::DX {
 
     void TopLevelAccelerationStructure::build(
         const DXRDevice& device, D3D12_RAYTRACING_ACCELERATION_STRUCTURE_BUILD_FLAGS buildFlag) {
-        D3D12_RAYTRACING_ACCELERATION_STRUCTURE_BUILD_FLAGS buildFlags
-            = D3D12_RAYTRACING_ACCELERATION_STRUCTURE_BUILD_FLAGS::
-                D3D12_RAYTRACING_ACCELERATION_STRUCTURE_BUILD_FLAG_PREFER_FAST_TRACE;
+        buildPrebuildInfoIfChanged(device, buildFlag);
 
-        D3D12_BUILD_RAYTRACING_ACCELERATION_STRUCTURE_INPUTS& topLevelInputs = mDesc.Inputs;
-        topLevelInputs.DescsLayout = D3D12_ELEMENTS_LAYOUT::D3D12_ELEMENTS_LAYOUT_ARRAY;
-        topLevelInputs.Flags = buildFlags;
-        topLevelInputs.NumDescs = mInstanceDescs.size();
-        topLevelInputs.pGeometryDescs = nullptr;
-        topLevelInputs.Type = D3D12_RAYTRACING_ACCELERATION_STRUCTURE_TYPE::
-            D3D12_RAYTRACING_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL;
-
-        D3D12_RAYTRACING_ACCELERATION_STRUCTURE_PREBUILD_INFO
-        mTopLevelPreInfo = {};
-        device.getDXRDevice()->GetRaytracingAccelerationStructurePrebuildInfo(
-            &topLevelInputs, &mTopLevelPreInfo);
-        MY_THROW_IF_FALSE(mTopLevelPreInfo.ResultDataMaxSizeInBytes > 0);
-
-        mScratch = createUAVBuffer(device.getDXRDevice(), mTopLevelPreInfo.ScratchDataSizeInBytes,
-            D3D12_RESOURCE_STATES::D3D12_RESOURCE_STATE_UNORDERED_ACCESS, L"ScratchResource");
-
-        D3D12_RESOURCE_STATES initResourceState
-            = D3D12_RESOURCE_STATES::D3D12_RESOURCE_STATE_RAYTRACING_ACCELERATION_STRUCTURE;
-        mBuffer = createUAVBuffer(device.getDXRDevice(), mTopLevelPreInfo.ResultDataMaxSizeInBytes,
-            initResourceState, L"TopLevelAS");
-
-        mDesc.DestAccelerationStructureData = mBuffer->GetGPUVirtualAddress();
-        mDesc.ScratchAccelerationStructureData = mScratch->GetGPUVirtualAddress();
-
-        mInstance = createBuffer(device.getDXRDevice(), mInstanceDescs.data(),
-            mInstanceDescs.size() * sizeof(D3D12_RAYTRACING_INSTANCE_DESC), L"InstanceDesc");
-        topLevelInputs.InstanceDescs = mInstance->GetGPUVirtualAddress();
+        UINT size
+            = static_cast<UINT>(mInstanceDescs.size() * sizeof(D3D12_RAYTRACING_INSTANCE_DESC));
+        mInstance
+            = createBuffer(device.getDXRDevice(), mInstanceDescs.data(), size, L"InstanceDesc");
+        mDesc.Inputs.InstanceDescs = mInstance->GetGPUVirtualAddress();
 
         device.getDXRCommandList()->BuildRaytracingAccelerationStructure(&mDesc, 0, nullptr);
     }
 
     void TopLevelAccelerationStructure::clear() {
         mInstanceDescs.clear();
+    }
+
+    void TopLevelAccelerationStructure::buildPrebuildInfoIfChanged(
+        const DXRDevice& dxrDevice, D3D12_RAYTRACING_ACCELERATION_STRUCTURE_BUILD_FLAGS buildFlag) {
+        if (mDesc.Inputs.NumDescs == mInstanceDescs.size() && mDesc.Inputs.Flags == buildFlag) {
+            return;
+        }
+        ID3D12Device5* device = dxrDevice.getDXRDevice();
+
+        D3D12_BUILD_RAYTRACING_ACCELERATION_STRUCTURE_INPUTS& topLevelInputs = mDesc.Inputs;
+        topLevelInputs.DescsLayout = D3D12_ELEMENTS_LAYOUT::D3D12_ELEMENTS_LAYOUT_ARRAY;
+        topLevelInputs.Flags = buildFlag;
+        topLevelInputs.NumDescs = static_cast<UINT>(mInstanceDescs.size());
+        topLevelInputs.pGeometryDescs = nullptr;
+        topLevelInputs.Type = D3D12_RAYTRACING_ACCELERATION_STRUCTURE_TYPE::
+            D3D12_RAYTRACING_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL;
+
+        D3D12_RAYTRACING_ACCELERATION_STRUCTURE_PREBUILD_INFO preInfo = {};
+        device->GetRaytracingAccelerationStructurePrebuildInfo(&topLevelInputs, &preInfo);
+        MY_THROW_IF_FALSE(preInfo.ResultDataMaxSizeInBytes > 0);
+
+        mScratch = createUAVBuffer(device, preInfo.ScratchDataSizeInBytes,
+            D3D12_RESOURCE_STATES::D3D12_RESOURCE_STATE_UNORDERED_ACCESS, L"ScratchResource");
+
+        mBuffer = createUAVBuffer(device, preInfo.ResultDataMaxSizeInBytes,
+            D3D12_RESOURCE_STATES::D3D12_RESOURCE_STATE_RAYTRACING_ACCELERATION_STRUCTURE,
+            L"TopLevelAS");
+        D3D12_RESOURCE_STATES initResourceState
+            = D3D12_RESOURCE_STATES::D3D12_RESOURCE_STATE_RAYTRACING_ACCELERATION_STRUCTURE;
+
+        mDesc.DestAccelerationStructureData = mBuffer->GetGPUVirtualAddress();
+        mDesc.ScratchAccelerationStructureData = mScratch->GetGPUVirtualAddress();
     }
 
 } // namespace Framework::DX

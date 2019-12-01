@@ -48,8 +48,11 @@ namespace Framework::DX {
         }
 
     private:
+        void buildPrebuildInfoIfChanged(
+            const DXRDevice& device, D3D12_RAYTRACING_ACCELERATION_STRUCTURE_BUILD_FLAGS buildFlag);
+
+    private:
         D3D12_BUILD_RAYTRACING_ACCELERATION_STRUCTURE_DESC mDesc;
-        D3D12_RAYTRACING_ACCELERATION_STRUCTURE_PREBUILD_INFO mPreInfo;
         std::vector<D3D12_RAYTRACING_INSTANCE_DESC> mInstanceDescs;
         ComPtr<ID3D12Resource> mScratch;
         ComPtr<ID3D12Resource> mInstance;
