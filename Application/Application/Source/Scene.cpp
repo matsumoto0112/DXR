@@ -371,7 +371,6 @@ void Scene::render() {
         D3D12_RESOURCE_STATES::D3D12_RESOURCE_STATE_COPY_SOURCE,
         D3D12_RESOURCE_STATES::D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
     commandList->ResourceBarrier(_countof(postCopyBarriers), postCopyBarriers);
-
     //mDebugWindow->draw();
 }
 
@@ -575,8 +574,7 @@ auto getOffset = [&mIndexOffsets, &mVertexOffsets](LocalRootSignature::HitGroupI
                 loader.getTangentsPerSubMeshes());
 
             mIndexBuffer[BottomLevelASType::UFO] = std::make_unique<IndexBuffer>(device, indices,
-                D3D12_PRIMITIVE_TOPOLOGY_TYPE::D3D12_PRIMITIVE_TOPOLOGY_TYPE_UNDEFINED,
-                L"IndexBuffer_UFO");
+                D3D12_PRIMITIVE_TOPOLOGY::D3D_PRIMITIVE_TOPOLOGY_UNDEFINED, L"IndexBuffer_UFO");
             mVertexBuffer[BottomLevelASType::UFO]
                 = std::make_unique<VertexBuffer>(device, vertices, L"VertexBuffer_UFO");
 
@@ -609,8 +607,7 @@ auto getOffset = [&mIndexOffsets, &mVertexOffsets](LocalRootSignature::HitGroupI
         {
             std::vector<Index> indices = { 0, 1, 2, 0, 2, 3 };
             mIndexBuffer[BottomLevelASType::Quad] = std::make_unique<IndexBuffer>(device, indices,
-                D3D12_PRIMITIVE_TOPOLOGY_TYPE::D3D12_PRIMITIVE_TOPOLOGY_TYPE_UNDEFINED,
-                L"IndexBuffer_Quad");
+                D3D12_PRIMITIVE_TOPOLOGY::D3D_PRIMITIVE_TOPOLOGY_UNDEFINED, L"IndexBuffer_Quad");
             std::vector<Framework::DX::Vertex> vertices = {
                 { Vec3(-1, 1, 0), Vec3(0, 0, -1), Vec2(0, 0) },
                 { Vec3(1, 1, 0), Vec3(0, 0, -1), Vec2(1, 0) },
@@ -648,8 +645,7 @@ auto getOffset = [&mIndexOffsets, &mVertexOffsets](LocalRootSignature::HitGroupI
                 modelPath / MODEL_NAMES.at(BottomLevelASType::Floor));
             auto indices = toLinearList(loader.getIndicesPerSubMeshes());
             mIndexBuffer[BottomLevelASType::Floor] = std::make_unique<IndexBuffer>(device, indices,
-                D3D12_PRIMITIVE_TOPOLOGY_TYPE::D3D12_PRIMITIVE_TOPOLOGY_TYPE_UNDEFINED,
-                L"IndexBuffer_Floor");
+                D3D12_PRIMITIVE_TOPOLOGY::D3D_PRIMITIVE_TOPOLOGY_UNDEFINED, L"IndexBuffer_Floor");
 
             auto vertices = toLinearVertices(loader.getPositionsPerSubMeshes(),
                 loader.getNormalsPerSubMeshes(), loader.getUVsPerSubMeshes());
@@ -687,8 +683,7 @@ auto getOffset = [&mIndexOffsets, &mVertexOffsets](LocalRootSignature::HitGroupI
                 modelPath / MODEL_NAMES.at(BottomLevelASType::Sphere));
             auto indices = toLinearList(loader.getIndicesPerSubMeshes());
             mIndexBuffer[BottomLevelASType::Sphere] = std::make_unique<IndexBuffer>(device, indices,
-                D3D12_PRIMITIVE_TOPOLOGY_TYPE::D3D12_PRIMITIVE_TOPOLOGY_TYPE_UNDEFINED,
-                L"IndexBuffer_Sphere");
+                D3D12_PRIMITIVE_TOPOLOGY::D3D_PRIMITIVE_TOPOLOGY_UNDEFINED, L"IndexBuffer_Sphere");
 
             auto vertices = toLinearVertices(loader.getPositionsPerSubMeshes(),
                 loader.getNormalsPerSubMeshes(), loader.getUVsPerSubMeshes(),
@@ -826,8 +821,7 @@ auto getOffset = [&mIndexOffsets, &mVertexOffsets](LocalRootSignature::HitGroupI
         mDeviceResource->waitForGPU();
 
         mResourcesIndexBuffer = std::make_unique<IndexBuffer>(device, resourceIndices,
-            D3D12_PRIMITIVE_TOPOLOGY_TYPE::D3D12_PRIMITIVE_TOPOLOGY_TYPE_UNDEFINED,
-            L"ResourceIndex");
+            D3D12_PRIMITIVE_TOPOLOGY::D3D_PRIMITIVE_TOPOLOGY_UNDEFINED, L"ResourceIndex");
         mResourcesIndexBuffer->setCPUHandle(
             mDescriptorTable->getCPUHandle(DescriptorHeapIndex::ResourceIndexBuffer));
         mResourcesIndexBuffer->setGPUHandle(

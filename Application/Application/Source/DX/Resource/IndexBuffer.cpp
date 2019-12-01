@@ -4,8 +4,8 @@
 namespace Framework::DX {
     //コンストラクタ
     IndexBuffer::IndexBuffer(ID3D12Device* device, const std::vector<Index>& indices,
-        D3D12_PRIMITIVE_TOPOLOGY_TYPE topologyType, const std::wstring& name)
-        : mIndexCount(static_cast<UINT>(indices.size())), mTopologyType(topologyType) {
+        D3D12_PRIMITIVE_TOPOLOGY primitiveTopology, const std::wstring& name)
+        : mIndexCount(static_cast<UINT>(indices.size())), mPrimitiveTopology(primitiveTopology) {
         mResource = createUploadBuffer(device, mIndexCount * sizeof(Index), name);
         writeToResource(mResource.Get(), indices.data(), mIndexCount * sizeof(Index));
     }

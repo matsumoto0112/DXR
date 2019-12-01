@@ -18,11 +18,11 @@ namespace Framework::DX {
          * @brief コンストラクタ
          * @param device デバイス
          * @param indices インデックス配列
-         * @param topologyType プリミティブの種類
+         * @param primitiveTopology プリミティブの種類
          * @param name リソース名
          */
         IndexBuffer(ID3D12Device* device, const std::vector<Index>& indices,
-            D3D12_PRIMITIVE_TOPOLOGY_TYPE topologyType, const std::wstring& name);
+            D3D12_PRIMITIVE_TOPOLOGY primitiveTopology, const std::wstring& name);
         /* *
          * @brief デストラクタ
          */
@@ -35,6 +35,6 @@ namespace Framework::DX {
 
     private:
         UINT mIndexCount; //!< インデックス数
-        D3D12_PRIMITIVE_TOPOLOGY_TYPE mTopologyType; //!< プリミティブの種類
+        D3D12_PRIMITIVE_TOPOLOGY mPrimitiveTopology; //!< プリミティブの種類
     };
 } // namespace Framework::DX
