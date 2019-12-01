@@ -6,6 +6,7 @@
 #include "DX/Raytracing/BottomLevelAccelerationStructure.h"
 #include "DX/Raytracing/DXRDevice.h"
 #include "DX/Raytracing/DXRPipelineStateObject.h"
+#include "DX/Raytracing/TopLevelAccelerationStructure.h"
 #include "DX/Resource/IndexBuffer.h"
 #include "DX/Resource/Texture2D.h"
 #include "DX/Resource/VertexBuffer.h"
@@ -57,7 +58,7 @@ private:
     std::array<std::unique_ptr<Framework::DX::BottomLevelAccelerationStructure>,
         BottomLevelASType::Count>
         mBLASBuffers;
-    AccelerationBuffer mTLASBuffer;
+    std::unique_ptr<Framework::DX::TopLevelAccelerationStructure> mTLASBuffer;
     ComPtr<ID3D12Resource> mRayGenTable;
     UINT mMissStride;
     ComPtr<ID3D12Resource> mMissTable;

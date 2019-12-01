@@ -3,7 +3,7 @@
 namespace Framework {
     //コンストラクタ
     ImGuiManager::ImGuiManager(
-        HWND hWnd, ID3D12Device* device, DXGI_FORMAT format, bool enableImGui)
+        HWND hWnd, ID3D12Device* device, DXGI_FORMAT format, UINT frameCount, bool enableImGui)
         : mEnableImGui(enableImGui), mHeap(nullptr) {
         IMGUI_CHECKVERSION();
         ImGui::CreateContext();
@@ -11,6 +11,7 @@ namespace Framework {
         (void)io;
         ImGui::StyleColorsDark();
         ImGui_ImplWin32_Init(hWnd);
+
         //ImGui用のヒープ確保
         D3D12_DESCRIPTOR_HEAP_DESC desc = {};
         desc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
@@ -18,7 +19,7 @@ namespace Framework {
         desc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
         device->CreateDescriptorHeap(&desc, IID_PPV_ARGS(&mHeap));
 
-        ImGui_ImplDX12_Init(device, 3, format, mHeap->GetCPUDescriptorHandleForHeapStart(),
+        ImGui_ImplDX12_Init(device, frameCount, format, mHeap->GetCPUDescriptorHandleForHeapStart(),
             mHeap->GetGPUDescriptorHandleForHeapStart());
     }
 

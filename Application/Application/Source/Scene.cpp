@@ -45,7 +45,6 @@ namespace {
     static constexpr UINT QUAD_COUNT = 0;
     static constexpr UINT FLOOR_COUNT = 1;
     static constexpr UINT SPHERE_COUNT = 100;
-    static constexpr UINT TLAS_NUM = UFO_COUNT + QUAD_COUNT + FLOOR_COUNT + SPHERE_COUNT;
 
     inline void createBuffer(ID3D12Device* device, ID3D12Resource** resource, void* data,
         UINT64 size, LPCWSTR name = nullptr) {
@@ -107,8 +106,8 @@ namespace {
     };
 
     Deg mQuadRotate = Deg(0.0f);
-    D3D12_RAYTRACING_ACCELERATION_STRUCTURE_PREBUILD_INFO topLevelPreInfo = {};
-    D3D12_BUILD_RAYTRACING_ACCELERATION_STRUCTURE_DESC topLevelBuildDesc = {};
+    //D3D12_RAYTRACING_ACCELERATION_STRUCTURE_PREBUILD_INFO mTopLevelPreInfo = {};
+    //D3D12_BUILD_RAYTRACING_ACCELERATION_STRUCTURE_DESC mTopLevelBuildDesc = {};
 
     enum ModelTextureType {
         Default_AlbedoTexture,
@@ -240,8 +239,13 @@ void Scene::render() {
     ID3D12Device* device = mDeviceResource->getDevice();
     ID3D12GraphicsCommandList5* dxrCommandList = mDXRDevice.getDXRCommandList();
 
-    std::vector<D3D12_RAYTRACING_INSTANCE_DESC> instanceDesc(TLAS_NUM);
+    mTLASBuffer->clear();
     UINT offset = 0;
+    TopLevelAccelerationStructure::InstanceDesc instanceDesc = {};
+    instanceDesc.instanceID = 0;
+    instanceDesc.mask = 0xff;
+    instanceDesc.flags = D3D12_RAYTRACING_INSTANCE_FLAGS::D3D12_RAYTRACING_INSTANCE_FLAG_NONE;
+
     for (UINT n = 0; n < UFO_COUNT; n++) {
         Rad rotX = mQuadRotate.toRadians() * 0.37f;
         Rad rotY = mQuadRotate.toRadians() * 1.45f;
@@ -249,70 +253,44 @@ void Scene::render() {
         XMMATRIX transform
             = XMMatrixRotationRollPitchYaw(rotX.getRad(), rotY.getRad(), rotZ.getRad())
             * XMMatrixTranslation((float)n * 5, 0, 0);
-        instanceDesc[n + offset].InstanceID = 0;
-        instanceDesc[n + offset].InstanceMask = 0xff;
-        instanceDesc[n + offset].Flags
-            = D3D12_RAYTRACING_INSTANCE_FLAGS::D3D12_RAYTRACING_INSTANCE_FLAG_NONE;
-        instanceDesc[n + offset].InstanceContributionToHitGroupIndex
-            = LocalRootSignature::HitGroupIndex::UFO;
-        instanceDesc[n + offset].AccelerationStructure
-            = mBLASBuffers[BottomLevelASType::UFO]->getBuffer()->GetGPUVirtualAddress();
-        XMStoreFloat3x4(
-            reinterpret_cast<XMFLOAT3X4*>(instanceDesc[n + offset].Transform), transform);
+        instanceDesc.hitGroupIndex = LocalRootSignature::HitGroupIndex::UFO;
+        instanceDesc.blas = mBLASBuffers[BottomLevelASType::UFO].get();
+        instanceDesc.transform = transform;
+        mTLASBuffer->add(instanceDesc);
     }
 
-    offset += UFO_COUNT;
     for (UINT n = 0; n < QUAD_COUNT; n++) {
         XMMATRIX transform = XMMatrixScaling(1, 1, 1)
             * XMMatrixRotationRollPitchYaw(0, mQuadRotate.toRadians().getRad(), 0)
             * XMMatrixTranslation((float)n * 5 + 20, 3, 0);
-        instanceDesc[n + offset].InstanceID = 0;
-        instanceDesc[n + offset].InstanceMask = 0xff;
-        instanceDesc[n + offset].Flags
-            = D3D12_RAYTRACING_INSTANCE_FLAGS::D3D12_RAYTRACING_INSTANCE_FLAG_NONE;
-        instanceDesc[n + offset].InstanceContributionToHitGroupIndex
-            = LocalRootSignature::HitGroupIndex::Quad;
-        instanceDesc[n + offset].AccelerationStructure
-            = mBLASBuffers[BottomLevelASType::Quad]->getBuffer()->GetGPUVirtualAddress();
-        XMStoreFloat3x4(
-            reinterpret_cast<XMFLOAT3X4*>(instanceDesc[n + offset].Transform), transform);
+        instanceDesc.hitGroupIndex = LocalRootSignature::HitGroupIndex::Quad;
+        instanceDesc.blas = mBLASBuffers[BottomLevelASType::Quad].get();
+        instanceDesc.transform = transform;
+        mTLASBuffer->add(instanceDesc);
     }
-    offset += QUAD_COUNT;
+
     for (UINT n = 0; n < FLOOR_COUNT; n++) {
         XMMATRIX transform = XMMatrixScaling(100, 1, 100) * XMMatrixTranslation(0, -5, 0);
-        instanceDesc[n + offset].InstanceID = 0;
-        instanceDesc[n + offset].InstanceMask = 0xff;
-        instanceDesc[n + offset].Flags
-            = D3D12_RAYTRACING_INSTANCE_FLAGS::D3D12_RAYTRACING_INSTANCE_FLAG_NONE;
-        instanceDesc[n + offset].InstanceContributionToHitGroupIndex
-            = LocalRootSignature::HitGroupIndex::Floor;
-        instanceDesc[n + offset].AccelerationStructure
-            = mBLASBuffers[BottomLevelASType::Floor]->getBuffer()->GetGPUVirtualAddress();
-        XMStoreFloat3x4(
-            reinterpret_cast<XMFLOAT3X4*>(instanceDesc[n + offset].Transform), transform);
+        instanceDesc.hitGroupIndex = LocalRootSignature::HitGroupIndex::Floor;
+        instanceDesc.blas = mBLASBuffers[BottomLevelASType::Floor].get();
+        instanceDesc.transform = transform;
+        mTLASBuffer->add(instanceDesc);
     }
-    offset += FLOOR_COUNT;
+
     UINT root = static_cast<UINT>(Framework::Math::MathUtil::sqrt(SPHERE_COUNT));
     for (UINT n = 0; n < SPHERE_COUNT; n++) {
-        XMMATRIX transform
-            = XMMatrixTranslation(((n - root / 2) / root) * 20, 3, ((n - root / 2) % root) * 20);
-        instanceDesc[n + offset].InstanceID = 0;
-        instanceDesc[n + offset].InstanceMask = 0xff;
-        instanceDesc[n + offset].Flags
-            = D3D12_RAYTRACING_INSTANCE_FLAGS::D3D12_RAYTRACING_INSTANCE_FLAG_NONE;
-        instanceDesc[n + offset].InstanceContributionToHitGroupIndex
-            = LocalRootSignature::HitGroupIndex::Sphere;
-        instanceDesc[n + offset].AccelerationStructure
-            = mBLASBuffers[BottomLevelASType::Sphere]->getBuffer()->GetGPUVirtualAddress();
-        XMStoreFloat3x4(
-            reinterpret_cast<XMFLOAT3X4*>(instanceDesc[n + offset].Transform), transform);
+        float x = (n % root) * 20.0f;
+        float z = (n / root) * 20.0f;
+        XMMATRIX transform = XMMatrixTranslation(x, 5.0f, z);
+        instanceDesc.hitGroupIndex = LocalRootSignature::HitGroupIndex::Sphere;
+        instanceDesc.blas = mBLASBuffers[BottomLevelASType::Sphere].get();
+        instanceDesc.transform = transform;
+        mTLASBuffer->add(instanceDesc);
     }
 
-    createBuffer(device, mInstanceDescs.ReleaseAndGetAddressOf(), instanceDesc.data(),
-        instanceDesc.size() * sizeof(D3D12_RAYTRACING_INSTANCE_DESC), L"InstanceDescs");
-    topLevelBuildDesc.Inputs.InstanceDescs = mInstanceDescs->GetGPUVirtualAddress();
-
-    dxrCommandList->BuildRaytracingAccelerationStructure(&topLevelBuildDesc, 0, nullptr);
+    mTLASBuffer->build(mDXRDevice,
+        D3D12_RAYTRACING_ACCELERATION_STRUCTURE_BUILD_FLAGS::
+            D3D12_RAYTRACING_ACCELERATION_STRUCTURE_BUILD_FLAG_PREFER_FAST_TRACE);
 
     ID3D12GraphicsCommandList* commandList = mDeviceResource->getCommandList();
     UINT frameIndex = mDeviceResource->getCurrentFrameIndex();
@@ -324,7 +302,7 @@ void Scene::render() {
     commandList->SetComputeRootDescriptorTable(
         GlobalRootSignature::Slot::RenderTarget, mRaytracingOutput.getGPUHandle());
     commandList->SetComputeRootShaderResourceView(GlobalRootSignature::Slot::AccelerationStructure,
-        mTLASBuffer.buffer->GetGPUVirtualAddress());
+        mTLASBuffer->getBuffer()->GetGPUVirtualAddress());
     commandList->SetComputeRootConstantBufferView(
         GlobalRootSignature::Slot::SceneConstant, mSceneCB->gpuVirtualAddress());
     commandList->SetComputeRootDescriptorTable(
@@ -732,36 +710,7 @@ auto getOffset = [&mIndexOffsets, &mVertexOffsets](LocalRootSignature::HitGroupI
                 static_cast<UINT>(sizeof(Index)));
         }
 
-        D3D12_RAYTRACING_ACCELERATION_STRUCTURE_BUILD_FLAGS buildFlags
-            = D3D12_RAYTRACING_ACCELERATION_STRUCTURE_BUILD_FLAGS::
-                D3D12_RAYTRACING_ACCELERATION_STRUCTURE_BUILD_FLAG_PREFER_FAST_TRACE;
-
-        auto& topLevelInputs = topLevelBuildDesc.Inputs;
-        topLevelInputs.DescsLayout = D3D12_ELEMENTS_LAYOUT::D3D12_ELEMENTS_LAYOUT_ARRAY;
-        topLevelInputs.Flags = buildFlags;
-        topLevelInputs.NumDescs = TLAS_NUM;
-        topLevelInputs.pGeometryDescs = nullptr;
-        topLevelInputs.Type = D3D12_RAYTRACING_ACCELERATION_STRUCTURE_TYPE::
-            D3D12_RAYTRACING_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL;
-
-        D3D12_RAYTRACING_ACCELERATION_STRUCTURE_PREBUILD_INFO
-        topLevelPreInfo = {};
-        dxrDevice->GetRaytracingAccelerationStructurePrebuildInfo(
-            &topLevelInputs, &topLevelPreInfo);
-        MY_THROW_IF_FALSE(topLevelPreInfo.ResultDataMaxSizeInBytes > 0);
-
-        allocateUAVBuffer(device, topLevelPreInfo.ScratchDataSizeInBytes, &mTLASBuffer.scratch,
-            D3D12_RESOURCE_STATES::D3D12_RESOURCE_STATE_UNORDERED_ACCESS, L"ScratchResource");
-
-        D3D12_RESOURCE_STATES initResourceState
-            = D3D12_RESOURCE_STATES::D3D12_RESOURCE_STATE_RAYTRACING_ACCELERATION_STRUCTURE;
-        allocateUAVBuffer(device, topLevelPreInfo.ResultDataMaxSizeInBytes, &mTLASBuffer.buffer,
-            initResourceState, L"TopLevelAS");
-
-        topLevelBuildDesc.DestAccelerationStructureData
-            = mTLASBuffer.buffer->GetGPUVirtualAddress();
-        topLevelBuildDesc.ScratchAccelerationStructureData
-            = mTLASBuffer.scratch->GetGPUVirtualAddress();
+        mTLASBuffer = std::make_unique<TopLevelAccelerationStructure>();
 
         mDeviceResource->executeCommandList();
         mDeviceResource->waitForGPU();

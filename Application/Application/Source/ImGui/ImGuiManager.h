@@ -21,9 +21,11 @@ namespace Framework {
          * @param hWnd ウィンドウハンドル
          * @param device デバイス
          * @param format レンダーターゲットのフォーマット
+         * @param frameCount バックバッファの枚数
          * @param enableImGui ImGuiを有効にするかどうか
          */
-        ImGuiManager(HWND hWnd, ID3D12Device* device, DXGI_FORMAT format, bool enableImGui = true);
+        ImGuiManager(HWND hWnd, ID3D12Device* device, DXGI_FORMAT format, UINT frameCount,
+            bool enableImGui = true);
         /**
          * @brief デストラクタ
          */
@@ -31,7 +33,9 @@ namespace Framework {
         /**
          * @brief ImGuiを有効にするかどうか
          */
-        void setImGuiEnable(bool enable) { mEnableImGui = enable; }
+        void setImGuiEnable(bool enable) {
+            mEnableImGui = enable;
+        }
         /**
          * @brief フレーム開始時に呼ぶ
          */

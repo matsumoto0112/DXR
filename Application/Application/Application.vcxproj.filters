@@ -47,6 +47,7 @@
     <ClCompile Include="Source\DX\Resource\VertexBuffer.cpp" />
     <ClCompile Include="Source\DX\Resource\IndexBuffer.cpp" />
     <ClCompile Include="Source\DX\Raytracing\BottomLevelAccelerationStructure.cpp" />
+    <ClCompile Include="Source\DX\Raytracing\TopLevelAccelerationStructure.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Source\stdafx.h" />
@@ -124,6 +125,7 @@
     <ClInclude Include="Source\DX\Resource\IndexBuffer.h" />
     <ClInclude Include="Source\DX\Util\Helper.h" />
     <ClInclude Include="Source\DX\Raytracing\BottomLevelAccelerationStructure.h" />
+    <ClInclude Include="Source\DX\Raytracing\TopLevelAccelerationStructure.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />

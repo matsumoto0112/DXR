@@ -38,13 +38,18 @@ namespace Framework::Device {
         mDeviceResource->createWindowDependentResources();
 
         mInputManager = std::make_unique<Input::InputManager>(mWindow->getHWnd());
-        mImGuiManager = std::make_unique<ImGuiManager>(mWindow->getHWnd(),
-            mDeviceResource->getDevice(), mDeviceResource->getBackBufferFormat());
+        mImGuiManager
+            = std::make_unique<ImGuiManager>(mWindow->getHWnd(), mDeviceResource->getDevice(),
+                mDeviceResource->getBackBufferFormat(), mDeviceResource->getBackBufferCount());
     }
     //アプリケーション開始
-    void GameDevice::run(int nCmdShow) { mWindow->show(nCmdShow); }
+    void GameDevice::run(int nCmdShow) {
+        mWindow->show(nCmdShow);
+    }
     //終了時処理
-    void GameDevice::finalize() { mDeviceResource->waitForGPU(); }
+    void GameDevice::finalize() {
+        mDeviceResource->waitForGPU();
+    }
     //フレームイベント
     void GameDevice::onFrameEvent() {
         beginFrame();
@@ -60,14 +65,18 @@ namespace Framework::Device {
         mNotify->toggleFullScreenWindow();
     }
     //ウィンドウ境界の設定
-    void GameDevice::setWindowBounds(const RECT& rect) { mNotify->setWindowBounds(rect); }
+    void GameDevice::setWindowBounds(const RECT& rect) {
+        mNotify->setWindowBounds(rect);
+    }
     //ウィンドウサイズ切り替え
     void GameDevice::onSizeChanged(UINT width, UINT height, bool minimized) {
         mDeviceResource->windowSizeChanged(width, height, minimized);
         mNotify->onSizeChanged(width, height, minimized);
     }
     //ウィンドウ移動
-    void GameDevice::onWindowMoved(int x, int y) { mNotify->onWindowMoved(x, y); }
+    void GameDevice::onWindowMoved(int x, int y) {
+        mNotify->onWindowMoved(x, y);
+    }
     //フレーム開始時処理
     void GameDevice::beginFrame() {
         mDeviceResource->prepare();

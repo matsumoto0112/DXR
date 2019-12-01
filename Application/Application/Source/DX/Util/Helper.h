@@ -22,4 +22,19 @@ namespace Framework::DX {
         memcpy(mapped, data, size);
         resource->Unmap(0, nullptr);
     }
+
+    inline ComPtr<ID3D12Resource> createUAVBuffer(ID3D12Device* device, UINT64 size,
+        D3D12_RESOURCE_STATES initResourceState, const std::wstring& name) {
+        ComPtr<ID3D12Resource> result;
+        CD3DX12_HEAP_PROPERTIES heapProp(D3D12_HEAP_TYPE::D3D12_HEAP_TYPE_DEFAULT);
+        CD3DX12_RESOURCE_DESC bufferDesc = CD3DX12_RESOURCE_DESC::Buffer(
+            size, D3D12_RESOURCE_FLAGS::D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS);
+        MY_THROW_IF_FAILED(
+            device->CreateCommittedResource(&heapProp, D3D12_HEAP_FLAGS::D3D12_HEAP_FLAG_NONE,
+                &bufferDesc, initResourceState, nullptr, IID_PPV_ARGS(&result)));
+        result->SetName(name.c_str());
+
+        return result;
+    };
+
 } // namespace Framework::DX
