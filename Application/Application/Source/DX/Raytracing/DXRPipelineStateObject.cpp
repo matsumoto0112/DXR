@@ -168,27 +168,33 @@ namespace Framework::DX {
             = mPipelineStateObjectDesc.CreateSubobject<CD3DX12_GLOBAL_ROOT_SIGNATURE_SUBOBJECT>();
         global->SetRootSignature(rootSignature.getRootSignature());
     }
-    void DXRPipelineStateObject::create() {
+    void DXRPipelineStateObject::createPipeline() {
         debugPrintDesc(mPipelineStateObjectDesc);
         MY_THROW_IF_FAILED(mDevice->getDXRDevice()->CreateStateObject(
             mPipelineStateObjectDesc, IID_PPV_ARGS(&mPipelineStateObject)));
     }
-    void DXRPipelineStateObject::getID(int key, const std::wstring& name) {
-        ShaderData data;
-        data.name = name;
+    void DXRPipelineStateObject::associateShaderInfoWithKey(int key, const ShaderInfo& info) {
+        mShaderDatas.emplace(key, ShaderData{ info, nullptr });
+    }
+
+    void DXRPipelineStateObject::prebuild() {
         ComPtr<ID3D12StateObjectProperties> stateObjectProp;
         MY_THROW_IF_FAILED(mPipelineStateObject->QueryInterface(IID_PPV_ARGS(&stateObjectProp)));
-        data.id = stateObjectProp->GetShaderIdentifier(name.c_str());
-        mShaderDatas.emplace(key, data);
+        for (auto&& data : mShaderDatas) {
+            data.second.id = stateObjectProp->GetShaderIdentifier(data.second.info.name.c_str());
+        }
     }
+
     void DXRPipelineStateObject::setShaderTableConfig(
         ShaderType type, UINT num, UINT appendSize, const std::wstring& name) {
         UINT shaderIDSize = D3D12_SHADER_IDENTIFIER_SIZE_IN_BYTES + appendSize;
         mShaderTables[type] = std::make_unique<ShaderTable>(
             mDevice->getDXRDevice(), num, shaderIDSize, name.c_str());
     }
-    void DXRPipelineStateObject::buildShaderTable(ShaderType type, int key, void* rootArgument) {
+    void DXRPipelineStateObject::buildShaderTable(int key, void* rootArgument) {
         constexpr UINT shaderIDSize = D3D12_SHADER_IDENTIFIER_SIZE_IN_BYTES;
+        ShaderType type = mShaderDatas[key].info.type;
+
         const UINT rootArgumentSize = mShaderTables[type]->getShaderRecordSize() - shaderIDSize;
         if (rootArgumentSize > 0) {
             mShaderTables[type]->push_back(

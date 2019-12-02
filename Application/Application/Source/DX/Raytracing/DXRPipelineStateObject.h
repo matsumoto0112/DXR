@@ -43,8 +43,12 @@ namespace Framework::DX {
                   intersectionName(intersectionName) {}
         };
 
-        struct ShaderData {
+        struct ShaderInfo {
+            ShaderType type;
             std::wstring name;
+        };
+        struct ShaderData {
+            ShaderInfo info;
             void* id;
         };
         struct ShaderResource {
@@ -91,29 +95,40 @@ namespace Framework::DX {
         /**
          * @brief パイプラインの作成
          */
-        void create();
+        void createPipeline();
         /**
          * @brief パイプラインの取得
          */
         ID3D12StateObject* getStateObject() const {
             return mPipelineStateObject.Get();
         }
-
-        void getID(int key, const std::wstring& name);
+        /**
+         * @brief シェーダー情報とキーを関連付ける
+         */
+        void associateShaderInfoWithKey(int key, const ShaderInfo& info);
+        /**
+         * @brief ビルドの事前準備
+         */
+        void prebuild();
         void setShaderTableConfig(
             ShaderType type, UINT num, UINT appendSize, const std::wstring& name);
 
-        void buildShaderTable(ShaderType type, int key, void* rootArgument = nullptr);
+        void buildShaderTable(int key, void* rootArgument = nullptr);
 
         void build();
         void doRaytracing(UINT width, UINT height);
-        //private:
+
+    private:
+        enum class State {
+            Init,
+        };
         DXRDevice* mDevice;
         CD3DX12_STATE_OBJECT_DESC mPipelineStateObjectDesc; //!< パイプラインディスク
         ComPtr<ID3D12StateObject> mPipelineStateObject; //!< パイプラインオブジェクト
         std::unordered_map<int, ShaderData> mShaderDatas;
         std::unordered_map<ShaderType, UniquePtr<ShaderTable>> mShaderTables;
         std::unordered_map<ShaderType, ShaderResource> mShaderResources;
+        State mCurrentState;
     };
 
     //シェーダーの読み込み
