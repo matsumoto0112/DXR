@@ -4,9 +4,16 @@
  */
 
 #pragma once
+#include "DX/Raytracing/DXRDevice.h"
+#include "DX/Raytracing/Shader/ShaderTable.h"
 
 namespace Framework::DX {
     class RootSignature;
+    enum class ShaderType {
+        RayGeneration,
+        Miss,
+        HitGroup,
+    };
     /**
      * @class DXRPipelineStateObject
      * @brief レイトレーシング用パイプライン
@@ -40,12 +47,16 @@ namespace Framework::DX {
             std::wstring name;
             void* id;
         };
+        struct ShaderResource {
+            ComPtr<ID3D12Resource> resource;
+            UINT stride;
+        };
 
     public:
         /**
          * @brief コンストラクタ
          */
-        DXRPipelineStateObject();
+        DXRPipelineStateObject(DXRDevice* device);
         /**
          * @brief デストラクタ
          */
@@ -80,7 +91,7 @@ namespace Framework::DX {
         /**
          * @brief パイプラインの作成
          */
-        void create(ID3D12Device5* device);
+        void create();
         /**
          * @brief パイプラインの取得
          */
@@ -89,12 +100,20 @@ namespace Framework::DX {
         }
 
         void getID(int key, const std::wstring& name);
-        //void build();
+        void setShaderTableConfig(
+            ShaderType type, UINT num, UINT appendSize, const std::wstring& name);
 
+        void buildShaderTable(ShaderType type, int key, void* rootArgument = nullptr);
+
+        void build();
+        void doRaytracing(UINT width, UINT height);
         //private:
+        DXRDevice* mDevice;
         CD3DX12_STATE_OBJECT_DESC mPipelineStateObjectDesc; //!< パイプラインディスク
         ComPtr<ID3D12StateObject> mPipelineStateObject; //!< パイプラインオブジェクト
         std::unordered_map<int, ShaderData> mShaderDatas;
+        std::unordered_map<ShaderType, UniquePtr<ShaderTable>> mShaderTables;
+        std::unordered_map<ShaderType, ShaderResource> mShaderResources;
     };
 
     //シェーダーの読み込み

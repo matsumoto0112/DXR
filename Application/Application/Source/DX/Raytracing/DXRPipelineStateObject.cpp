@@ -122,8 +122,9 @@ namespace {
 
 namespace Framework::DX {
 
-    DXRPipelineStateObject::DXRPipelineStateObject()
-        : mPipelineStateObjectDesc{
+    DXRPipelineStateObject::DXRPipelineStateObject(DXRDevice* device)
+        : mDevice(device),
+          mPipelineStateObjectDesc{
               D3D12_STATE_OBJECT_TYPE::D3D12_STATE_OBJECT_TYPE_RAYTRACING_PIPELINE
           } {}
     DXRPipelineStateObject::~DXRPipelineStateObject() {}
@@ -167,9 +168,9 @@ namespace Framework::DX {
             = mPipelineStateObjectDesc.CreateSubobject<CD3DX12_GLOBAL_ROOT_SIGNATURE_SUBOBJECT>();
         global->SetRootSignature(rootSignature.getRootSignature());
     }
-    void DXRPipelineStateObject::create(ID3D12Device5* device) {
+    void DXRPipelineStateObject::create() {
         debugPrintDesc(mPipelineStateObjectDesc);
-        MY_THROW_IF_FAILED(device->CreateStateObject(
+        MY_THROW_IF_FAILED(mDevice->getDXRDevice()->CreateStateObject(
             mPipelineStateObjectDesc, IID_PPV_ARGS(&mPipelineStateObject)));
     }
     void DXRPipelineStateObject::getID(int key, const std::wstring& name) {
@@ -179,5 +180,56 @@ namespace Framework::DX {
         MY_THROW_IF_FAILED(mPipelineStateObject->QueryInterface(IID_PPV_ARGS(&stateObjectProp)));
         data.id = stateObjectProp->GetShaderIdentifier(name.c_str());
         mShaderDatas.emplace(key, data);
+    }
+    void DXRPipelineStateObject::setShaderTableConfig(
+        ShaderType type, UINT num, UINT appendSize, const std::wstring& name) {
+        UINT shaderIDSize = D3D12_SHADER_IDENTIFIER_SIZE_IN_BYTES + appendSize;
+        mShaderTables[type] = std::make_unique<ShaderTable>(
+            mDevice->getDXRDevice(), num, shaderIDSize, name.c_str());
+    }
+    void DXRPipelineStateObject::buildShaderTable(ShaderType type, int key, void* rootArgument) {
+        constexpr UINT shaderIDSize = D3D12_SHADER_IDENTIFIER_SIZE_IN_BYTES;
+        const UINT rootArgumentSize = mShaderTables[type]->getShaderRecordSize() - shaderIDSize;
+        if (rootArgumentSize > 0) {
+            mShaderTables[type]->push_back(
+                ShaderRecord(mShaderDatas[key].id, shaderIDSize, rootArgument, rootArgumentSize));
+        } else {
+            mShaderTables[type]->push_back(ShaderRecord(mShaderDatas[key].id, shaderIDSize));
+        }
+    }
+    void DXRPipelineStateObject::build() {
+        auto loadResource = [&](ShaderType type) {
+            mShaderResources[type].resource = mShaderTables[type]->getResource();
+            mShaderResources[type].stride = mShaderTables[type]->getShaderRecordSize();
+        };
+        loadResource(ShaderType::RayGeneration);
+        loadResource(ShaderType::Miss);
+        loadResource(ShaderType::HitGroup);
+    }
+    void DXRPipelineStateObject::doRaytracing(UINT width, UINT height) {
+        D3D12_DISPATCH_RAYS_DESC dispatchDesc = {};
+        dispatchDesc.RayGenerationShaderRecord.StartAddress
+            = mShaderResources[ShaderType::RayGeneration].resource->GetGPUVirtualAddress();
+        dispatchDesc.RayGenerationShaderRecord.SizeInBytes
+            = mShaderResources[ShaderType::RayGeneration].resource->GetDesc().Width;
+
+        dispatchDesc.MissShaderTable.StartAddress
+            = mShaderResources[ShaderType::Miss].resource->GetGPUVirtualAddress();
+        dispatchDesc.MissShaderTable.SizeInBytes
+            = mShaderResources[ShaderType::Miss].resource->GetDesc().Width;
+        dispatchDesc.MissShaderTable.StrideInBytes = mShaderResources[ShaderType::Miss].stride;
+
+        dispatchDesc.HitGroupTable.StartAddress
+            = mShaderResources[ShaderType::HitGroup].resource->GetGPUVirtualAddress();
+        dispatchDesc.HitGroupTable.SizeInBytes
+            = mShaderResources[ShaderType::HitGroup].resource->GetDesc().Width;
+        dispatchDesc.HitGroupTable.StrideInBytes = mShaderResources[ShaderType::HitGroup].stride;
+
+        dispatchDesc.Width = width;
+        dispatchDesc.Height = height;
+        dispatchDesc.Depth = 1;
+
+        mDevice->getDXRCommandList()->SetPipelineState1(mPipelineStateObject.Get());
+        mDevice->getDXRCommandList()->DispatchRays(&dispatchDesc);
     }
 } // namespace Framework::DX

@@ -121,8 +121,6 @@ namespace {
         Sphere_OcclusionMap,
     };
     std::unordered_map<ModelTextureType, UINT> mTextureIDs;
-
-    ComPtr<ID3D12Resource> mInstanceDescs;
 } // namespace
 
 Scene::Scene(Framework::DX::DeviceResource* device, Framework::Input::InputManager* inputManager,
@@ -265,24 +263,7 @@ void Scene::render() {
     commandList->SetComputeRootDescriptorTable(
         GlobalRootSignature::Slot::VertexBuffer, mResourcesVertexBuffer->getGPUHandle());
 
-    D3D12_DISPATCH_RAYS_DESC dispatchDesc = {};
-    dispatchDesc.RayGenerationShaderRecord.StartAddress = mRayGenTable->GetGPUVirtualAddress();
-    dispatchDesc.RayGenerationShaderRecord.SizeInBytes = mRayGenTable->GetDesc().Width;
-
-    dispatchDesc.MissShaderTable.StartAddress = mMissTable->GetGPUVirtualAddress();
-    dispatchDesc.MissShaderTable.SizeInBytes = mMissTable->GetDesc().Width;
-    dispatchDesc.MissShaderTable.StrideInBytes = mMissStride;
-
-    dispatchDesc.HitGroupTable.StartAddress = mHitGroupTable->GetGPUVirtualAddress();
-    dispatchDesc.HitGroupTable.SizeInBytes = mHitGroupTable->GetDesc().Width;
-    dispatchDesc.HitGroupTable.StrideInBytes = mHitGroupStride;
-
-    dispatchDesc.Width = mWidth;
-    dispatchDesc.Height = mHeight;
-    dispatchDesc.Depth = 1;
-
-    dxrCommandList->SetPipelineState1(mDXRStateObject->getStateObject());
-    dxrCommandList->DispatchRays(&dispatchDesc);
+    mDXRStateObject->doRaytracing(mWidth, mHeight);
 
     D3D12_RESOURCE_BARRIER preCopyBarriers[2];
     preCopyBarriers[0] = CD3DX12_RESOURCE_BARRIER::Transition(mDeviceResource->getRenderTarget(),
@@ -303,7 +284,6 @@ void Scene::render() {
         D3D12_RESOURCE_STATES::D3D12_RESOURCE_STATE_COPY_SOURCE,
         D3D12_RESOURCE_STATES::D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
     commandList->ResourceBarrier(_countof(postCopyBarriers), postCopyBarriers);
-    //mDebugWindow->draw();
 }
 
 void Scene::onWindowSizeChanged(UINT width, UINT height) {
@@ -374,7 +354,7 @@ void Scene::createDeviceDependentResources() {
 }
 }
 {
-    mDXRStateObject = std::make_unique<DXRPipelineStateObject>();
+    mDXRStateObject = std::make_unique<DXRPipelineStateObject>(&mDXRDevice);
     mDXRStateObject->exportShader((void*)g_pMiss, _countof(g_pMiss), MISS_SHADER_NAME);
     mDXRStateObject->exportShader(
         (void*)g_pClosestHit_Normal, _countof(g_pClosestHit_Normal), CLOSEST_HIT_NORMAL_NAME);
@@ -408,7 +388,7 @@ void Scene::createDeviceDependentResources() {
 
     mDXRStateObject->bindGlobalRootSignature(*mGlobalRootSignature);
 
-    mDXRStateObject->create(mDXRDevice.getDXRDevice());
+    mDXRStateObject->create();
 }
 {
     using namespace Framework::Desc;
@@ -698,27 +678,20 @@ auto getOffset = [&mIndexOffsets, &mVertexOffsets](LocalRootSignature::HitGroupI
     mDXRStateObject->getID(ShaderKey::HitGroup_Sphere, HIT_GROUP_SPHERE_NAME);
     UINT shaderIDSize = D3D12_SHADER_IDENTIFIER_SIZE_IN_BYTES;
     {
-        UINT num = 1;
-        UINT recordSize = shaderIDSize;
-        ShaderTable table(device, num, recordSize, L"RayGenShaderTable");
-        table.push_back(
-            ShaderRecord(mDXRStateObject->mShaderDatas[ShaderKey::RayGenShader].id, shaderIDSize));
-        mRayGenTable = table.getResource();
+        mDXRStateObject->setShaderTableConfig(
+            ShaderType::RayGeneration, 1, 0, L"RayGenShaderTable");
+        mDXRStateObject->buildShaderTable(ShaderType::RayGeneration, ShaderKey::RayGenShader);
     }
     {
         struct RootArgument {
             MissConstant cb;
         } rootArgument;
-        rootArgument.cb.back = Color(0.0f, 0.6f, 0.6f, 1.0f);
-        UINT num = 2;
-        UINT recordSize = shaderIDSize + sizeof(RootArgument);
-        ShaderTable table(device, num, recordSize, L"MissShaderTable");
-        table.push_back(ShaderRecord(mDXRStateObject->mShaderDatas[ShaderKey::MissShader].id,
-            shaderIDSize, &rootArgument, sizeof(RootArgument)));
-        table.push_back(ShaderRecord(
-            mDXRStateObject->mShaderDatas[ShaderKey::MissShadowShader].id, shaderIDSize));
-        mMissTable = table.getResource();
-        mMissStride = table.getShaderRecordSize();
+        rootArgument.cb.back = Color(188.0f / 255.0f, 226.0f / 255.0f, 232.0f / 255.0f, 1.0f);
+
+        mDXRStateObject->setShaderTableConfig(
+            ShaderType::Miss, 2, sizeof(RootArgument), L"MissShaderTable");
+        mDXRStateObject->buildShaderTable(ShaderType::Miss, ShaderKey::MissShader, &rootArgument);
+        mDXRStateObject->buildShaderTable(ShaderType::Miss, ShaderKey::MissShadowShader);
     }
     {
         struct RootArgument {
@@ -738,49 +711,38 @@ auto getOffset = [&mIndexOffsets, &mVertexOffsets](LocalRootSignature::HitGroupI
             root.emissive = mTextures[mTextureIDs[ModelTextureType(offset + 3)]]->getGPUHandle();
             root.occlusion = mTextures[mTextureIDs[ModelTextureType(offset + 4)]]->getGPUHandle();
         };
-        UINT num = 4;
-        UINT recordSize = shaderIDSize + sizeof(RootArgument);
-        ShaderTable table(device, num, recordSize, L"HitGroupShaderTable");
-        {
-            rootArguments.cb.indexOffset
-                = std::get<0>(getOffset(LocalRootSignature::HitGroupIndex::UFO));
-            rootArguments.cb.vertexOffset
-                = std::get<1>(getOffset(LocalRootSignature::HitGroupIndex::UFO));
-            setRootArgumentTexture(rootArguments, ModelTextureType::UFO_AlbedoTexture);
-            table.push_back(ShaderRecord(mDXRStateObject->mShaderDatas[ShaderKey::HitGroup_UFO].id,
-                shaderIDSize, &rootArguments, sizeof(RootArgument)));
-        }
-        {
-            rootArguments.cb.indexOffset
-                = std::get<0>(getOffset(LocalRootSignature::HitGroupIndex::Quad));
-            rootArguments.cb.vertexOffset
-                = std::get<1>(getOffset(LocalRootSignature::HitGroupIndex::Quad));
-            setRootArgumentTexture(rootArguments, ModelTextureType::Quad_AlbedoTexture);
-            table.push_back(ShaderRecord(mDXRStateObject->mShaderDatas[ShaderKey::HitGroup_Quad].id,
-                shaderIDSize, &rootArguments, sizeof(RootArgument)));
-        }
-        {
-            rootArguments.cb.indexOffset
-                = std::get<0>(getOffset(LocalRootSignature::HitGroupIndex::Floor));
-            rootArguments.cb.vertexOffset
-                = std::get<1>(getOffset(LocalRootSignature::HitGroupIndex::Floor));
-            setRootArgumentTexture(rootArguments, ModelTextureType::Plane_AlbedoTexture);
-            table.push_back(
-                ShaderRecord(mDXRStateObject->mShaderDatas[ShaderKey::HitGroup_Floor].id,
-                    shaderIDSize, &rootArguments, sizeof(RootArgument)));
-        }
-        {
-            rootArguments.cb.indexOffset
-                = std::get<0>(getOffset(LocalRootSignature::HitGroupIndex::Sphere));
-            rootArguments.cb.vertexOffset
-                = std::get<1>(getOffset(LocalRootSignature::HitGroupIndex::Sphere));
-            setRootArgumentTexture(rootArguments, ModelTextureType::Sphere_AlbedoTexture);
-            table.push_back(
-                ShaderRecord(mDXRStateObject->mShaderDatas[ShaderKey::HitGroup_Sphere].id,
-                    shaderIDSize, &rootArguments, sizeof(RootArgument)));
-        }
-        mHitGroupStride = table.getShaderRecordSize();
-        mHitGroupTable = table.getResource();
+        mDXRStateObject->setShaderTableConfig(
+            ShaderType::HitGroup, 4, sizeof(RootArgument), L"HitGroupShaderTable");
+
+        auto setRootArgument = [&setRootArgumentTexture, &getOffset](RootArgument& arg,
+                                   LocalRootSignature::HitGroupIndex::MyEnum hitGroupIndex,
+                                   ModelTextureType texOffset) {
+            arg.cb.indexOffset = std::get<0>(getOffset(hitGroupIndex));
+            arg.cb.vertexOffset = std::get<1>(getOffset(hitGroupIndex));
+            setRootArgumentTexture(arg, texOffset);
+        };
+
+        setRootArgument(rootArguments, LocalRootSignature::HitGroupIndex::UFO,
+            ModelTextureType::UFO_AlbedoTexture);
+        mDXRStateObject->buildShaderTable(
+            ShaderType::HitGroup, ShaderKey::HitGroup_UFO, &rootArguments);
+
+        setRootArgument(rootArguments, LocalRootSignature::HitGroupIndex::Quad,
+            ModelTextureType::Quad_AlbedoTexture);
+        mDXRStateObject->buildShaderTable(
+            ShaderType::HitGroup, ShaderKey::HitGroup_Quad, &rootArguments);
+
+        setRootArgument(rootArguments, LocalRootSignature::HitGroupIndex::Floor,
+            ModelTextureType::Plane_AlbedoTexture);
+        mDXRStateObject->buildShaderTable(
+            ShaderType::HitGroup, ShaderKey::HitGroup_Floor, &rootArguments);
+
+        setRootArgument(rootArguments, LocalRootSignature::HitGroupIndex::Sphere,
+            ModelTextureType::Sphere_AlbedoTexture);
+        mDXRStateObject->buildShaderTable(
+            ShaderType::HitGroup, ShaderKey::HitGroup_Sphere, &rootArguments);
+
+        mDXRStateObject->build();
     }
 }
 }

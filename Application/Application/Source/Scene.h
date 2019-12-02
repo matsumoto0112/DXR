@@ -29,10 +29,6 @@ namespace DescriptorIndex {
         Count = TextureEnd + 1
     };
 }
-struct AccelerationBuffer {
-    ComPtr<ID3D12Resource> buffer;
-    ComPtr<ID3D12Resource> scratch;
-};
 
 class Scene {
 public:
@@ -59,11 +55,6 @@ private:
         BottomLevelASType::Count>
         mBLASBuffers;
     std::unique_ptr<Framework::DX::TopLevelAccelerationStructure> mTLASBuffer;
-    ComPtr<ID3D12Resource> mRayGenTable;
-    UINT mMissStride;
-    ComPtr<ID3D12Resource> mMissTable;
-    UINT mHitGroupStride;
-    ComPtr<ID3D12Resource> mHitGroupTable;
     std::unique_ptr<Framework::DX::ConstantBuffer<SceneConstantBuffer>> mSceneCB;
 
 private:
