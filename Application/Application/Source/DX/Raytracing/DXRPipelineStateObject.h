@@ -36,6 +36,11 @@ namespace Framework::DX {
                   intersectionName(intersectionName) {}
         };
 
+        struct ShaderData {
+            std::wstring name;
+            void* id;
+        };
+
     public:
         /**
          * @brief コンストラクタ
@@ -83,9 +88,13 @@ namespace Framework::DX {
             return mPipelineStateObject.Get();
         }
 
-    private:
+        void getID(int key, const std::wstring& name);
+        //void build();
+
+        //private:
         CD3DX12_STATE_OBJECT_DESC mPipelineStateObjectDesc; //!< パイプラインディスク
         ComPtr<ID3D12StateObject> mPipelineStateObject; //!< パイプラインオブジェクト
+        std::unordered_map<int, ShaderData> mShaderDatas;
     };
 
     //シェーダーの読み込み

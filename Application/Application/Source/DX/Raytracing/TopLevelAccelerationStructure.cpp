@@ -42,7 +42,6 @@ namespace Framework::DX {
             mDesc.Inputs.InstanceDescs = mInstance->GetGPUVirtualAddress();
         }
         writeToResource(mInstance.Get(), mInstanceDescs.data(), size);
-        mDesc.Inputs.InstanceDescs = mInstance->GetGPUVirtualAddress();
         device.getDXRCommandList()->BuildRaytracingAccelerationStructure(&mDesc, 0, nullptr);
     }
 

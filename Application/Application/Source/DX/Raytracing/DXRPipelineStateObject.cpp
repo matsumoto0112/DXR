@@ -172,4 +172,12 @@ namespace Framework::DX {
         MY_THROW_IF_FAILED(device->CreateStateObject(
             mPipelineStateObjectDesc, IID_PPV_ARGS(&mPipelineStateObject)));
     }
+    void DXRPipelineStateObject::getID(int key, const std::wstring& name) {
+        ShaderData data;
+        data.name = name;
+        ComPtr<ID3D12StateObjectProperties> stateObjectProp;
+        MY_THROW_IF_FAILED(mPipelineStateObject->QueryInterface(IID_PPV_ARGS(&stateObjectProp)));
+        data.id = stateObjectProp->GetShaderIdentifier(name.c_str());
+        mShaderDatas.emplace(key, data);
+    }
 } // namespace Framework::DX
