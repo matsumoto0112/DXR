@@ -48,7 +48,7 @@ namespace Framework::DX {
         }
 
     private:
-        void buildPrebuildInfoIfChanged(
+        void buildPrebuildInfo(
             const DXRDevice& device, D3D12_RAYTRACING_ACCELERATION_STRUCTURE_BUILD_FLAGS buildFlag);
 
     private:

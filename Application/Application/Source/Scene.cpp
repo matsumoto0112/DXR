@@ -106,8 +106,6 @@ namespace {
     };
 
     Deg mQuadRotate = Deg(0.0f);
-    //D3D12_RAYTRACING_ACCELERATION_STRUCTURE_PREBUILD_INFO mTopLevelPreInfo = {};
-    //D3D12_BUILD_RAYTRACING_ACCELERATION_STRUCTURE_DESC mTopLevelBuildDesc = {};
 
     enum ModelTextureType {
         Default_AlbedoTexture,
@@ -277,11 +275,13 @@ void Scene::render() {
         mTLASBuffer->add(instanceDesc);
     }
 
+    static float X = 0.0f;
+    X += 0.001f;
     UINT root = static_cast<UINT>(Framework::Math::MathUtil::sqrt(SPHERE_COUNT));
     for (UINT n = 0; n < SPHERE_COUNT; n++) {
         float x = (n % root) * 20.0f;
         float z = (n / root) * 20.0f;
-        XMMATRIX transform = XMMatrixTranslation(x, 5.0f, z);
+        XMMATRIX transform = XMMatrixRotationY(X) * XMMatrixTranslation(x, 5.0f, z);
         instanceDesc.hitGroupIndex = LocalRootSignature::HitGroupIndex::Sphere;
         instanceDesc.blas = mBLASBuffers[BottomLevelASType::Sphere].get();
         instanceDesc.transform = transform;
@@ -741,11 +741,12 @@ auto getOffset = [&mIndexOffsets, &mVertexOffsets](LocalRootSignature::HitGroupI
     void* missShaderID = stateObjectProp->GetShaderIdentifier(MISS_SHADER_NAME.c_str());
     void* missShadowShaderID
         = stateObjectProp->GetShaderIdentifier(MISS_SHADOW_SHADER_NAME.c_str());
-    void* hitGroup_SphereShaderID
-        = stateObjectProp->GetShaderIdentifier(HIT_GROUP_UFO_NAME.c_str());
+    void* hitGroup_UFOShaderID = stateObjectProp->GetShaderIdentifier(HIT_GROUP_UFO_NAME.c_str());
     void* hitGroup_QuadShaderID = stateObjectProp->GetShaderIdentifier(HIT_GROUP_QUAD_NAME.c_str());
     void* hitGroup_FloorShaderID
         = stateObjectProp->GetShaderIdentifier(HIT_GROUP_FLOOR_NAME.c_str());
+    void* hitGroup_SphereShaderID
+        = stateObjectProp->GetShaderIdentifier(HIT_GROUP_SPHERE_NAME.c_str());
     UINT shaderIDSize = D3D12_SHADER_IDENTIFIER_SIZE_IN_BYTES;
     {
         UINT num = 1;
@@ -796,7 +797,7 @@ auto getOffset = [&mIndexOffsets, &mVertexOffsets](LocalRootSignature::HitGroupI
                 = std::get<1>(getOffset(LocalRootSignature::HitGroupIndex::UFO));
             setRootArgumentTexture(rootArguments, ModelTextureType::UFO_AlbedoTexture);
             table.push_back(ShaderRecord(
-                hitGroup_SphereShaderID, shaderIDSize, &rootArguments, sizeof(RootArgument)));
+                hitGroup_UFOShaderID, shaderIDSize, &rootArguments, sizeof(RootArgument)));
         }
         {
             rootArguments.cb.indexOffset
@@ -823,7 +824,7 @@ auto getOffset = [&mIndexOffsets, &mVertexOffsets](LocalRootSignature::HitGroupI
                 = std::get<1>(getOffset(LocalRootSignature::HitGroupIndex::Sphere));
             setRootArgumentTexture(rootArguments, ModelTextureType::Sphere_AlbedoTexture);
             table.push_back(ShaderRecord(
-                hitGroup_FloorShaderID, shaderIDSize, &rootArguments, sizeof(RootArgument)));
+                hitGroup_SphereShaderID, shaderIDSize, &rootArguments, sizeof(RootArgument)));
         }
         mHitGroupStride = table.getShaderRecordSize();
         mHitGroupTable = table.getResource();

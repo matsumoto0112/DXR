@@ -7,18 +7,7 @@
 #include "../Local.hlsli"
 
 inline float3 Normal(in MyAttr attr) {
-    float2 uv = GetUV(attr);
-    float3 worldNormal = normalize(mul(GetNormal(attr), (float3x3)ObjectToWorld4x3()));
-    float4 tangent4 = GetTangent(attr);
-    float3 tangent = normalize(mul(tangent4.xyz, (float3x3)ObjectToWorld4x3())) * tangent4.w;
-
-    float3 binormal = cross(worldNormal, tangent);
-
-    float3 normal = SampleTexture(normalMap, samLinear, uv).rgb;
-
-    float3 N = normal.x * tangent.xyz + normal.y * binormal.xyz + normal.z * worldNormal.xyz;
-
-    return N;
+    return normalize(mul(GetNormal(attr), (float3x3)ObjectToWorld4x3()));
 }
 
 [shader("closesthit")] void ClosestHit_Sphere(inout RayPayload payload, in MyAttr attr) {
@@ -47,7 +36,7 @@ inline float3 Normal(in MyAttr attr) {
 
     //îΩéÀêFÇÃéÊìæ
     float3 reflectColor = RayCast(secondRay, payload.recursionCount).rgb;
-    //color.rgb += reflectColor;
+    color.rgb += reflectColor;
 
     payload.color.rgb = color;
     payload.color.a = 1.0;

@@ -33,14 +33,16 @@ namespace Framework::DX {
 
     void TopLevelAccelerationStructure::build(
         const DXRDevice& device, D3D12_RAYTRACING_ACCELERATION_STRUCTURE_BUILD_FLAGS buildFlag) {
-        buildPrebuildInfoIfChanged(device, buildFlag);
-
-        UINT size
+        const UINT size
             = static_cast<UINT>(mInstanceDescs.size() * sizeof(D3D12_RAYTRACING_INSTANCE_DESC));
-        mInstance
-            = createBuffer(device.getDXRDevice(), mInstanceDescs.data(), size, L"InstanceDesc");
+        //前のディスクの状態から更新する必要があるなら更新する
+        if (!(mDesc.Inputs.NumDescs == mInstanceDescs.size() && mDesc.Inputs.Flags == buildFlag)) {
+            buildPrebuildInfo(device, buildFlag);
+            mInstance = createUploadBuffer(device.getDXRDevice(), size, L"InstanceDesc");
+            mDesc.Inputs.InstanceDescs = mInstance->GetGPUVirtualAddress();
+        }
+        writeToResource(mInstance.Get(), mInstanceDescs.data(), size);
         mDesc.Inputs.InstanceDescs = mInstance->GetGPUVirtualAddress();
-
         device.getDXRCommandList()->BuildRaytracingAccelerationStructure(&mDesc, 0, nullptr);
     }
 
@@ -48,11 +50,8 @@ namespace Framework::DX {
         mInstanceDescs.clear();
     }
 
-    void TopLevelAccelerationStructure::buildPrebuildInfoIfChanged(
+    void TopLevelAccelerationStructure::buildPrebuildInfo(
         const DXRDevice& dxrDevice, D3D12_RAYTRACING_ACCELERATION_STRUCTURE_BUILD_FLAGS buildFlag) {
-        if (mDesc.Inputs.NumDescs == mInstanceDescs.size() && mDesc.Inputs.Flags == buildFlag) {
-            return;
-        }
         ID3D12Device5* device = dxrDevice.getDXRDevice();
 
         D3D12_BUILD_RAYTRACING_ACCELERATION_STRUCTURE_INPUTS& topLevelInputs = mDesc.Inputs;
