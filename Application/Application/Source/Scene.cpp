@@ -634,6 +634,7 @@ auto getOffset = [&mIndexOffsets, &mVertexOffsets](LocalRootSignature::HitGroupI
 {
 
     mDXRStateObject = std::make_unique<DXRPipelineStateObject>(&mDXRDevice);
+
     mDXRStateObject->exportShader((void*)g_pMiss, _countof(g_pMiss), MISS_SHADER_NAME);
     mDXRStateObject->exportShader(
         (void*)g_pClosestHit_Normal, _countof(g_pClosestHit_Normal), CLOSEST_HIT_NORMAL_NAME);
@@ -667,26 +668,26 @@ auto getOffset = [&mIndexOffsets, &mVertexOffsets](LocalRootSignature::HitGroupI
 
     mDXRStateObject->bindGlobalRootSignature(*mGlobalRootSignature);
 
-    mDXRStateObject->createPipeline();
     mDXRStateObject->associateShaderInfoWithKey(
-        ShaderKey::RayGenShader, { ShaderType::RayGeneration, RAY_GEN_NAME });
+        ShaderKey::RayGenShader, ShaderType::RayGeneration, RAY_GEN_NAME);
     mDXRStateObject->associateShaderInfoWithKey(
-        ShaderKey::MissShader, { ShaderType::Miss, MISS_SHADER_NAME });
+        ShaderKey::MissShader, ShaderType::Miss, MISS_SHADER_NAME);
     mDXRStateObject->associateShaderInfoWithKey(
-        ShaderKey::MissShadowShader, { ShaderType::Miss, MISS_SHADOW_SHADER_NAME });
+        ShaderKey::MissShadowShader, ShaderType::Miss, MISS_SHADOW_SHADER_NAME);
     mDXRStateObject->associateShaderInfoWithKey(
-        ShaderKey::HitGroup_UFO, { ShaderType::HitGroup, HIT_GROUP_UFO_NAME });
+        ShaderKey::HitGroup_UFO, ShaderType::HitGroup, HIT_GROUP_UFO_NAME);
     mDXRStateObject->associateShaderInfoWithKey(
-        ShaderKey::HitGroup_Quad, { ShaderType::HitGroup, HIT_GROUP_QUAD_NAME });
+        ShaderKey::HitGroup_Quad, ShaderType::HitGroup, HIT_GROUP_QUAD_NAME);
     mDXRStateObject->associateShaderInfoWithKey(
-        ShaderKey::HitGroup_Floor, { ShaderType::HitGroup, HIT_GROUP_FLOOR_NAME });
+        ShaderKey::HitGroup_Floor, ShaderType::HitGroup, HIT_GROUP_FLOOR_NAME);
     mDXRStateObject->associateShaderInfoWithKey(
-        ShaderKey::HitGroup_Sphere, { ShaderType::HitGroup, HIT_GROUP_SPHERE_NAME });
+        ShaderKey::HitGroup_Sphere, ShaderType::HitGroup, HIT_GROUP_SPHERE_NAME);
 
+    mDXRStateObject->createPipeline();
     mDXRStateObject->prebuild();
 
     mDXRStateObject->setShaderTableConfig(ShaderType::RayGeneration, 1, 0, L"RayGenShaderTable");
-    mDXRStateObject->buildShaderTable(ShaderKey::RayGenShader);
+    mDXRStateObject->appendShaderTable(ShaderKey::RayGenShader);
     {
         struct RootArgument {
             MissConstant cb;
@@ -695,8 +696,8 @@ auto getOffset = [&mIndexOffsets, &mVertexOffsets](LocalRootSignature::HitGroupI
 
         mDXRStateObject->setShaderTableConfig(
             ShaderType::Miss, 2, sizeof(RootArgument), L"MissShaderTable");
-        mDXRStateObject->buildShaderTable(ShaderKey::MissShader, &rootArgument);
-        mDXRStateObject->buildShaderTable(ShaderKey::MissShadowShader);
+        mDXRStateObject->appendShaderTable(ShaderKey::MissShader, &rootArgument);
+        mDXRStateObject->appendShaderTable(ShaderKey::MissShadowShader);
     }
     {
         struct RootArgument {
@@ -725,23 +726,23 @@ auto getOffset = [&mIndexOffsets, &mVertexOffsets](LocalRootSignature::HitGroupI
             return arg;
         };
 
-        mDXRStateObject->buildShaderTable(ShaderKey::HitGroup_UFO,
+        mDXRStateObject->appendShaderTable(ShaderKey::HitGroup_UFO,
             &setRootArgument(
                 LocalRootSignature::HitGroupIndex::UFO, ModelTextureType::UFO_AlbedoTexture));
 
-        mDXRStateObject->buildShaderTable(ShaderKey::HitGroup_Quad,
+        mDXRStateObject->appendShaderTable(ShaderKey::HitGroup_Quad,
             &setRootArgument(
                 LocalRootSignature::HitGroupIndex::Quad, ModelTextureType::Quad_AlbedoTexture));
 
-        mDXRStateObject->buildShaderTable(ShaderKey::HitGroup_Floor,
+        mDXRStateObject->appendShaderTable(ShaderKey::HitGroup_Floor,
             &setRootArgument(
                 LocalRootSignature::HitGroupIndex::Floor, ModelTextureType::Plane_AlbedoTexture));
 
-        mDXRStateObject->buildShaderTable(ShaderKey::HitGroup_Sphere,
+        mDXRStateObject->appendShaderTable(ShaderKey::HitGroup_Sphere,
             &setRootArgument(
                 LocalRootSignature::HitGroupIndex::Sphere, ModelTextureType::Sphere_AlbedoTexture));
 
-        mDXRStateObject->build();
+        mDXRStateObject->buildShaderTable();
     }
 }
 }

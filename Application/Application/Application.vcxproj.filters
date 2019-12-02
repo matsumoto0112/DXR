@@ -126,6 +126,7 @@
     <ClInclude Include="Source\DX\Util\Helper.h" />
     <ClInclude Include="Source\DX\Raytracing\BottomLevelAccelerationStructure.h" />
     <ClInclude Include="Source\DX\Raytracing\TopLevelAccelerationStructure.h" />
+    <ClInclude Include="Source\Utility\STLExtend.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />

@@ -9,6 +9,9 @@
 
 namespace Framework::DX {
     class RootSignature;
+    /**
+     * @brief シェーダーの種類
+     */
     enum class ShaderType {
         RayGeneration,
         Miss,
@@ -43,17 +46,20 @@ namespace Framework::DX {
                   intersectionName(intersectionName) {}
         };
 
-        struct ShaderInfo {
+        /**
+         * @brief シェーダーデータ
+         */
+        struct ShaderData {
             ShaderType type;
             std::wstring name;
-        };
-        struct ShaderData {
-            ShaderInfo info;
             void* id;
         };
+        /**
+         * @brief シェーダーリソース
+         */
         struct ShaderResource {
-            ComPtr<ID3D12Resource> resource;
-            UINT stride;
+            ComPtr<ID3D12Resource> resource; //!< リソース
+            UINT stride; //!< シェーダーテーブルのストライド
         };
 
     public:
@@ -105,30 +111,44 @@ namespace Framework::DX {
         /**
          * @brief シェーダー情報とキーを関連付ける
          */
-        void associateShaderInfoWithKey(int key, const ShaderInfo& info);
+        void associateShaderInfoWithKey(int key, ShaderType type, const std::wstring& name);
         /**
          * @brief ビルドの事前準備
          */
         void prebuild();
+        /**
+         * @brief シェーダータイプに対する情報を設定する
+         * @param type シェーダーの種類
+         * @param num テーブルの要素数
+         * @param appendSize 追加するArgumentの大きさ
+         * @param name テーブル名
+         */
         void setShaderTableConfig(
             ShaderType type, UINT num, UINT appendSize, const std::wstring& name);
-
-        void buildShaderTable(int key, void* rootArgument = nullptr);
-
-        void build();
+        /**
+         * @brief シェーダーテーブルに要素を追加する
+         * @param key シェーダーキー
+         * @param rootArgument シェーダーに対する追加データ
+         */
+        void appendShaderTable(int key, void* rootArgument = nullptr);
+        /**
+         * @brief シェーダーテーブルを構築する
+         */
+        void buildShaderTable();
+        /**
+         * @brief レイトレーシングを実行する
+         */
         void doRaytracing(UINT width, UINT height);
 
     private:
-        enum class State {
-            Init,
-        };
-        DXRDevice* mDevice;
+        DXRDevice* mDevice; //!< DXR用デバイス
         CD3DX12_STATE_OBJECT_DESC mPipelineStateObjectDesc; //!< パイプラインディスク
         ComPtr<ID3D12StateObject> mPipelineStateObject; //!< パイプラインオブジェクト
-        std::unordered_map<int, ShaderData> mShaderDatas;
-        std::unordered_map<ShaderType, UniquePtr<ShaderTable>> mShaderTables;
-        std::unordered_map<ShaderType, ShaderResource> mShaderResources;
-        State mCurrentState;
+        std::unordered_map<int, ShaderData> mShaderDatas; //!< シェーダーのデータ
+        std::unordered_map<ShaderType, UniquePtr<ShaderTable>>
+            mShaderTables; //!< シェーダーテーブルリスト
+        std::unordered_map<ShaderType, ShaderResource>
+            mShaderResources; //!< シェーダーリソースリスト
     };
 
     //シェーダーの読み込み

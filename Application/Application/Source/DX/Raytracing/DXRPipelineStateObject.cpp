@@ -121,13 +121,15 @@ namespace {
 } // namespace
 
 namespace Framework::DX {
-
+    //コンストラクタ
     DXRPipelineStateObject::DXRPipelineStateObject(DXRDevice* device)
         : mDevice(device),
           mPipelineStateObjectDesc{
               D3D12_STATE_OBJECT_TYPE::D3D12_STATE_OBJECT_TYPE_RAYTRACING_PIPELINE
           } {}
+    //デストラクタ
     DXRPipelineStateObject::~DXRPipelineStateObject() {}
+
     void DXRPipelineStateObject::bindHitGroup(const HitGroupDesc& desc) {
         CD3DX12_HIT_GROUP_SUBOBJECT* hitGroup
             = mPipelineStateObjectDesc.CreateSubobject<CD3DX12_HIT_GROUP_SUBOBJECT>();
@@ -173,15 +175,18 @@ namespace Framework::DX {
         MY_THROW_IF_FAILED(mDevice->getDXRDevice()->CreateStateObject(
             mPipelineStateObjectDesc, IID_PPV_ARGS(&mPipelineStateObject)));
     }
-    void DXRPipelineStateObject::associateShaderInfoWithKey(int key, const ShaderInfo& info) {
-        mShaderDatas.emplace(key, ShaderData{ info, nullptr });
+    void DXRPipelineStateObject::associateShaderInfoWithKey(
+        int key, ShaderType type, const std::wstring& name) {
+        mShaderDatas.emplace(key, ShaderData{ type, name, nullptr });
     }
 
     void DXRPipelineStateObject::prebuild() {
+        MY_THROW_IF_FALSE_LOG(mPipelineStateObject, "パイプラインが存在しません");
+
         ComPtr<ID3D12StateObjectProperties> stateObjectProp;
         MY_THROW_IF_FAILED(mPipelineStateObject->QueryInterface(IID_PPV_ARGS(&stateObjectProp)));
         for (auto&& data : mShaderDatas) {
-            data.second.id = stateObjectProp->GetShaderIdentifier(data.second.info.name.c_str());
+            data.second.id = stateObjectProp->GetShaderIdentifier(data.second.name.c_str());
         }
     }
 
@@ -191,9 +196,14 @@ namespace Framework::DX {
         mShaderTables[type] = std::make_unique<ShaderTable>(
             mDevice->getDXRDevice(), num, shaderIDSize, name.c_str());
     }
-    void DXRPipelineStateObject::buildShaderTable(int key, void* rootArgument) {
+    void DXRPipelineStateObject::appendShaderTable(int key, void* rootArgument) {
+        MY_ASSERTION(Utility::isExist(mShaderDatas, key), "キーが存在しません");
+
         constexpr UINT shaderIDSize = D3D12_SHADER_IDENTIFIER_SIZE_IN_BYTES;
-        ShaderType type = mShaderDatas[key].info.type;
+        ShaderType type = mShaderDatas[key].type;
+        MY_ASSERTION(Utility::isExist(mShaderTables, type),
+            "keyの属するシェーダータイプに対するsetShaderTableConfigがすでに呼ばれていることを確認"
+            "してください");
 
         const UINT rootArgumentSize = mShaderTables[type]->getShaderRecordSize() - shaderIDSize;
         if (rootArgumentSize > 0) {
@@ -203,7 +213,7 @@ namespace Framework::DX {
             mShaderTables[type]->push_back(ShaderRecord(mShaderDatas[key].id, shaderIDSize));
         }
     }
-    void DXRPipelineStateObject::build() {
+    void DXRPipelineStateObject::buildShaderTable() {
         auto loadResource = [&](ShaderType type) {
             mShaderResources[type].resource = mShaderTables[type]->getResource();
             mShaderResources[type].stride = mShaderTables[type]->getShaderRecordSize();
@@ -211,6 +221,9 @@ namespace Framework::DX {
         loadResource(ShaderType::RayGeneration);
         loadResource(ShaderType::Miss);
         loadResource(ShaderType::HitGroup);
+
+        //不要になったのでクリアする
+        mShaderTables.clear();
     }
     void DXRPipelineStateObject::doRaytracing(UINT width, UINT height) {
         D3D12_DISPATCH_RAYS_DESC dispatchDesc = {};

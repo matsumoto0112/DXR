@@ -38,5 +38,6 @@
 #include "Math/Vector4.h"
 #include "Math/VectorUtil.h"
 #include "Utility/Color4.h"
+#include "Utility/STLExtend.h"
 
 #include "Typedef.h"
