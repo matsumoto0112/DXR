@@ -18,7 +18,7 @@
 #include "Typedef.h"
 #endif
 
-static const UINT MAX_RAY_RECURSION_DEPTH = 2; //! 最大再帰回数
+static const UINT MAX_RAY_RECURSION_DEPTH = 3; //! 最大再帰回数
 
 /**
  * @brief シーン全体の情報

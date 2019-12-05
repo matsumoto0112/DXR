@@ -34,6 +34,7 @@ namespace Framework::Utility {
     Desc::TextureDesc TextureLoader::load(const std::filesystem::path& filepath) {
         int w, h, bpp;
         BYTE* data = stbi_load(toString(filepath.c_str()).c_str(), &w, &h, &bpp, 0);
+        MY_ASSERTION(data, "テクスチャの読み込みに失敗しました。\n%s\n", filepath.string().c_str());
 
         Desc::TextureDesc desc = {};
         desc.format = Desc::TextureFormat::R8G8B8A8;

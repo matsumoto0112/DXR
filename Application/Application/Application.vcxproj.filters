@@ -51,6 +51,7 @@
     <ClCompile Include="Source\DX\Resource\IndexBufferView.cpp" />
     <ClCompile Include="Source\DX\Resource\VertexBuffer.cpp" />
     <ClCompile Include="Source\DX\Resource\VertexBufferView.cpp" />
+    <ClCompile Include="Source\DX\Resource\ShaderResourceView.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Source\stdafx.h" />

@@ -12,22 +12,13 @@ namespace {
 } // namespace
 
 namespace Framework::DX {
-    //コンストラクタ
-    Texture2D::Texture2D() {}
-    //コンストラクタ
-    Texture2D::Texture2D(ID3D12Device* device, const Desc::TextureDesc& desc) {
-        createBuffer(device, desc);
-    }
-    //デストラクタ
-    Texture2D::~Texture2D() {}
-    //バッファを作成する
-    void Texture2D::createBuffer(ID3D12Device* device, const Desc::TextureDesc& desc) {
+    void Texture2D::init(ID3D12Device* device, const Desc::TextureDesc& desc) {
         mWidth = desc.width;
         mHeight = desc.height;
         mFormat = desc.format;
 
         mBuffer.init(device, Buffer::Usage::ShaderResource, DXGI_FORMAT::DXGI_FORMAT_R8G8B8A8_UNORM,
-            mWidth, mHeight, L"");
+            mWidth, mHeight, desc.name);
 
         //テクスチャデータを書き込む
         D3D12_BOX box = { 0, 0, 0, desc.width, desc.height, 1 };
@@ -37,18 +28,10 @@ namespace Framework::DX {
             mBuffer.getResource()->WriteToSubresource(0, &box, desc.pixels.data(), row, slice));
     }
     //シェーダーリソースビューを作成
-    void Texture2D::createSRV(ID3D12Device* device) {
-        //シェーダーリソースビューを作成する
-        D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
-        srvDesc.ViewDimension = D3D12_SRV_DIMENSION::D3D12_SRV_DIMENSION_TEXTURE2D;
-        srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
-        srvDesc.Format = FORMATS.at(mFormat);
-        srvDesc.Texture2D.MipLevels = 1;
-        srvDesc.Texture2D.MostDetailedMip = 0;
-        srvDesc.Texture2D.PlaneSlice = 0;
-        srvDesc.Texture2D.ResourceMinLODClamp = 0.0f;
-
-        device->CreateShaderResourceView(mBuffer.getResource(), &srvDesc, mCPUHandle);
+    void Texture2D::createSRV(ID3D12Device* device, const D3D12_CPU_DESCRIPTOR_HANDLE& cpuHandle,
+        const D3D12_GPU_DESCRIPTOR_HANDLE& gpuHandle) {
+        mView.initAsTexture2D(
+            device, mBuffer, DXGI_FORMAT::DXGI_FORMAT_R8G8B8A8_UNORM, cpuHandle, gpuHandle);
     }
 
 } // namespace Framework::DX

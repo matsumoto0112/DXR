@@ -1,5 +1,6 @@
 #pragma once
 #include "DX/Resource/Buffer.h"
+#include "DX/Resource/ShaderResourceView.h"
 #include "Desc/TextureDesc.h"
 
 namespace Framework::DX {
@@ -12,35 +13,25 @@ namespace Framework::DX {
         /**
          * @brief コンストラクタ
          */
-        Texture2D();
-        /**
-         * @brief コンストラクタ
-         * @param device デバイス
-         * @param desc テクスチャディスク
-         */
-        Texture2D(ID3D12Device* device, const Desc::TextureDesc& desc);
+        Texture2D() {}
         /**
          * @brief デストラクタ
          */
-        ~Texture2D();
-        /**
-         * @brief バッファを作成する
-         * @param device デバイス
-         * @param desc テクスチャディスク
-         */
-        void createBuffer(ID3D12Device* device, const Desc::TextureDesc& desc);
+        ~Texture2D() {}
+
+        void init(ID3D12Device* device, const Desc::TextureDesc& desc);
         /**
          * @brief シェーダーリソースビューを作成する
          * @param device デバイス
          */
-        void createSRV(ID3D12Device* device);
+        void createSRV(ID3D12Device* device, const D3D12_CPU_DESCRIPTOR_HANDLE& cpuHandle,
+            const D3D12_GPU_DESCRIPTOR_HANDLE& gpuHandle);
 
         //private:
         Buffer mBuffer;
         UINT mWidth = 0;
         UINT mHeight = 0;
-        D3D12_CPU_DESCRIPTOR_HANDLE mCPUHandle;
-        D3D12_GPU_DESCRIPTOR_HANDLE mGPUHandle;
+        ShaderResourceView mView;
         Desc::TextureFormat mFormat;
     };
 } // namespace Framework::DX

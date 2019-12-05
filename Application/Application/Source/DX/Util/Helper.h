@@ -37,4 +37,6 @@ namespace Framework::DX {
         return result;
     };
 
+#define TO_WSTRING(param) L#param
+
 } // namespace Framework::DX

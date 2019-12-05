@@ -9,6 +9,7 @@
 #include "DX/Raytracing/TopLevelAccelerationStructure.h"
 #include "DX/Resource/IBuffer.h"
 #include "DX/Resource/IndexBuffer.h"
+#include "DX/Resource/ShaderResourceView.h"
 #include "DX/Resource/Texture2D.h"
 #include "DX/Resource/VertexBuffer.h"
 #include "DX/Shader/RootSignature.h"
@@ -65,8 +66,9 @@ private:
     std::unique_ptr<Framework::DX::DescriptorTable> mDescriptorTable;
     Framework::DX::IndexBuffer mResourcesIndexBuffer;
     Framework::DX::VertexBuffer mResourcesVertexBuffer;
+    Framework::DX::ShaderResourceView mResourceVertexBufferSRV;
     Framework::DX::IBuffer mRaytracingOutput;
-    std::vector<std::shared_ptr<Framework::DX::Texture2D>> mTextures;
+    std::vector<Framework::DX::Texture2D> mTextures;
 
     std::unique_ptr<Framework::DX::DXRPipelineStateObject> mDXRStateObject;
 

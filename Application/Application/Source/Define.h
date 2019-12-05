@@ -117,6 +117,8 @@ namespace DescriptorHeapIndex {
         Sphere_EmissiveMap,
         Sphere_OcclusionMap,
 
+        Texture_Checker,
+
         ResourceIndexBuffer,
         ResourceVertexBuffer,
         RaytracingOutput,

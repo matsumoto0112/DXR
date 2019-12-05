@@ -33,7 +33,7 @@ void ClosestHit_Plane(inout RayPayload payload, in MyAttr attr) {
 
     //”½ËF‚Ìæ“¾
     float3 reflectColor = RayCast(secondRay, payload.recursionCount).rgb;
-    color.rgb += reflectColor;
+    color.rgb += reflectColor * 0.5;
 
     //color.rgb *= factor;
     color = saturate(color);

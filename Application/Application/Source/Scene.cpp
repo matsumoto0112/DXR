@@ -2,6 +2,7 @@
 #include <DirectXMath.h>
 #include <numeric>
 #include "DX/Raytracing/Shader/ShaderTable.h"
+#include "DX/Util/Helper.h"
 #include "ImGui/ImGuiManager.h"
 #include "Utility/Debug.h"
 #include "Utility/IO/GLBLoader.h"
@@ -119,6 +120,8 @@ namespace {
         Sphere_MetallicRoughnessMap,
         Sphere_EmissiveMap,
         Sphere_OcclusionMap,
+
+        Checker,
     };
     std::unordered_map<ModelTextureType, UINT> mTextureIDs;
 } // namespace
@@ -261,7 +264,7 @@ void Scene::render() {
     commandList->SetComputeRootDescriptorTable(
         GlobalRootSignature::Slot::IndexBuffer, mResourcesIndexBuffer.mGPUHandle);
     commandList->SetComputeRootDescriptorTable(
-        GlobalRootSignature::Slot::VertexBuffer, mResourcesVertexBuffer.mGPUHandle);
+        GlobalRootSignature::Slot::VertexBuffer, mResourceVertexBufferSRV.getGPUHandle());
 
     mDXRStateObject->doRaytracing(mWidth, mHeight);
 
@@ -401,12 +404,11 @@ auto getOffset = [&mIndexOffsets, &mVertexOffsets](LocalRootSignature::HitGroupI
             };
             auto createDefaultTexture = [&](const std::wstring& name, ModelTextureType texType,
                                             const Color4& col, UINT heapIndex) {
-                std::shared_ptr<Texture2D> texture
-                    = std::make_shared<Texture2D>(device, createUnitTexture(col, name));
+                Texture2D texture;
+                texture.init(device, createUnitTexture(col, name));
 
-                texture->mCPUHandle = (mDescriptorTable->getCPUHandle(heapIndex));
-                texture->mGPUHandle = (mDescriptorTable->getGPUHandle(heapIndex));
-                texture->createSRV(device);
+                texture.createSRV(device, mDescriptorTable->getCPUHandle(heapIndex),
+                    mDescriptorTable->getGPUHandle(heapIndex));
                 mTextures[texType] = texture;
                 mTextureIDs[texType] = texType;
             };
@@ -429,10 +431,10 @@ auto getOffset = [&mIndexOffsets, &mVertexOffsets](LocalRootSignature::HitGroupI
                                       UINT descID, UINT heapIndex, ModelTextureType defaultID) {
             if (expr) {
                 Framework::Desc::TextureDesc desc = textureDatas[descID];
-                auto texture = std::make_shared<Texture2D>(device, desc);
-                texture->mCPUHandle = (mDescriptorTable->getCPUHandle(heapIndex));
-                texture->mGPUHandle = (mDescriptorTable->getGPUHandle(heapIndex));
-                texture->createSRV(device);
+                Texture2D texture;
+                texture.init(device, desc);
+                texture.createSRV(device, mDescriptorTable->getCPUHandle(heapIndex),
+                    mDescriptorTable->getGPUHandle(heapIndex));
                 mTextures[type] = texture;
                 mTextureIDs[type] = type;
             } else {
@@ -497,13 +499,11 @@ auto getOffset = [&mIndexOffsets, &mVertexOffsets](LocalRootSignature::HitGroupI
 
             Framework::Desc::TextureDesc desc
                 = Framework::Utility::TextureLoader::load(texPath / "back2.png");
-            auto texture = std::make_shared<Texture2D>(device, desc);
-
-            texture->mCPUHandle
-                = (mDescriptorTable->getCPUHandle(DescriptorHeapIndex::Quad_Albedo));
-            texture->mGPUHandle
-                = (mDescriptorTable->getGPUHandle(DescriptorHeapIndex::Quad_Albedo));
-            texture->createSRV(device);
+            Texture2D texture;
+            texture.init(device, desc);
+            texture.createSRV(device,
+                mDescriptorTable->getCPUHandle(DescriptorHeapIndex::Quad_Albedo),
+                mDescriptorTable->getGPUHandle(DescriptorHeapIndex::Quad_Albedo));
             mTextures[ModelTextureType::Quad_AlbedoTexture] = texture;
             mTextureIDs[ModelTextureType::Quad_AlbedoTexture]
                 = ModelTextureType::Quad_AlbedoTexture;
@@ -590,6 +590,21 @@ auto getOffset = [&mIndexOffsets, &mVertexOffsets](LocalRootSignature::HitGroupI
                 descs, material.occlusionMapID, DescriptorHeapIndex::Sphere_OcclusionMap,
                 ModelTextureType::Default_OcclusionMap);
         }
+        {
+            TextureLoader loader;
+            auto desc = loader.load(texPath / "checker.jpg");
+            mTextureIDs[ModelTextureType::Checker] = ModelTextureType::Checker;
+            Texture2D texture;
+            texture.init(device, desc);
+            texture.createSRV(device,
+                mDescriptorTable->getCPUHandle(DescriptorHeapIndex::Texture_Checker),
+                mDescriptorTable->getGPUHandle(DescriptorHeapIndex::Texture_Checker));
+            mTextures[ModelTextureType::Checker] = texture;
+        }
+        {
+            mTextureIDs[ModelTextureType::Plane_AlbedoTexture]
+                = mTextureIDs[ModelTextureType::Checker];
+        }
     }
     {
         ID3D12Device* device = mDeviceResource->getDevice();
@@ -620,11 +635,9 @@ auto getOffset = [&mIndexOffsets, &mVertexOffsets](LocalRootSignature::HitGroupI
         mResourcesIndexBuffer.createSRV(device);
 
         mResourcesVertexBuffer.init(device, resourceVertices, L"ResourceVertex");
-        mResourcesVertexBuffer.mCPUHandle
-            = (mDescriptorTable->getCPUHandle(DescriptorHeapIndex::ResourceVertexBuffer));
-        mResourcesVertexBuffer.mGPUHandle
-            = (mDescriptorTable->getGPUHandle(DescriptorHeapIndex::ResourceVertexBuffer));
-        mResourcesVertexBuffer.createSRV(device);
+        mResourceVertexBufferSRV.initAsBuffer(device, mResourcesVertexBuffer.getBuffer(),
+            mDescriptorTable->getCPUHandle(DescriptorHeapIndex::ResourceVertexBuffer),
+            mDescriptorTable->getGPUHandle(DescriptorHeapIndex::ResourceVertexBuffer));
     }
 }
 
@@ -714,12 +727,15 @@ auto getOffset = [&mIndexOffsets, &mVertexOffsets](LocalRootSignature::HitGroupI
             RootArgument arg;
             arg.cb.indexOffset = std::get<0>(getOffset(hitGroupIndex));
             arg.cb.vertexOffset = std::get<1>(getOffset(hitGroupIndex));
-            arg.albedo = mTextures[mTextureIDs[texOffset]]->mGPUHandle;
-            arg.normal = mTextures[mTextureIDs[ModelTextureType(texOffset + 1)]]->mGPUHandle;
+            arg.albedo = mTextures[mTextureIDs[texOffset]].mView.getGPUHandle();
+            arg.normal
+                = mTextures[mTextureIDs[ModelTextureType(texOffset + 1)]].mView.getGPUHandle();
             arg.metallicRoughness
-                = mTextures[mTextureIDs[ModelTextureType(texOffset + 2)]]->mGPUHandle;
-            arg.emissive = mTextures[mTextureIDs[ModelTextureType(texOffset + 3)]]->mGPUHandle;
-            arg.occlusion = mTextures[mTextureIDs[ModelTextureType(texOffset + 4)]]->mGPUHandle;
+                = mTextures[mTextureIDs[ModelTextureType(texOffset + 2)]].mView.getGPUHandle();
+            arg.emissive
+                = mTextures[mTextureIDs[ModelTextureType(texOffset + 3)]].mView.getGPUHandle();
+            arg.occlusion
+                = mTextures[mTextureIDs[ModelTextureType(texOffset + 4)]].mView.getGPUHandle();
             return arg;
         };
 

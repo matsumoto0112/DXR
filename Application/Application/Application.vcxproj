@@ -89,6 +89,7 @@
     <ClCompile Include="Source\DX\Resource\Buffer.cpp" />
     <ClCompile Include="Source\DX\Resource\IndexBuffer.cpp" />
     <ClCompile Include="Source\DX\Resource\IndexBufferView.cpp" />
+    <ClCompile Include="Source\DX\Resource\ShaderResourceView.cpp" />
     <ClCompile Include="Source\DX\Resource\VertexBuffer.cpp" />
     <ClCompile Include="Source\DX\Resource\VertexBufferView.cpp" />
     <ClCompile Include="Source\DX\Shader\RootSignature.cpp" />
