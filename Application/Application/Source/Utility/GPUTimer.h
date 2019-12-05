@@ -66,8 +66,8 @@ namespace Framework::Utility {
         static constexpr UINT TIMER_COUNT = 8; //!< タイマーの総使用可能数
         static constexpr UINT TIMER_SLOT_NUM = 2
             * TIMER_COUNT; //!< タイマーの時間を持っておく数 開始と終了でタイマー使用数の二倍必要
-        ComPtr<ID3D12QueryHeap> mQueryHeap; //!< デバイスへのクエリ用ヒープ
-        ComPtr<ID3D12Resource> mBuffer; //!< 計測した時間を取得するためのバッファ
+        Comptr<ID3D12QueryHeap> mQueryHeap; //!< デバイスへのクエリ用ヒープ
+        Comptr<ID3D12Resource> mBuffer; //!< 計測した時間を取得するためのバッファ
         float mGpuFreqInv; //!< GPUのタイムスタンプカウンターの周期
         std::array<float, TIMER_COUNT> mAverages; //!< 経過時間の平均
         std::array<UINT64, TIMER_SLOT_NUM> mTimings; //!< 経過時間を取得するための配列

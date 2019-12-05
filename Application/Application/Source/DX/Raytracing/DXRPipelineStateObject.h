@@ -58,7 +58,7 @@ namespace Framework::DX {
          * @brief シェーダーリソース
          */
         struct ShaderResource {
-            ComPtr<ID3D12Resource> resource; //!< リソース
+            Comptr<ID3D12Resource> resource; //!< リソース
             UINT stride; //!< シェーダーテーブルのストライド
         };
 
@@ -143,7 +143,7 @@ namespace Framework::DX {
     private:
         DXRDevice* mDevice; //!< DXR用デバイス
         CD3DX12_STATE_OBJECT_DESC mPipelineStateObjectDesc; //!< パイプラインディスク
-        ComPtr<ID3D12StateObject> mPipelineStateObject; //!< パイプラインオブジェクト
+        Comptr<ID3D12StateObject> mPipelineStateObject; //!< パイプラインオブジェクト
         std::unordered_map<int, ShaderData> mShaderDatas; //!< シェーダーのデータ
         std::unordered_map<ShaderType, UniquePtr<ShaderTable>>
             mShaderTables; //!< シェーダーテーブルリスト

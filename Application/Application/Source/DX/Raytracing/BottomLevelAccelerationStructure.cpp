@@ -16,19 +16,22 @@ namespace Framework::DX {
     BottomLevelAccelerationStructure::BottomLevelAccelerationStructure(const DXRDevice& device,
         const VertexBuffer& vertexBuffer, UINT vertexSize, const IndexBuffer& indexBuffer,
         UINT indexSize) {
+        const UINT indexCount
+            = static_cast<UINT>(indexBuffer.getBuffer().getResource()->GetDesc().Width / indexSize);
+        const UINT vertexCount = static_cast<UINT>(
+            vertexBuffer.getBuffer().getResource()->GetDesc().Width / vertexSize);
         D3D12_RAYTRACING_GEOMETRY_DESC geometryDesc = {};
         geometryDesc.Type
             = D3D12_RAYTRACING_GEOMETRY_TYPE::D3D12_RAYTRACING_GEOMETRY_TYPE_TRIANGLES;
-        geometryDesc.Triangles.IndexBuffer = indexBuffer.getResource()->GetGPUVirtualAddress();
-        geometryDesc.Triangles.IndexCount
-            = static_cast<UINT>(indexBuffer.getResource()->GetDesc().Width) / indexSize;
+        geometryDesc.Triangles.IndexBuffer
+            = indexBuffer.getBuffer().getResource()->GetGPUVirtualAddress();
+        geometryDesc.Triangles.IndexCount = indexCount;
         geometryDesc.Triangles.IndexFormat = toFormatFromIndexSize(indexSize);
         geometryDesc.Triangles.Transform3x4 = 0;
         geometryDesc.Triangles.VertexBuffer.StartAddress
-            = vertexBuffer.getResource()->GetGPUVirtualAddress();
+            = vertexBuffer.getBuffer().getResource()->GetGPUVirtualAddress();
         geometryDesc.Triangles.VertexBuffer.StrideInBytes = vertexSize;
-        geometryDesc.Triangles.VertexCount
-            = static_cast<UINT>(vertexBuffer.getResource()->GetDesc().Width) / vertexSize;
+        geometryDesc.Triangles.VertexCount = vertexCount;
         geometryDesc.Triangles.VertexFormat = DXGI_FORMAT::DXGI_FORMAT_R32G32B32_FLOAT;
         geometryDesc.Flags = D3D12_RAYTRACING_GEOMETRY_FLAGS::D3D12_RAYTRACING_GEOMETRY_FLAG_OPAQUE;
 

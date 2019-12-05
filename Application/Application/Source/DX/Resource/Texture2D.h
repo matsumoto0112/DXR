@@ -1,5 +1,5 @@
 #pragma once
-#include "DX/Resource/IBuffer.h"
+#include "DX/Resource/Buffer.h"
 #include "Desc/TextureDesc.h"
 
 namespace Framework::DX {
@@ -7,7 +7,7 @@ namespace Framework::DX {
      * @class Texture2D
      * @brief 2Dテクスチャクラス
      */
-    class Texture2D : public IBuffer {
+    class Texture2D {
     public:
         /**
          * @brief コンストラクタ
@@ -35,9 +35,12 @@ namespace Framework::DX {
          */
         void createSRV(ID3D12Device* device);
 
-    private:
-        UINT mWidth;
-        UINT mHeight;
+        //private:
+        Buffer mBuffer;
+        UINT mWidth = 0;
+        UINT mHeight = 0;
+        D3D12_CPU_DESCRIPTOR_HANDLE mCPUHandle;
+        D3D12_GPU_DESCRIPTOR_HANDLE mGPUHandle;
         Desc::TextureFormat mFormat;
     };
 } // namespace Framework::DX

@@ -34,9 +34,11 @@ namespace Framework::DX {
         /**
          * @brief リソースを取得する
          */
-        ComPtr<ID3D12Resource> getResource() const { return mResource; }
+        Comptr<ID3D12Resource> getResource() const {
+            return mResource;
+        }
 
     protected:
-        ComPtr<ID3D12Resource> mResource; //!< リソース
+        Comptr<ID3D12Resource> mResource; //!< リソース
     };
 } // namespace Framework::DX

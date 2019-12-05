@@ -4,7 +4,7 @@
 #include <memory>
 
 template <class T>
-using ComPtr = Microsoft::WRL::ComPtr<T>;
+using Comptr = Microsoft::WRL::ComPtr<T>;
 
 template <class T>
 using UniquePtr = std::unique_ptr<T>;

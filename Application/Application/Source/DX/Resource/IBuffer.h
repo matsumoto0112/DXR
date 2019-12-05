@@ -48,7 +48,7 @@ namespace Framework::DX {
         }
 
         //protected:
-        ComPtr<ID3D12Resource> mResource; //!< リソース
+        Comptr<ID3D12Resource> mResource; //!< リソース
         D3D12_CPU_DESCRIPTOR_HANDLE mCPUHandle; //!< CPUハンドル
         D3D12_GPU_DESCRIPTOR_HANDLE mGPUHandle; //!< GPUハンドル
     };

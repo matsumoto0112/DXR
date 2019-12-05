@@ -24,7 +24,9 @@ namespace Framework::Window {
     //デストラクタ
     Window::~Window() {}
     //ウィンドウの表示
-    void Window::show(int nCmdShow) { ShowWindow(mHWnd, nCmdShow); }
+    void Window::show(int nCmdShow) {
+        ShowWindow(mHWnd, nCmdShow);
+    }
     //フルスクリーンモード切替
     void Window::toggleFullScreenWindow(IDXGISwapChain* swapChain) {
         //フルスクリーンからウィンドウモード
@@ -48,7 +50,7 @@ namespace Framework::Window {
             RECT fullScreenWindowRect;
             try {
                 if (swapChain) {
-                    ComPtr<IDXGIOutput> output;
+                    Comptr<IDXGIOutput> output;
                     MY_THROW_IF_FAILED(swapChain->GetContainingOutput(&output));
                     DXGI_OUTPUT_DESC desc;
                     MY_THROW_IF_FAILED(output->GetDesc(&desc));

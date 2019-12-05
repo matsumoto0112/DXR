@@ -76,8 +76,8 @@ namespace Framework::DX {
     private:
         D3D12_BUILD_RAYTRACING_ACCELERATION_STRUCTURE_DESC mDesc; //!< ディスク
         std::vector<D3D12_RAYTRACING_INSTANCE_DESC> mInstanceDescs; //!< シーン情報ディスク
-        ComPtr<ID3D12Resource> mScratch; //!< スクラッチリソース
-        ComPtr<ID3D12Resource> mInstance; //!< 一時的なリソース
-        ComPtr<ID3D12Resource> mBuffer; //!< TLASバッファ
+        Comptr<ID3D12Resource> mScratch; //!< スクラッチリソース
+        Comptr<ID3D12Resource> mInstance; //!< 一時的なリソース
+        Comptr<ID3D12Resource> mBuffer; //!< TLASバッファ
     };
 } // namespace Framework::DX

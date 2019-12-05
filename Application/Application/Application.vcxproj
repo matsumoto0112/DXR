@@ -86,8 +86,11 @@
     <ClCompile Include="Source\DX\Raytracing\BottomLevelAccelerationStructure.cpp" />
     <ClCompile Include="Source\DX\Raytracing\DXRPipelineStateObject.cpp" />
     <ClCompile Include="Source\DX\Raytracing\TopLevelAccelerationStructure.cpp" />
+    <ClCompile Include="Source\DX\Resource\Buffer.cpp" />
     <ClCompile Include="Source\DX\Resource\IndexBuffer.cpp" />
+    <ClCompile Include="Source\DX\Resource\IndexBufferView.cpp" />
     <ClCompile Include="Source\DX\Resource\VertexBuffer.cpp" />
+    <ClCompile Include="Source\DX\Resource\VertexBufferView.cpp" />
     <ClCompile Include="Source\DX\Shader\RootSignature.cpp" />
     <ClCompile Include="Source\Game.cpp" />
     <ClCompile Include="Source\ImGui\ImGuiManager.cpp" />
@@ -151,10 +154,14 @@
     <ClInclude Include="Source\DX\Raytracing\Shader\ShaderRecord.h" />
     <ClInclude Include="Source\DX\Raytracing\Shader\ShaderTable.h" />
     <ClInclude Include="Source\DX\Raytracing\TopLevelAccelerationStructure.h" />
+    <ClInclude Include="Source\DX\Resource\Buffer.h" />
     <ClInclude Include="Source\DX\Resource\IBuffer.h" />
     <ClInclude Include="Source\DX\Resource\IndexBuffer.h" />
+    <ClInclude Include="Source\DX\Resource\IndexBufferView.h" />
+    <ClInclude Include="Source\DX\Resource\ShaderResourceView.h" />
     <ClInclude Include="Source\DX\Resource\Texture2D.h" />
     <ClInclude Include="Source\DX\Resource\VertexBuffer.h" />
+    <ClInclude Include="Source\DX\Resource\VertexBufferView.h" />
     <ClInclude Include="Source\DX\Shader\RootSignature.h" />
     <ClInclude Include="Source\DX\Util\Helper.h" />
     <ClInclude Include="Source\Game.h" />

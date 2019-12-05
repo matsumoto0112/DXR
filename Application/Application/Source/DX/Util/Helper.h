@@ -1,9 +1,9 @@
 #pragma once
 
 namespace Framework::DX {
-    inline ComPtr<ID3D12Resource> createUploadBuffer(
+    inline Comptr<ID3D12Resource> createUploadBuffer(
         ID3D12Device* device, UINT64 size, const std::wstring& name) {
-        ComPtr<ID3D12Resource> resource;
+        Comptr<ID3D12Resource> resource;
         CD3DX12_HEAP_PROPERTIES heapProps(D3D12_HEAP_TYPE::D3D12_HEAP_TYPE_UPLOAD);
         CD3DX12_RESOURCE_DESC bufferDesc = CD3DX12_RESOURCE_DESC::Buffer(size);
 
@@ -23,9 +23,9 @@ namespace Framework::DX {
         resource->Unmap(0, nullptr);
     }
 
-    inline ComPtr<ID3D12Resource> createUAVBuffer(ID3D12Device* device, UINT64 size,
+    inline Comptr<ID3D12Resource> createUAVBuffer(ID3D12Device* device, UINT64 size,
         D3D12_RESOURCE_STATES initResourceState, const std::wstring& name) {
-        ComPtr<ID3D12Resource> result;
+        Comptr<ID3D12Resource> result;
         CD3DX12_HEAP_PROPERTIES heapProp(D3D12_HEAP_TYPE::D3D12_HEAP_TYPE_DEFAULT);
         CD3DX12_RESOURCE_DESC bufferDesc = CD3DX12_RESOURCE_DESC::Buffer(
             size, D3D12_RESOURCE_FLAGS::D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS);

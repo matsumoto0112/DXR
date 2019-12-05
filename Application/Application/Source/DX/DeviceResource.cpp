@@ -57,13 +57,13 @@ namespace Framework::DX {
         bool useDebug = false;
         //デバッグ時はデバッグレイヤーを有効にする
 #ifdef _DEBUG
-        ComPtr<ID3D12Debug> debug;
+        Comptr<ID3D12Debug> debug;
         if (SUCCEEDED(D3D12GetDebugInterface(IID_PPV_ARGS(&debug)))) {
             debug->EnableDebugLayer();
         } else {
             MY_DEBUG_LOG("WARNING:デバッグレイヤーが使用できません。");
         }
-        ComPtr<IDXGIInfoQueue> dxgiInfoQueue;
+        Comptr<IDXGIInfoQueue> dxgiInfoQueue;
         if (SUCCEEDED(DXGIGetDebugInterface1(0, IID_PPV_ARGS(&dxgiInfoQueue)))) {
             useDebug = true;
             MY_THROW_IF_FAILED(
@@ -82,7 +82,7 @@ namespace Framework::DX {
         if (mOptions & (ALLOW_TEARING | REQUIRE_TEARING_SUPPORT)) {
             BOOL allowTearing = FALSE;
 
-            ComPtr<IDXGIFactory5> factory5;
+            Comptr<IDXGIFactory5> factory5;
             HRESULT hr = mFactory.As(&factory5);
             if (SUCCEEDED(hr)) {
                 hr = factory5->CheckFeatureSupport(DXGI_FEATURE::DXGI_FEATURE_PRESENT_ALLOW_TEARING,
@@ -105,7 +105,7 @@ namespace Framework::DX {
             D3D12CreateDevice(mAdapter.Get(), mFeatureLevel, IID_PPV_ARGS(&mDevice)));
 
 #ifndef NDEBUG
-        ComPtr<ID3D12InfoQueue> infoQueue;
+        Comptr<ID3D12InfoQueue> infoQueue;
         if (SUCCEEDED(mDevice.As(&infoQueue))) {
 #ifdef _DEBUG
             infoQueue->SetBreakOnSeverity(
@@ -228,7 +228,7 @@ namespace Framework::DX {
             DXGI_SWAP_CHAIN_FULLSCREEN_DESC fullScreenChainDesc = { 0 };
             fullScreenChainDesc.Windowed = TRUE;
 
-            ComPtr<IDXGISwapChain1> swapChain;
+            Comptr<IDXGISwapChain1> swapChain;
 
             //フルスクリーン状態だと作成できないので一時的に後ろにする
             bool prevIsFullScreen = mWindow->isFullScreen();
@@ -346,7 +346,7 @@ namespace Framework::DX {
 
 #ifdef _DEBUG
         {
-            ComPtr<IDXGIDebug1> debug;
+            Comptr<IDXGIDebug1> debug;
             if (SUCCEEDED(DXGIGetDebugInterface1(0, IID_PPV_ARGS(&debug)))) {
                 debug->ReportLiveObjects(DXGI_DEBUG_ALL,
                     DXGI_DEBUG_RLO_FLAGS(DXGI_DEBUG_RLO_SUMMARY | DXGI_DEBUG_RLO_IGNORE_INTERNAL));
@@ -459,7 +459,7 @@ namespace Framework::DX {
     void DeviceResource::initializeAdapter(IDXGIAdapter1** adapter) {
         *adapter = nullptr;
 
-        ComPtr<IDXGIAdapter1> adap;
+        Comptr<IDXGIAdapter1> adap;
         MY_THROW_IF_FAILED(mFactory->EnumAdapters1(0, &adap));
         DXGI_ADAPTER_DESC1 desc;
         MY_THROW_IF_FAILED(adap->GetDesc1(&desc));

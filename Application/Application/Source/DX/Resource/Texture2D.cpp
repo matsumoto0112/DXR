@@ -13,7 +13,7 @@ namespace {
 
 namespace Framework::DX {
     //コンストラクタ
-    Texture2D::Texture2D() : mWidth(0), mHeight(0), mFormat(TextureFormat::UNKNOWN) {}
+    Texture2D::Texture2D() {}
     //コンストラクタ
     Texture2D::Texture2D(ID3D12Device* device, const Desc::TextureDesc& desc) {
         createBuffer(device, desc);
@@ -26,23 +26,15 @@ namespace Framework::DX {
         mHeight = desc.height;
         mFormat = desc.format;
 
-        //テクスチャリソースを作成する
-        CD3DX12_RESOURCE_DESC texDesc
-            = CD3DX12_RESOURCE_DESC::Tex2D(FORMATS.at(desc.format), desc.width, desc.height, 1);
-        CD3DX12_HEAP_PROPERTIES props(D3D12_CPU_PAGE_PROPERTY::D3D12_CPU_PAGE_PROPERTY_WRITE_BACK,
-            D3D12_MEMORY_POOL::D3D12_MEMORY_POOL_L0);
-
-        MY_THROW_IF_FAILED(
-            device->CreateCommittedResource(&props, D3D12_HEAP_FLAGS::D3D12_HEAP_FLAG_NONE,
-                &texDesc, D3D12_RESOURCE_STATES::D3D12_RESOURCE_STATE_GENERIC_READ, nullptr,
-                IID_PPV_ARGS(&mResource)));
-        mResource->SetName(desc.name.c_str());
+        mBuffer.init(device, Buffer::Usage::ShaderResource, DXGI_FORMAT::DXGI_FORMAT_R8G8B8A8_UNORM,
+            mWidth, mHeight, L"");
 
         //テクスチャデータを書き込む
         D3D12_BOX box = { 0, 0, 0, desc.width, desc.height, 1 };
         UINT row = desc.width * 4;
         UINT slice = row * desc.height;
-        MY_THROW_IF_FAILED(mResource->WriteToSubresource(0, &box, desc.pixels.data(), row, slice));
+        MY_THROW_IF_FAILED(
+            mBuffer.getResource()->WriteToSubresource(0, &box, desc.pixels.data(), row, slice));
     }
     //シェーダーリソースビューを作成
     void Texture2D::createSRV(ID3D12Device* device) {
@@ -56,7 +48,7 @@ namespace Framework::DX {
         srvDesc.Texture2D.PlaneSlice = 0;
         srvDesc.Texture2D.ResourceMinLODClamp = 0.0f;
 
-        device->CreateShaderResourceView(mResource.Get(), &srvDesc, mCPUHandle);
+        device->CreateShaderResourceView(mBuffer.getResource(), &srvDesc, mCPUHandle);
     }
 
 } // namespace Framework::DX

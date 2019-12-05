@@ -18,7 +18,7 @@ namespace Framework::DX {
     RootSignature::RootSignature(ID3D12Device* device, const RootSignatureDesc& desc) {
         CD3DX12_ROOT_SIGNATURE_DESC rootSig(desc.params.size(), desc.params.data(),
             desc.samplers.size(), desc.samplers.data(), toFlags(desc.flag));
-        ComPtr<ID3DBlob> blob, error;
+        Comptr<ID3DBlob> blob, error;
         MY_THROW_IF_FAILED_LOG(
             D3D12SerializeRootSignature(
                 &rootSig, D3D_ROOT_SIGNATURE_VERSION::D3D_ROOT_SIGNATURE_VERSION_1, &blob, &error),

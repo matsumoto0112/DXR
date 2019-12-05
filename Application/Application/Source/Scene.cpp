@@ -259,9 +259,9 @@ void Scene::render() {
     commandList->SetComputeRootConstantBufferView(
         GlobalRootSignature::Slot::SceneConstant, mSceneCB->gpuVirtualAddress());
     commandList->SetComputeRootDescriptorTable(
-        GlobalRootSignature::Slot::IndexBuffer, mResourcesIndexBuffer->getGPUHandle());
+        GlobalRootSignature::Slot::IndexBuffer, mResourcesIndexBuffer.mGPUHandle);
     commandList->SetComputeRootDescriptorTable(
-        GlobalRootSignature::Slot::VertexBuffer, mResourcesVertexBuffer->getGPUHandle());
+        GlobalRootSignature::Slot::VertexBuffer, mResourcesVertexBuffer.mGPUHandle);
 
     mDXRStateObject->doRaytracing(mWidth, mHeight);
 
@@ -373,8 +373,8 @@ auto getOffset = [&mIndexOffsets, &mVertexOffsets](LocalRootSignature::HitGroupI
 
 {
     ID3D12Device* device = mDeviceResource->getDevice();
-    std::array<std::unique_ptr<IndexBuffer>, BottomLevelASType::Count> mIndexBuffer;
-    std::array<std::unique_ptr<VertexBuffer>, BottomLevelASType::Count> mVertexBuffer;
+    std::array<IndexBuffer, BottomLevelASType::Count> mIndexBuffer;
+    std::array<VertexBuffer, BottomLevelASType::Count> mVertexBuffer;
 
     std::vector<Framework::DX::Vertex> resourceVertices;
     std::vector<Index> resourceIndices;
@@ -404,8 +404,8 @@ auto getOffset = [&mIndexOffsets, &mVertexOffsets](LocalRootSignature::HitGroupI
                 std::shared_ptr<Texture2D> texture
                     = std::make_shared<Texture2D>(device, createUnitTexture(col, name));
 
-                texture->setCPUHandle(mDescriptorTable->getCPUHandle(heapIndex));
-                texture->setGPUHandle(mDescriptorTable->getGPUHandle(heapIndex));
+                texture->mCPUHandle = (mDescriptorTable->getCPUHandle(heapIndex));
+                texture->mGPUHandle = (mDescriptorTable->getGPUHandle(heapIndex));
                 texture->createSRV(device);
                 mTextures[texType] = texture;
                 mTextureIDs[texType] = texType;
@@ -430,8 +430,8 @@ auto getOffset = [&mIndexOffsets, &mVertexOffsets](LocalRootSignature::HitGroupI
             if (expr) {
                 Framework::Desc::TextureDesc desc = textureDatas[descID];
                 auto texture = std::make_shared<Texture2D>(device, desc);
-                texture->setCPUHandle(mDescriptorTable->getCPUHandle(heapIndex));
-                texture->setGPUHandle(mDescriptorTable->getGPUHandle(heapIndex));
+                texture->mCPUHandle = (mDescriptorTable->getCPUHandle(heapIndex));
+                texture->mGPUHandle = (mDescriptorTable->getGPUHandle(heapIndex));
                 texture->createSRV(device);
                 mTextures[type] = texture;
                 mTextureIDs[type] = type;
@@ -448,10 +448,9 @@ auto getOffset = [&mIndexOffsets, &mVertexOffsets](LocalRootSignature::HitGroupI
                 loader.getNormalsPerSubMeshes(), loader.getUVsPerSubMeshes(),
                 loader.getTangentsPerSubMeshes());
 
-            mIndexBuffer[BottomLevelASType::UFO] = std::make_unique<IndexBuffer>(device, indices,
+            mIndexBuffer[BottomLevelASType::UFO].init(device, indices,
                 D3D12_PRIMITIVE_TOPOLOGY::D3D_PRIMITIVE_TOPOLOGY_UNDEFINED, L"IndexBuffer_UFO");
-            mVertexBuffer[BottomLevelASType::UFO]
-                = std::make_unique<VertexBuffer>(device, vertices, L"VertexBuffer_UFO");
+            mVertexBuffer[BottomLevelASType::UFO].init(device, vertices, L"VertexBuffer_UFO");
 
             resourceIndices.insert(resourceIndices.end(), indices.begin(), indices.end());
             resourceVertices.insert(resourceVertices.end(), vertices.begin(), vertices.end());
@@ -481,7 +480,7 @@ auto getOffset = [&mIndexOffsets, &mVertexOffsets](LocalRootSignature::HitGroupI
         }
         {
             std::vector<Index> indices = { 0, 1, 2, 0, 2, 3 };
-            mIndexBuffer[BottomLevelASType::Quad] = std::make_unique<IndexBuffer>(device, indices,
+            mIndexBuffer[BottomLevelASType::Quad].init(device, indices,
                 D3D12_PRIMITIVE_TOPOLOGY::D3D_PRIMITIVE_TOPOLOGY_UNDEFINED, L"IndexBuffer_Quad");
             std::vector<Framework::DX::Vertex> vertices = {
                 { Vec3(-1, 1, 0), Vec3(0, 0, -1), Vec2(0, 0) },
@@ -489,8 +488,7 @@ auto getOffset = [&mIndexOffsets, &mVertexOffsets](LocalRootSignature::HitGroupI
                 { Vec3(1, -1, 0), Vec3(0, 0, -1), Vec2(1, 1) },
                 { Vec3(-1, -1, 0), Vec3(0, 0, -1), Vec2(0, 1) },
             };
-            mVertexBuffer[BottomLevelASType::Quad]
-                = std::make_unique<VertexBuffer>(device, vertices, L"VertexBuffer_Quad");
+            mVertexBuffer[BottomLevelASType::Quad].init(device, vertices, L"VertexBuffer_Quad");
 
             resourceIndices.insert(resourceIndices.end(), indices.begin(), indices.end());
             resourceVertices.insert(resourceVertices.end(), vertices.begin(), vertices.end());
@@ -501,8 +499,10 @@ auto getOffset = [&mIndexOffsets, &mVertexOffsets](LocalRootSignature::HitGroupI
                 = Framework::Utility::TextureLoader::load(texPath / "back2.png");
             auto texture = std::make_shared<Texture2D>(device, desc);
 
-            texture->setCPUHandle(mDescriptorTable->getCPUHandle(DescriptorHeapIndex::Quad_Albedo));
-            texture->setGPUHandle(mDescriptorTable->getGPUHandle(DescriptorHeapIndex::Quad_Albedo));
+            texture->mCPUHandle
+                = (mDescriptorTable->getCPUHandle(DescriptorHeapIndex::Quad_Albedo));
+            texture->mGPUHandle
+                = (mDescriptorTable->getGPUHandle(DescriptorHeapIndex::Quad_Albedo));
             texture->createSRV(device);
             mTextures[ModelTextureType::Quad_AlbedoTexture] = texture;
             mTextureIDs[ModelTextureType::Quad_AlbedoTexture]
@@ -519,13 +519,12 @@ auto getOffset = [&mIndexOffsets, &mVertexOffsets](LocalRootSignature::HitGroupI
             Framework::Utility::GLBLoader loader(
                 modelPath / MODEL_NAMES.at(BottomLevelASType::Floor));
             auto indices = toLinearList(loader.getIndicesPerSubMeshes());
-            mIndexBuffer[BottomLevelASType::Floor] = std::make_unique<IndexBuffer>(device, indices,
+            mIndexBuffer[BottomLevelASType::Floor].init(device, indices,
                 D3D12_PRIMITIVE_TOPOLOGY::D3D_PRIMITIVE_TOPOLOGY_UNDEFINED, L"IndexBuffer_Floor");
 
             auto vertices = toLinearVertices(loader.getPositionsPerSubMeshes(),
                 loader.getNormalsPerSubMeshes(), loader.getUVsPerSubMeshes());
-            mVertexBuffer[BottomLevelASType::Floor]
-                = std::make_unique<VertexBuffer>(device, vertices, L"VertexBuffer_Floor");
+            mVertexBuffer[BottomLevelASType::Floor].init(device, vertices, L"VertexBuffer_Floor");
 
             resourceIndices.insert(resourceIndices.end(), indices.begin(), indices.end());
             resourceVertices.insert(resourceVertices.end(), vertices.begin(), vertices.end());
@@ -557,14 +556,13 @@ auto getOffset = [&mIndexOffsets, &mVertexOffsets](LocalRootSignature::HitGroupI
             Framework::Utility::GLBLoader loader(
                 modelPath / MODEL_NAMES.at(BottomLevelASType::Sphere));
             auto indices = toLinearList(loader.getIndicesPerSubMeshes());
-            mIndexBuffer[BottomLevelASType::Sphere] = std::make_unique<IndexBuffer>(device, indices,
+            mIndexBuffer[BottomLevelASType::Sphere].init(device, indices,
                 D3D12_PRIMITIVE_TOPOLOGY::D3D_PRIMITIVE_TOPOLOGY_UNDEFINED, L"IndexBuffer_Sphere");
 
             auto vertices = toLinearVertices(loader.getPositionsPerSubMeshes(),
                 loader.getNormalsPerSubMeshes(), loader.getUVsPerSubMeshes(),
                 loader.getTangentsPerSubMeshes());
-            mVertexBuffer[BottomLevelASType::Sphere]
-                = std::make_unique<VertexBuffer>(device, vertices, L"VertexBuffer_Sphere");
+            mVertexBuffer[BottomLevelASType::Sphere].init(device, vertices, L"VertexBuffer_Sphere");
 
             resourceIndices.insert(resourceIndices.end(), indices.begin(), indices.end());
             resourceVertices.insert(resourceVertices.end(), vertices.begin(), vertices.end());
@@ -604,7 +602,7 @@ auto getOffset = [&mIndexOffsets, &mVertexOffsets](LocalRootSignature::HitGroupI
 
         for (int i = 0; i < BottomLevelASType::Count; i++) {
             mBLASBuffers[i] = std::make_unique<BottomLevelAccelerationStructure>(mDXRDevice,
-                *mVertexBuffer[i], static_cast<UINT>(sizeof(Vertex)), *mIndexBuffer[i],
+                mVertexBuffer[i], static_cast<UINT>(sizeof(Vertex)), mIndexBuffer[i],
                 static_cast<UINT>(sizeof(Index)));
         }
 
@@ -613,21 +611,20 @@ auto getOffset = [&mIndexOffsets, &mVertexOffsets](LocalRootSignature::HitGroupI
         mDeviceResource->executeCommandList();
         mDeviceResource->waitForGPU();
 
-        mResourcesIndexBuffer = std::make_unique<IndexBuffer>(device, resourceIndices,
+        mResourcesIndexBuffer.init(device, resourceIndices,
             D3D12_PRIMITIVE_TOPOLOGY::D3D_PRIMITIVE_TOPOLOGY_UNDEFINED, L"ResourceIndex");
-        mResourcesIndexBuffer->setCPUHandle(
-            mDescriptorTable->getCPUHandle(DescriptorHeapIndex::ResourceIndexBuffer));
-        mResourcesIndexBuffer->setGPUHandle(
-            mDescriptorTable->getGPUHandle(DescriptorHeapIndex::ResourceIndexBuffer));
-        mResourcesIndexBuffer->createSRV(device);
+        mResourcesIndexBuffer.mCPUHandle
+            = (mDescriptorTable->getCPUHandle(DescriptorHeapIndex::ResourceIndexBuffer));
+        mResourcesIndexBuffer.mGPUHandle
+            = (mDescriptorTable->getGPUHandle(DescriptorHeapIndex::ResourceIndexBuffer));
+        mResourcesIndexBuffer.createSRV(device);
 
-        mResourcesVertexBuffer
-            = std::make_unique<VertexBuffer>(device, resourceVertices, L"ResourceVertex");
-        mResourcesVertexBuffer->setCPUHandle(
-            mDescriptorTable->getCPUHandle(DescriptorHeapIndex::ResourceVertexBuffer));
-        mResourcesVertexBuffer->setGPUHandle(
-            mDescriptorTable->getGPUHandle(DescriptorHeapIndex::ResourceVertexBuffer));
-        mResourcesVertexBuffer->createSRV(device);
+        mResourcesVertexBuffer.init(device, resourceVertices, L"ResourceVertex");
+        mResourcesVertexBuffer.mCPUHandle
+            = (mDescriptorTable->getCPUHandle(DescriptorHeapIndex::ResourceVertexBuffer));
+        mResourcesVertexBuffer.mGPUHandle
+            = (mDescriptorTable->getGPUHandle(DescriptorHeapIndex::ResourceVertexBuffer));
+        mResourcesVertexBuffer.createSRV(device);
     }
 }
 
@@ -717,12 +714,12 @@ auto getOffset = [&mIndexOffsets, &mVertexOffsets](LocalRootSignature::HitGroupI
             RootArgument arg;
             arg.cb.indexOffset = std::get<0>(getOffset(hitGroupIndex));
             arg.cb.vertexOffset = std::get<1>(getOffset(hitGroupIndex));
-            arg.albedo = mTextures[mTextureIDs[texOffset]]->getGPUHandle();
-            arg.normal = mTextures[mTextureIDs[ModelTextureType(texOffset + 1)]]->getGPUHandle();
+            arg.albedo = mTextures[mTextureIDs[texOffset]]->mGPUHandle;
+            arg.normal = mTextures[mTextureIDs[ModelTextureType(texOffset + 1)]]->mGPUHandle;
             arg.metallicRoughness
-                = mTextures[mTextureIDs[ModelTextureType(texOffset + 2)]]->getGPUHandle();
-            arg.emissive = mTextures[mTextureIDs[ModelTextureType(texOffset + 3)]]->getGPUHandle();
-            arg.occlusion = mTextures[mTextureIDs[ModelTextureType(texOffset + 4)]]->getGPUHandle();
+                = mTextures[mTextureIDs[ModelTextureType(texOffset + 2)]]->mGPUHandle;
+            arg.emissive = mTextures[mTextureIDs[ModelTextureType(texOffset + 3)]]->mGPUHandle;
+            arg.occlusion = mTextures[mTextureIDs[ModelTextureType(texOffset + 4)]]->mGPUHandle;
             return arg;
         };
 

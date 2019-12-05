@@ -22,7 +22,9 @@ namespace Framework::Utility {
         storeDevice(device, commandQueue, maxFrameCount);
     }
     //デストラクタ
-    GPUTimer::~GPUTimer() { releaseDevice(); }
+    GPUTimer::~GPUTimer() {
+        releaseDevice();
+    }
     //フレーム開始
     void GPUTimer::beginFrame() {
         //特に処理することはない
@@ -73,7 +75,9 @@ namespace Framework::Utility {
             mQueryHeap.Get(), D3D12_QUERY_TYPE::D3D12_QUERY_TYPE_TIMESTAMP, timerID * 2 + 1);
     }
     //平均のリセット
-    void GPUTimer::reset() { mAverages.fill(0.0f); }
+    void GPUTimer::reset() {
+        mAverages.fill(0.0f);
+    }
     //経過時間の取得
     float GPUTimer::getElapsedTime(UINT timerID) {
         MY_ASSERTION(timerID < TIMER_COUNT, "timerIDの値が不正です");
@@ -99,7 +103,7 @@ namespace Framework::Utility {
         ID3D12Device* device, ID3D12CommandQueue* commandQueue, UINT maxFrameCount) {
         mMaxFrameCount = maxFrameCount;
 
-        ComPtr<ID3D12InfoQueue> infoQueue;
+        Comptr<ID3D12InfoQueue> infoQueue;
         //デバッグレイヤーの警告の一部を無効化する
         if (SUCCEEDED(device->QueryInterface(IID_PPV_ARGS(&infoQueue)))) {
             D3D12_MESSAGE_ID denyIDs[] = {

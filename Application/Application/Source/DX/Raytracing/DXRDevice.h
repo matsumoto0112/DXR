@@ -32,14 +32,18 @@ namespace Framework::DX {
         /**
          * @brief デバイスの取得
          */
-        ID3D12Device5* getDXRDevice() const { return mDXRDevice.Get(); }
+        ID3D12Device5* getDXRDevice() const {
+            return mDXRDevice.Get();
+        }
         /**
          * @brief コマンドリストの取得
          */
-        ID3D12GraphicsCommandList5* getDXRCommandList() const { return mDXRCommandList.Get(); }
+        ID3D12GraphicsCommandList5* getDXRCommandList() const {
+            return mDXRCommandList.Get();
+        }
 
     private:
-        ComPtr<ID3D12Device5> mDXRDevice; //!< DXRに対応したデバイス
-        ComPtr<ID3D12GraphicsCommandList5> mDXRCommandList; //!< DXRに対応したコマンドリスト
+        Comptr<ID3D12Device5> mDXRDevice; //!< DXRに対応したデバイス
+        Comptr<ID3D12GraphicsCommandList5> mDXRCommandList; //!< DXRに対応したコマンドリスト
     };
 } // namespace Framework::DX

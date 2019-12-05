@@ -4,9 +4,9 @@
 using namespace DirectX;
 
 namespace {
-    inline ComPtr<ID3D12Resource> createBuffer(
+    inline Comptr<ID3D12Resource> createBuffer(
         ID3D12Device* device, void* data, UINT size, const std::wstring& name) {
-        ComPtr<ID3D12Resource> result = Framework::DX::createUploadBuffer(device, size, name);
+        Comptr<ID3D12Resource> result = Framework::DX::createUploadBuffer(device, size, name);
         Framework::DX::writeToResource(result.Get(), data, size);
         return result;
     }

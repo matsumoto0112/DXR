@@ -102,47 +102,69 @@ namespace Framework::DX {
         /**
          * @brief 出力先の矩形を取得する
          */
-        RECT getOutputSize() const { return mOutputSize; }
+        RECT getOutputSize() const {
+            return mOutputSize;
+        }
         /**
          * @brief ウィンドウが可視状態か
          */
-        bool isWindowVisible() const { return mIsWindowVisible; }
+        bool isWindowVisible() const {
+            return mIsWindowVisible;
+        }
         /**
          * @brief テアリングサポートしているか
          */
-        bool isTearingSupported() const { return mOptions & ALLOW_TEARING; }
+        bool isTearingSupported() const {
+            return mOptions & ALLOW_TEARING;
+        }
         /**
          * @brief アダプタを取得する
          */
-        IDXGIAdapter1* getAdapter() const { return mAdapter.Get(); }
+        IDXGIAdapter1* getAdapter() const {
+            return mAdapter.Get();
+        }
         /**
          * @brief デバイスを取得する
          */
-        ID3D12Device* getDevice() const { return mDevice.Get(); }
+        ID3D12Device* getDevice() const {
+            return mDevice.Get();
+        }
         /**
          * @brief ファクトリを取得する
          */
-        IDXGIFactory4* getFactory() const { return mFactory.Get(); }
+        IDXGIFactory4* getFactory() const {
+            return mFactory.Get();
+        }
         /**
          * @brief スワップチェインを取得する
          */
-        IDXGISwapChain3* getSwapChain() const { return mSwapChain.Get(); }
+        IDXGISwapChain3* getSwapChain() const {
+            return mSwapChain.Get();
+        }
         /**
          * @brief 機能レベルを取得する
          */
-        D3D_FEATURE_LEVEL getFeatureLevel() const { return mFeatureLevel; }
+        D3D_FEATURE_LEVEL getFeatureLevel() const {
+            return mFeatureLevel;
+        }
         /**
          * @brief レンダーターゲットを取得する
          */
-        ID3D12Resource* getRenderTarget() const { return mRenderTargets[mBackBufferIndex].Get(); }
+        ID3D12Resource* getRenderTarget() const {
+            return mRenderTargets[mBackBufferIndex].Get();
+        }
         /**
          * @brief デプス・ステンシルを取得する
          */
-        ID3D12Resource* getDepthStencil() const { return mDepthStencil.Get(); }
+        ID3D12Resource* getDepthStencil() const {
+            return mDepthStencil.Get();
+        }
         /**
          * @brief コマンドキューを取得する
          */
-        ID3D12CommandQueue* getCommandQueue() const { return mCommandQueue.Get(); }
+        ID3D12CommandQueue* getCommandQueue() const {
+            return mCommandQueue.Get();
+        }
         /**
          * @brief コマンドアロケータを取得する
          */
@@ -152,27 +174,39 @@ namespace Framework::DX {
         /**
          * @brief コマンドリストを取得する
          */
-        ID3D12GraphicsCommandList* getCommandList() const { return mCommandList.Get(); }
+        ID3D12GraphicsCommandList* getCommandList() const {
+            return mCommandList.Get();
+        }
         /**
          * @brief バックバッファのフォーマットを取得する
          */
-        DXGI_FORMAT getBackBufferFormat() const { return mBackBufferFormat; }
+        DXGI_FORMAT getBackBufferFormat() const {
+            return mBackBufferFormat;
+        }
         /**
          * @brief デプス・ステンシルバッファのフォーマットを取得する
          */
-        DXGI_FORMAT getDepthBufferFormat() const { return mDepthBufferFormat; }
+        DXGI_FORMAT getDepthBufferFormat() const {
+            return mDepthBufferFormat;
+        }
         /**
          * @brief ビューポートを取得する
          */
-        D3D12_VIEWPORT getScreenViewport() const { return mScreenViewport; }
+        D3D12_VIEWPORT getScreenViewport() const {
+            return mScreenViewport;
+        }
         /**
          * @brief シザー矩形を取得する
          */
-        D3D12_RECT getScissorRect() const { return mScissorRect; }
+        D3D12_RECT getScissorRect() const {
+            return mScissorRect;
+        }
         /**
          * @brief 現在のフレームインデックスを取得する
          */
-        UINT getCurrentFrameIndex() const { return mBackBufferIndex; }
+        UINT getCurrentFrameIndex() const {
+            return mBackBufferIndex;
+        }
         /**
          * @brief 前のフレームインデックスを取得する
          */
@@ -182,19 +216,27 @@ namespace Framework::DX {
         /**
          * @brief バックバッファの枚数を取得する
          */
-        UINT getBackBufferCount() const { return BACK_BUFFER_COUNT; }
+        UINT getBackBufferCount() const {
+            return BACK_BUFFER_COUNT;
+        }
         /**
          * @brief デバイスのオプションを取得する
          */
-        UINT getDeviceOptions() const { return mOptions; }
+        UINT getDeviceOptions() const {
+            return mOptions;
+        }
         /**
          * @brief アダプタの説明を取得する
          */
-        const std::wstring& getAdapterDescription() const { return mAdapterDescription; }
+        const std::wstring& getAdapterDescription() const {
+            return mAdapterDescription;
+        }
         /**
          * @brief アダプタIDを取得する
          */
-        UINT getAdapterID() const { return mAdapterID; }
+        UINT getAdapterID() const {
+            return mAdapterID;
+        }
         /**
          * @brief レンダーターゲットのハンドルを取得する
          */
@@ -220,19 +262,19 @@ namespace Framework::DX {
 
     private:
         UINT mBackBufferIndex; //!< バックバッファのインデックス
-        ComPtr<IDXGIAdapter1> mAdapter; //!< アダプタ
+        Comptr<IDXGIAdapter1> mAdapter; //!< アダプタ
         UINT mAdapterID; //!< アダプタID
         std::wstring mAdapterDescription; //!< アダプタの説明
-        ComPtr<ID3D12Device> mDevice; //!< デバイス
-        ComPtr<ID3D12CommandQueue> mCommandQueue; //!< コマンドキュー
-        ComPtr<ID3D12GraphicsCommandList> mCommandList; //!< コマンドリスト
-        std::array<ComPtr<ID3D12CommandAllocator>, BACK_BUFFER_COUNT>
+        Comptr<ID3D12Device> mDevice; //!< デバイス
+        Comptr<ID3D12CommandQueue> mCommandQueue; //!< コマンドキュー
+        Comptr<ID3D12GraphicsCommandList> mCommandList; //!< コマンドリスト
+        std::array<Comptr<ID3D12CommandAllocator>, BACK_BUFFER_COUNT>
             mCommandAllocators; //!< コマンドアロケータ
-        ComPtr<IDXGIFactory4> mFactory; //!< ファクトリ
-        ComPtr<IDXGISwapChain3> mSwapChain; //!< スワップチェイン
-        ComPtr<ID3D12Resource> mRenderTargets[BACK_BUFFER_COUNT]; //!< レンダーターゲット
-        ComPtr<ID3D12Resource> mDepthStencil; //!< デプス・ステンシル
-        ComPtr<ID3D12Fence> mFence; //!< フェンス
+        Comptr<IDXGIFactory4> mFactory; //!< ファクトリ
+        Comptr<IDXGISwapChain3> mSwapChain; //!< スワップチェイン
+        Comptr<ID3D12Resource> mRenderTargets[BACK_BUFFER_COUNT]; //!< レンダーターゲット
+        Comptr<ID3D12Resource> mDepthStencil; //!< デプス・ステンシル
+        Comptr<ID3D12Fence> mFence; //!< フェンス
         std::array<UINT64, BACK_BUFFER_COUNT> mFenceValues; //!< フェンスの値
         Microsoft::WRL::Wrappers::Event mFenceEvent; //!< フェンスイベント
         UniquePtr<DescriptorTable> mRTVHeap; //!< レンダーターゲットのディスクリプタヒープ

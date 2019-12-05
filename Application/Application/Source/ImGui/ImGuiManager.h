@@ -46,7 +46,7 @@ namespace Framework {
         void endFrame(ID3D12GraphicsCommandList* commandList);
 
     private:
-        ComPtr<ID3D12DescriptorHeap> mHeap; //!< ImGui用ヒープ
+        Comptr<ID3D12DescriptorHeap> mHeap; //!< ImGui用ヒープ
         bool mEnableImGui;
     };
 } // namespace Framework

@@ -7,6 +7,7 @@
 #include "DX/Raytracing/DXRDevice.h"
 #include "DX/Raytracing/DXRPipelineStateObject.h"
 #include "DX/Raytracing/TopLevelAccelerationStructure.h"
+#include "DX/Resource/IBuffer.h"
 #include "DX/Resource/IndexBuffer.h"
 #include "DX/Resource/Texture2D.h"
 #include "DX/Resource/VertexBuffer.h"
@@ -62,8 +63,8 @@ private:
     std::unique_ptr<Framework::DX::RootSignature> mMissLocalRootSignature;
     std::unique_ptr<Framework::DX::RootSignature> mHitGroupLocalRootSignature;
     std::unique_ptr<Framework::DX::DescriptorTable> mDescriptorTable;
-    std::unique_ptr<Framework::DX::IndexBuffer> mResourcesIndexBuffer;
-    std::unique_ptr<Framework::DX::VertexBuffer> mResourcesVertexBuffer;
+    Framework::DX::IndexBuffer mResourcesIndexBuffer;
+    Framework::DX::VertexBuffer mResourcesVertexBuffer;
     Framework::DX::IBuffer mRaytracingOutput;
     std::vector<std::shared_ptr<Framework::DX::Texture2D>> mTextures;
 

@@ -183,7 +183,7 @@ namespace Framework::DX {
     void DXRPipelineStateObject::prebuild() {
         MY_THROW_IF_FALSE_LOG(mPipelineStateObject, "パイプラインが存在しません");
 
-        ComPtr<ID3D12StateObjectProperties> stateObjectProp;
+        Comptr<ID3D12StateObjectProperties> stateObjectProp;
         MY_THROW_IF_FAILED(mPipelineStateObject->QueryInterface(IID_PPV_ARGS(&stateObjectProp)));
         for (auto&& data : mShaderDatas) {
             data.second.id = stateObjectProp->GetShaderIdentifier(data.second.name.c_str());

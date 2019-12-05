@@ -39,7 +39,7 @@ namespace Framework::DX {
         }
 
     private:
-        ComPtr<ID3D12RootSignature> mRootSignature; //!< ルートシグネチャ
+        Comptr<ID3D12RootSignature> mRootSignature; //!< ルートシグネチャ
     };
 
     /**

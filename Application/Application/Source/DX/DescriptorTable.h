@@ -33,7 +33,9 @@ namespace Framework::DX {
         /**
          * @brief ディスクリプタヒープの取得
          */
-        inline ID3D12DescriptorHeap* getHeap() const { return mHeap.Get(); }
+        inline ID3D12DescriptorHeap* getHeap() const {
+            return mHeap.Get();
+        }
         /**
          * @brief CPUハンドルの取得
          */
@@ -44,7 +46,7 @@ namespace Framework::DX {
         CD3DX12_GPU_DESCRIPTOR_HANDLE getGPUHandle(UINT index);
 
     protected:
-        ComPtr<ID3D12DescriptorHeap> mHeap; //!< ディスクリプタヒープ
+        Comptr<ID3D12DescriptorHeap> mHeap; //!< ディスクリプタヒープ
         UINT mDescriptorSize; //!< ディスクリプタのサイズ
     };
 } // namespace Framework::DX

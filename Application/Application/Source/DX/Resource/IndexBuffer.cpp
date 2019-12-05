@@ -1,26 +1,33 @@
 #include "IndexBuffer.h"
-#include "DX/Util/Helper.h"
 
 namespace Framework::DX {
-    //コンストラクタ
-    IndexBuffer::IndexBuffer(ID3D12Device* device, const std::vector<Index>& indices,
-        D3D12_PRIMITIVE_TOPOLOGY primitiveTopology, const std::wstring& name)
-        : mIndexCount(static_cast<UINT>(indices.size())), mPrimitiveTopology(primitiveTopology) {
-        mResource = createUploadBuffer(device, mIndexCount * sizeof(Index), name);
-        writeToResource(mResource.Get(), indices.data(), mIndexCount * sizeof(Index));
+    //初期化
+    void IndexBuffer::init(ID3D12Device* device, const std::vector<UINT>& indices,
+        D3D_PRIMITIVE_TOPOLOGY topology, const std::wstring& name) {
+        mIndexNum = static_cast<UINT>(indices.size());
+        mTopology = topology;
+        mBuffer.init(
+            device, Buffer::Usage::IndexBuffer, mIndexNum * sizeof(UINT), sizeof(UINT), name);
+        mBuffer.writeResource(indices.data(), mIndexNum * sizeof(UINT));
+        mView.init(&mBuffer);
     }
-    //デストラクタ
-    IndexBuffer::~IndexBuffer() {}
-    //シェーダーリソースビューを作成する
-    void IndexBuffer::createSRV(ID3D12Device* device) {
-        D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
-        srvDesc.ViewDimension = D3D12_SRV_DIMENSION::D3D12_SRV_DIMENSION_BUFFER;
-        srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
-        //Indexは2Byteで確保しているので生データとして扱う
-        srvDesc.Buffer.NumElements = mIndexCount * sizeof(Index) / sizeof(float);
-        srvDesc.Format = DXGI_FORMAT::DXGI_FORMAT_R32_TYPELESS;
-        srvDesc.Buffer.Flags = D3D12_BUFFER_SRV_FLAGS::D3D12_BUFFER_SRV_FLAG_RAW;
-        srvDesc.Buffer.StructureByteStride = 0;
-        device->CreateShaderResourceView(mResource.Get(), &srvDesc, mCPUHandle);
+    //初期化
+    void IndexBuffer::init(ID3D12Device* device, const std::vector<UINT16>& indices,
+        D3D_PRIMITIVE_TOPOLOGY topology, const std::wstring& name) {
+        mIndexNum = static_cast<UINT>(indices.size());
+        mTopology = topology;
+        mBuffer.init(
+            device, Buffer::Usage::IndexBuffer, mIndexNum * sizeof(UINT16), sizeof(UINT16), name);
+        mBuffer.writeResource(indices.data(), mIndexNum * sizeof(UINT16));
+        mView.init(&mBuffer);
+    }
+    //コマンドリストにセットする
+    void IndexBuffer::setCommandList(ID3D12GraphicsCommandList* commandList) {
+        commandList->IASetPrimitiveTopology(mTopology);
+        commandList->IASetIndexBuffer(&mView.getView());
+    }
+    //描画する
+    void IndexBuffer::draw(ID3D12GraphicsCommandList* commandList) {
+        commandList->DrawIndexedInstanced(mIndexNum, 1, 0, 0, 0);
     }
 } // namespace Framework::DX

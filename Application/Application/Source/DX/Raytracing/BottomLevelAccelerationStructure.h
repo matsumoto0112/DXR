@@ -38,7 +38,7 @@ namespace Framework::DX {
         }
 
     private:
-        ComPtr<ID3D12Resource> mScratch;
-        ComPtr<ID3D12Resource> mBuffer;
+        Comptr<ID3D12Resource> mScratch;
+        Comptr<ID3D12Resource> mBuffer;
     };
 } // namespace Framework::DX
