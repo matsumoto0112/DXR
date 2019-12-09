@@ -4,28 +4,31 @@ using Framework::Desc::TextureFormat;
 
 namespace {
     static constexpr UINT BYTES_PER_PIXEL = 4; // 1ピクセルのバイト数
-    //フォーマット変換マップ
-    static const std::unordered_map<TextureFormat, DXGI_FORMAT> FORMATS = {
-        { TextureFormat::R8G8B8A8, DXGI_FORMAT::DXGI_FORMAT_R8G8B8A8_UNORM },
-        { TextureFormat::UNKNOWN, DXGI_FORMAT::DXGI_FORMAT_UNKNOWN },
-    };
+    static constexpr DXGI_FORMAT toFormat(TextureFormat format) {
+        switch (format) {
+        case Framework::Desc::TextureFormat::R8G8B8A8:
+            return DXGI_FORMAT::DXGI_FORMAT_R8G8B8A8_UNORM;
+        default: return DXGI_FORMAT::DXGI_FORMAT_UNKNOWN;
+        }
+    }
 } // namespace
 
 namespace Framework::DX {
-    void Texture2D::init(ID3D12Device* device, const Desc::TextureDesc& desc) {
-        mWidth = desc.width;
-        mHeight = desc.height;
-        mFormat = desc.format;
+    void Texture2D::init(ID3D12Device* device, ID3D12GraphicsCommandList* commandList,
+        const Desc::TextureDesc& desc) {
+        mBuffer.init(device, Buffer::Usage::ShaderResource, toFormat(desc.format), desc.width,
+            desc.height, desc.name);
+        mImmediateBuffer.init(device, Buffer::Usage::ShaderResource,
+            GetRequiredIntermediateSize(mBuffer.getResource(), 0, 1), 0, L"Immediate" + desc.name);
 
-        mBuffer.init(device, Buffer::Usage::ShaderResource, DXGI_FORMAT::DXGI_FORMAT_R8G8B8A8_UNORM,
-            mWidth, mHeight, desc.name);
+        D3D12_SUBRESOURCE_DATA subresource = {};
+        subresource.pData = desc.pixels.data();
+        subresource.RowPitch = desc.width * 4;
+        subresource.SlicePitch = subresource.RowPitch * desc.height;
+        UpdateSubresources(commandList, mBuffer.getResource(), mImmediateBuffer.getResource(), 0, 0,
+            1, &subresource);
 
-        //テクスチャデータを書き込む
-        D3D12_BOX box = { 0, 0, 0, desc.width, desc.height, 1 };
-        UINT row = desc.width * 4;
-        UINT slice = row * desc.height;
-        MY_THROW_IF_FAILED(
-            mBuffer.getResource()->WriteToSubresource(0, &box, desc.pixels.data(), row, slice));
+        mBuffer.transition(commandList, D3D12_RESOURCE_STATES::D3D12_RESOURCE_STATE_GENERIC_READ);
     }
     //シェーダーリソースビューを作成
     void Texture2D::createSRV(ID3D12Device* device, const D3D12_CPU_DESCRIPTOR_HANDLE& cpuHandle,

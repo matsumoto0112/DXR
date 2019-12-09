@@ -165,7 +165,6 @@ namespace Framework::DX {
         MY_THROW_IF_FAILED(
             mDevice->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE::D3D12_COMMAND_LIST_TYPE_DIRECT,
                 mCommandAllocators[0].Get(), nullptr, IID_PPV_ARGS(&mCommandList)));
-        MY_THROW_IF_FAILED(mCommandList->Close());
 
         //ƒtƒFƒ“ƒXì¬
         MY_THROW_IF_FAILED(mDevice->CreateFence(mFenceValues[mBackBufferIndex],

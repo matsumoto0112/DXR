@@ -26,19 +26,12 @@ namespace Framework::DX {
      */
     void Buffer::init(
         ID3D12Device* device, Usage usage, UINT size, UINT stride, const std::wstring& name) {
+        mCurrentState = D3D12_RESOURCE_STATES::D3D12_RESOURCE_STATE_GENERIC_READ;
+        mStride = stride;
+
         CD3DX12_HEAP_PROPERTIES props(D3D12_HEAP_TYPE::D3D12_HEAP_TYPE_UPLOAD);
         CD3DX12_RESOURCE_DESC desc = CD3DX12_RESOURCE_DESC::Buffer(calcBufferSize(usage, size));
-
-        MY_THROW_IF_FAILED(
-            device->CreateCommittedResource(&props, D3D12_HEAP_FLAGS::D3D12_HEAP_FLAG_NONE, &desc,
-                D3D12_RESOURCE_STATES::D3D12_RESOURCE_STATE_GENERIC_READ, nullptr,
-                IID_PPV_ARGS(&mResource)));
-        MY_THROW_IF_FAILED(mResource->SetName(name.c_str()));
-
-        mResourceType = usage;
-        mSize = desc.Width;
-        mStride = stride;
-        mCurrentState = D3D12_RESOURCE_STATES::D3D12_RESOURCE_STATE_GENERIC_READ;
+        init(device, usage, props, desc, name);
     }
 
     /**
@@ -46,15 +39,12 @@ namespace Framework::DX {
      */
     void Buffer::init(ID3D12Device* device, Usage usage, DXGI_FORMAT format, UINT width,
         UINT height, const std::wstring& name) {
-        CD3DX12_RESOURCE_DESC texDesc = CD3DX12_RESOURCE_DESC::Tex2D(format, width, height);
-        CD3DX12_HEAP_PROPERTIES props(D3D12_CPU_PAGE_PROPERTY::D3D12_CPU_PAGE_PROPERTY_WRITE_BACK,
-            D3D12_MEMORY_POOL::D3D12_MEMORY_POOL_L0);
+        mCurrentState = D3D12_RESOURCE_STATES::D3D12_RESOURCE_STATE_COPY_DEST;
 
-        MY_THROW_IF_FAILED(
-            device->CreateCommittedResource(&props, D3D12_HEAP_FLAGS::D3D12_HEAP_FLAG_NONE,
-                &texDesc, D3D12_RESOURCE_STATES::D3D12_RESOURCE_STATE_GENERIC_READ, nullptr,
-                IID_PPV_ARGS(&mResource)));
-        mResource->SetName(name.c_str());
+        CD3DX12_HEAP_PROPERTIES props(D3D12_HEAP_TYPE::D3D12_HEAP_TYPE_DEFAULT);
+        CD3DX12_RESOURCE_DESC desc = CD3DX12_RESOURCE_DESC::Tex2D(format, width, height);
+
+        init(device, usage, props, desc, name);
     }
 
     /**
@@ -79,5 +69,22 @@ namespace Framework::DX {
         void* mapped = map();
         memcpy(mapped, data, size);
         unmap();
+    }
+    void Buffer::transition(
+        ID3D12GraphicsCommandList* commandList, D3D12_RESOURCE_STATES nextState) {
+        if (mCurrentState == nextState) return;
+        commandList->ResourceBarrier(
+            1, &CD3DX12_RESOURCE_BARRIER::Transition(mResource.Get(), mCurrentState, nextState));
+        mCurrentState = nextState;
+    }
+    void Buffer::init(ID3D12Device* device, Usage usage, const CD3DX12_HEAP_PROPERTIES& props,
+        const CD3DX12_RESOURCE_DESC& desc, const std::wstring& name) {
+        MY_THROW_IF_FAILED(
+            device->CreateCommittedResource(&props, D3D12_HEAP_FLAGS::D3D12_HEAP_FLAG_NONE, &desc,
+                mCurrentState, nullptr, IID_PPV_ARGS(&mResource)));
+        MY_THROW_IF_FAILED(mResource->SetName(name.c_str()));
+
+        mResourceType = usage;
+        mSize = static_cast<UINT>(desc.Width);
     }
 } // namespace Framework::DX

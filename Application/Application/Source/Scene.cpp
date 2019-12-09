@@ -376,6 +376,7 @@ auto getOffset = [&mIndexOffsets, &mVertexOffsets](LocalRootSignature::HitGroupI
 
 {
     ID3D12Device* device = mDeviceResource->getDevice();
+    ID3D12GraphicsCommandList* commandList = mDeviceResource->getCommandList();
     std::array<IndexBuffer, BottomLevelASType::Count> mIndexBuffer;
     std::array<VertexBuffer, BottomLevelASType::Count> mVertexBuffer;
 
@@ -405,7 +406,7 @@ auto getOffset = [&mIndexOffsets, &mVertexOffsets](LocalRootSignature::HitGroupI
             auto createDefaultTexture = [&](const std::wstring& name, ModelTextureType texType,
                                             const Color4& col, UINT heapIndex) {
                 Texture2D texture;
-                texture.init(device, createUnitTexture(col, name));
+                texture.init(device, commandList, createUnitTexture(col, name));
 
                 texture.createSRV(device, mDescriptorTable->getCPUHandle(heapIndex),
                     mDescriptorTable->getGPUHandle(heapIndex));
@@ -432,7 +433,7 @@ auto getOffset = [&mIndexOffsets, &mVertexOffsets](LocalRootSignature::HitGroupI
             if (expr) {
                 Framework::Desc::TextureDesc desc = textureDatas[descID];
                 Texture2D texture;
-                texture.init(device, desc);
+                texture.init(device, commandList, desc);
                 texture.createSRV(device, mDescriptorTable->getCPUHandle(heapIndex),
                     mDescriptorTable->getGPUHandle(heapIndex));
                 mTextures[type] = texture;
@@ -500,7 +501,7 @@ auto getOffset = [&mIndexOffsets, &mVertexOffsets](LocalRootSignature::HitGroupI
             Framework::Desc::TextureDesc desc
                 = Framework::Utility::TextureLoader::load(texPath / "back2.png");
             Texture2D texture;
-            texture.init(device, desc);
+            texture.init(device, commandList, desc);
             texture.createSRV(device,
                 mDescriptorTable->getCPUHandle(DescriptorHeapIndex::Quad_Albedo),
                 mDescriptorTable->getGPUHandle(DescriptorHeapIndex::Quad_Albedo));
@@ -595,7 +596,7 @@ auto getOffset = [&mIndexOffsets, &mVertexOffsets](LocalRootSignature::HitGroupI
             auto desc = loader.load(texPath / "checker.jpg");
             mTextureIDs[ModelTextureType::Checker] = ModelTextureType::Checker;
             Texture2D texture;
-            texture.init(device, desc);
+            texture.init(device, commandList, desc);
             texture.createSRV(device,
                 mDescriptorTable->getCPUHandle(DescriptorHeapIndex::Texture_Checker),
                 mDescriptorTable->getGPUHandle(DescriptorHeapIndex::Texture_Checker));
@@ -612,8 +613,6 @@ auto getOffset = [&mIndexOffsets, &mVertexOffsets](LocalRootSignature::HitGroupI
         ID3D12CommandAllocator* allocator = mDeviceResource->getCommandAllocator();
         ID3D12Device5* dxrDevice = mDXRDevice.getDXRDevice();
         ID3D12GraphicsCommandList5* dxrCommandList = mDXRDevice.getDXRCommandList();
-
-        commandList->Reset(allocator, nullptr);
 
         for (int i = 0; i < BottomLevelASType::Count; i++) {
             mBLASBuffers[i] = std::make_unique<BottomLevelAccelerationStructure>();

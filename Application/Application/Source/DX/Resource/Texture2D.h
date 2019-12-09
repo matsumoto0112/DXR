@@ -18,8 +18,11 @@ namespace Framework::DX {
          * @brief デストラクタ
          */
         ~Texture2D() {}
-
-        void init(ID3D12Device* device, const Desc::TextureDesc& desc);
+        /**
+         * @brief 初期化処理
+         */
+        void init(ID3D12Device* device, ID3D12GraphicsCommandList* commandList,
+            const Desc::TextureDesc& desc);
         /**
          * @brief シェーダーリソースビューを作成する
          * @param device デバイス
@@ -29,9 +32,7 @@ namespace Framework::DX {
 
         //private:
         Buffer mBuffer;
-        UINT mWidth = 0;
-        UINT mHeight = 0;
+        Buffer mImmediateBuffer;
         ShaderResourceView mView;
-        Desc::TextureFormat mFormat;
     };
 } // namespace Framework::DX

@@ -56,18 +56,38 @@ namespace Framework::DX {
          * @brief リソースの書き込み
          */
         void writeResource(const void* data, UINT size);
+        /**
+         * @brief リソースの状態を移行する
+         */
+        void transition(ID3D12GraphicsCommandList* commandList, D3D12_RESOURCE_STATES nextState);
+        /**
+         * @brief リソースを取得する
+         */
         ID3D12Resource* getResource() const {
             return mResource.Get();
         }
+        /**
+         * @brief リソースの種類を取得する
+         */
         Usage getResourceType() const {
             return mResourceType;
         }
+        /**
+         * @brief リソースのメモリサイズを取得する
+         */
         UINT getSize() const {
             return mSize;
         }
+        /**
+         * @brief リソースのストライドを取得する
+         */
         UINT getStride() const {
             return mStride;
         }
+
+    private:
+        void init(ID3D12Device* device, Usage usage, const CD3DX12_HEAP_PROPERTIES& props,
+            const CD3DX12_RESOURCE_DESC& desc, const std::wstring& name);
 
     private:
         Comptr<ID3D12Resource> mResource{ nullptr };
