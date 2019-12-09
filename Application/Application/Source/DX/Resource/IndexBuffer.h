@@ -20,12 +20,8 @@ namespace Framework::DX {
         /**
          * @brief 初期化処理
          */
-        void init(ID3D12Device* device, const std::vector<UINT>& indices,
-            D3D_PRIMITIVE_TOPOLOGY topology, const std::wstring& name);
-        /**
-         * @brief 初期化処理
-         */
-        void init(ID3D12Device* device, const std::vector<UINT16>& indices,
+        template <class T>
+        void init(ID3D12Device* device, const std::vector<T>& indices,
             D3D_PRIMITIVE_TOPOLOGY topology, const std::wstring& name);
         /**
          * @brief コマンドリストにセットする
@@ -57,4 +53,13 @@ namespace Framework::DX {
             = D3D_PRIMITIVE_TOPOLOGY::D3D_PRIMITIVE_TOPOLOGY_UNDEFINED; //!< トポロジーの種類
         UINT mIndexNum = 0; //!< インデックス数
     };
+    template <class T>
+    inline void IndexBuffer::init(ID3D12Device* device, const std::vector<T>& indices,
+        D3D_PRIMITIVE_TOPOLOGY topology, const std::wstring& name) {
+        mIndexNum = static_cast<UINT>(indices.size());
+        mTopology = topology;
+        mBuffer.init(device, Buffer::Usage::IndexBuffer, mIndexNum * sizeof(T), sizeof(T), name);
+        mBuffer.writeResource(indices.data(), mIndexNum * sizeof(T));
+        mView.init(mBuffer);
+    }
 } // namespace Framework::DX

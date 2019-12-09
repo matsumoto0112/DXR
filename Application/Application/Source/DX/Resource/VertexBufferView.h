@@ -1,3 +1,8 @@
+/**
+ * @file VertexBufferView.h
+ * @brief 頂点バッファビュー
+ */
+
 #pragma once
 #include "DX/Resource/Buffer.h"
 
@@ -19,7 +24,7 @@ namespace Framework::DX {
         /**
          * @brief 初期化
          */
-        void init(Buffer* buffer);
+        void init(const Buffer& buffer);
         /**
          * @brief ビューの取得
          */

@@ -8,13 +8,12 @@ namespace {
 
 namespace Framework::DX {
     //初期化
-    void IndexBufferView::init(Buffer* buffer) {
-        MY_THROW_IF_FALSE_LOG(buffer, "バッファが存在しません");
+    void IndexBufferView::init(const Buffer& buffer) {
         MY_ASSERTION(
-            buffer->getResourceType() == Buffer::Usage::IndexBuffer, "バッファの種類が違います。");
+            buffer.getResourceType() == Buffer::Usage::IndexBuffer, "バッファの種類が違います。");
 
-        mView.BufferLocation = buffer->getResource()->GetGPUVirtualAddress();
-        mView.Format = calcFormatFromStride(buffer->getStride());
-        mView.SizeInBytes = buffer->getSize();
+        mView.BufferLocation = buffer.getResource()->GetGPUVirtualAddress();
+        mView.Format = calcFormatFromStride(buffer.getStride());
+        mView.SizeInBytes = buffer.getSize();
     }
 } // namespace Framework::DX

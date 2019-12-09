@@ -47,6 +47,6 @@ namespace Framework::DX {
         mBuffer.init(device, Buffer::Usage::VertexBuffer,
             static_cast<UINT>(mVertexCount * sizeof(T)), static_cast<UINT>(sizeof(T)), name);
         mBuffer.writeResource(vertices.data(), static_cast<UINT>(mVertexCount * sizeof(T)));
-        mView.init(&mBuffer);
+        mView.init(mBuffer);
     }
 } // namespace Framework::DX
