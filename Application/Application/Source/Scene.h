@@ -33,6 +33,16 @@ namespace DescriptorIndex {
     };
 }
 
+namespace ModelType {
+    enum Enum {
+        UFO,
+        Floor,
+        Sphere,
+
+        Count,
+    };
+}
+
 class Scene {
 public:
     Scene(Framework::DX::DeviceResource* device, Framework::Input::InputManager* inputManager,
@@ -54,8 +64,8 @@ private:
     Framework::DX::DeviceResource* mDeviceResource;
     Framework::Input::InputManager* mInputManager;
     Framework::DX::DXRDevice mDXRDevice;
-    std::array<std::unique_ptr<Framework::DX::BottomLevelAccelerationStructure>,
-        BottomLevelASType::Count>
+    std::unordered_map<ModelType::Enum,
+        std::unique_ptr<Framework::DX::BottomLevelAccelerationStructure>>
         mBLASBuffers;
     std::unique_ptr<Framework::DX::TopLevelAccelerationStructure> mTLASBuffer;
     std::unique_ptr<Framework::DX::ConstantBuffer<SceneConstantBuffer>> mSceneCB;
@@ -71,7 +81,6 @@ private:
     Framework::DX::ShaderResourceView mResourceVertexBufferSRV;
     Framework::DX::Buffer mRaytracingOutput;
     Framework::DX::UnorderedAccessView mRaytracingOutputUAV;
-    //Framework::DX::IBuffer mRaytracingOutput;
     std::vector<Framework::DX::Texture2D> mTextures;
 
     std::unique_ptr<Framework::DX::DXRPipelineStateObject> mDXRStateObject;

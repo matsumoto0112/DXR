@@ -38,21 +38,31 @@ namespace {
     }
     static const std::wstring MISS_SHADER_NAME = L"Miss";
     static const std::wstring MISS_SHADOW_SHADER_NAME = L"Shadow";
-    static const std::wstring CLOSEST_HIT_NORMAL_NAME = L"ClosestHit_Normal";
-    static const std::wstring CLOSEST_HIT_PLANE_NAME = L"ClosestHit_Plane";
-    static const std::wstring CLOSEST_HIT_SPHERE_NAME = L"ClosestHit_Sphere";
     static const std::wstring RAY_GEN_NAME = L"RayGenShader";
-    static const std::wstring HIT_GROUP_UFO_NAME = L"HitGroup_UFO";
-    static const std::wstring HIT_GROUP_FLOOR_NAME = L"HitGroup_Floor";
-    static const std::wstring HIT_GROUP_SPHERE_NAME = L"HitGroup_Sphere";
+
+    struct HitGroup {
+        const unsigned char* shader;
+        UINT shaderSize;
+        std::wstring closestHitNames;
+        std::wstring hitGroupName;
+    };
+
+    static const std::vector<HitGroup> HIT_GROUP_NAMES = {
+        { g_pClosestHit_Normal, _countof(g_pClosestHit_Normal), L"ClosestHit_Normal",
+            L"HitGroup_UFO" },
+        { g_pClosestHit_Plane, _countof(g_pClosestHit_Plane), L"ClosestHit_Plane",
+            L"HitGroup_Floor" },
+        { g_pClosestHit_Sphere, _countof(g_pClosestHit_Sphere), L"ClosestHit_Sphere",
+            L"HitGroup_Sphere" },
+    };
 
     static const std::unordered_map<BottomLevelASType::MyEnum, std::wstring> MODEL_NAMES = {
         { BottomLevelASType::UFO, L"UFO.glb" },
         { BottomLevelASType::Sphere, L"sphere.glb" },
-        { BottomLevelASType::Floor, L"floor.glb" },
+        { BottomLevelASType::Floor, L"field.glb" },
     };
 
-    static constexpr UINT UFO_COUNT = 0;
+    static constexpr UINT UFO_COUNT = 1;
     static constexpr UINT FLOOR_COUNT = 1;
     static constexpr UINT SPHERE_COUNT = 100;
 
@@ -201,8 +211,12 @@ namespace {
         TexturePtr mMetallicRoughnessTexture;
         TexturePtr mEmissiveMapTexture;
         TexturePtr mOcclusionMapTexture;
+        ShaderKey::MyEnum mShaderKey;
+        UINT mVertexOffset;
+        UINT mIndexOffset;
     };
-    std::vector<GLBModel> mModels;
+
+    std::unordered_map<ModelType::Enum, GLBModel> mModels;
 } // namespace
 
 Scene::Scene(Framework::DX::DeviceResource* device, Framework::Input::InputManager* inputManager,
@@ -303,9 +317,9 @@ void Scene::render() {
     instanceDesc.flags = D3D12_RAYTRACING_INSTANCE_FLAGS::D3D12_RAYTRACING_INSTANCE_FLAG_NONE;
 
     for (UINT n = 0; n < FLOOR_COUNT; n++) {
-        XMMATRIX transform = XMMatrixScaling(100, 1, 100) * XMMatrixTranslation(0, -5, 0);
+        XMMATRIX transform = XMMatrixScaling(50, 1, 50) * XMMatrixTranslation(-100, -20, -100);
         instanceDesc.hitGroupIndex = LocalRootSignature::HitGroupIndex::Floor;
-        instanceDesc.blas = mBLASBuffers[BottomLevelASType::Floor].get();
+        instanceDesc.blas = mBLASBuffers[ModelType::Floor].get();
         instanceDesc.transform = transform;
         mTLASBuffer->add(instanceDesc);
     }
@@ -318,7 +332,7 @@ void Scene::render() {
         float z = (n / root) * 20.0f;
         XMMATRIX transform = XMMatrixRotationY(X) * XMMatrixTranslation(x, 5.0f, z);
         instanceDesc.hitGroupIndex = LocalRootSignature::HitGroupIndex::Sphere;
-        instanceDesc.blas = mBLASBuffers[BottomLevelASType::Sphere].get();
+        instanceDesc.blas = mBLASBuffers[ModelType::Sphere].get();
         instanceDesc.transform = transform;
         mTLASBuffer->add(instanceDesc);
     }
@@ -442,17 +456,6 @@ void Scene::createDeviceDependentResources() {
     mDescriptorTable->create(mDeviceResource->getDevice(), desc);
 }
 
-std::array<UINT, LocalRootSignature::HitGroupIndex::Count> mIndexOffsets;
-std::array<UINT, LocalRootSignature::HitGroupIndex::Count> mVertexOffsets;
-auto getOffset = [&mIndexOffsets, &mVertexOffsets](LocalRootSignature::HitGroupIndex::MyEnum e) {
-    if (e == 0)
-        return std::make_tuple<UINT, UINT>(0, 0);
-    else
-        return std::make_tuple(
-            std::accumulate(mIndexOffsets.begin(), mIndexOffsets.begin() + e, 0u),
-            std::accumulate(mVertexOffsets.begin(), mVertexOffsets.begin() + e, 0u));
-};
-
 {
     ID3D12Device* device = mDeviceResource->getDevice();
     ID3D12GraphicsCommandList* commandList = mDeviceResource->getCommandList();
@@ -503,41 +506,53 @@ auto getOffset = [&mIndexOffsets, &mVertexOffsets](LocalRootSignature::HitGroupI
                 Color4(1, 1, 1, 1), DescriptorHeapIndex::DefaultTexture_OcclusionMap);
         }
         UINT heapStartIndex = DescriptorHeapIndex::ModelTextureStart;
+        UINT vertexOffset = 0;
+        UINT indexOffset = 0;
+
         {
             GLBModel model;
             model.init(device, commandList, modelPath / MODEL_NAMES.at(BottomLevelASType::UFO),
                 mDescriptorTable.get(), heapStartIndex);
-            mModels.emplace_back(model);
             resourceIndices.insert(
                 resourceIndices.end(), model.mIndices.begin(), model.mIndices.end());
             resourceVertices.insert(
                 resourceVertices.end(), model.mVertices.begin(), model.mVertices.end());
-            mIndexOffsets[LocalRootSignature::HitGroupIndex::UFO] = model.mIndices.size();
-            mVertexOffsets[LocalRootSignature::HitGroupIndex::UFO] = model.mVertices.size();
+            model.mVertexOffset = vertexOffset;
+            model.mIndexOffset = indexOffset;
+            vertexOffset += model.mVertices.size();
+            indexOffset += model.mIndices.size();
+            model.mShaderKey = ShaderKey::HitGroup_UFO;
+            mModels[ModelType::UFO] = model;
         }
         {
             GLBModel model;
             model.init(device, commandList, modelPath / MODEL_NAMES.at(BottomLevelASType::Floor),
                 mDescriptorTable.get(), heapStartIndex);
-            mModels.emplace_back(model);
             resourceIndices.insert(
                 resourceIndices.end(), model.mIndices.begin(), model.mIndices.end());
             resourceVertices.insert(
                 resourceVertices.end(), model.mVertices.begin(), model.mVertices.end());
-            mIndexOffsets[LocalRootSignature::HitGroupIndex::Floor] = model.mIndices.size();
-            mVertexOffsets[LocalRootSignature::HitGroupIndex::Floor] = model.mVertices.size();
+            model.mVertexOffset = vertexOffset;
+            model.mIndexOffset = indexOffset;
+            vertexOffset += model.mVertices.size();
+            indexOffset += model.mIndices.size();
+            model.mShaderKey = ShaderKey::HitGroup_Floor;
+            mModels[ModelType::Floor] = model;
         }
         {
             GLBModel model;
             model.init(device, commandList, modelPath / MODEL_NAMES.at(BottomLevelASType::Sphere),
                 mDescriptorTable.get(), heapStartIndex);
-            mModels.emplace_back(model);
             resourceIndices.insert(
                 resourceIndices.end(), model.mIndices.begin(), model.mIndices.end());
             resourceVertices.insert(
                 resourceVertices.end(), model.mVertices.begin(), model.mVertices.end());
-            mIndexOffsets[LocalRootSignature::HitGroupIndex::Sphere] = model.mIndices.size();
-            mVertexOffsets[LocalRootSignature::HitGroupIndex::Sphere] = model.mVertices.size();
+            model.mVertexOffset = vertexOffset;
+            model.mIndexOffset = indexOffset;
+            vertexOffset += model.mVertices.size();
+            indexOffset += model.mIndices.size();
+            model.mShaderKey = ShaderKey::HitGroup_Sphere;
+            mModels[ModelType::Sphere] = model;
         }
     }
     {
@@ -547,10 +562,10 @@ auto getOffset = [&mIndexOffsets, &mVertexOffsets](LocalRootSignature::HitGroupI
         ID3D12Device5* dxrDevice = mDXRDevice.getDXRDevice();
         ID3D12GraphicsCommandList5* dxrCommandList = mDXRDevice.getDXRCommandList();
 
-        for (int i = 0; i < mModels.size(); i++) {
-            mBLASBuffers[i] = std::make_unique<BottomLevelAccelerationStructure>();
-            mBLASBuffers[i]->init(mDXRDevice, mModels[i].mVertexBuffer,
-                static_cast<UINT>(sizeof(Vertex)), mModels[i].mIndexBuffer,
+        for (auto&& model : mModels) {
+            mBLASBuffers[model.first] = std::make_unique<BottomLevelAccelerationStructure>();
+            mBLASBuffers[model.first]->init(mDXRDevice, model.second.mVertexBuffer,
+                static_cast<UINT>(sizeof(Vertex)), model.second.mIndexBuffer,
                 static_cast<UINT>(sizeof(Index)));
         }
 
@@ -577,21 +592,19 @@ auto getOffset = [&mIndexOffsets, &mVertexOffsets](LocalRootSignature::HitGroupI
     mDXRStateObject = std::make_unique<DXRPipelineStateObject>(&mDXRDevice);
 
     mDXRStateObject->exportShader((void*)g_pMiss, _countof(g_pMiss), MISS_SHADER_NAME);
-    mDXRStateObject->exportShader(
-        (void*)g_pClosestHit_Normal, _countof(g_pClosestHit_Normal), CLOSEST_HIT_NORMAL_NAME);
-    mDXRStateObject->exportShader(
-        (void*)g_pClosestHit_Plane, _countof(g_pClosestHit_Plane), CLOSEST_HIT_PLANE_NAME);
-    mDXRStateObject->exportShader(
-        (void*)g_pClosestHit_Sphere, _countof(g_pClosestHit_Sphere), CLOSEST_HIT_SPHERE_NAME);
+
+    UINT key = ShaderKey::HitGroup_UFO;
+    for (auto&& shader : HIT_GROUP_NAMES) {
+        mDXRStateObject->exportShader(
+            (void*)shader.shader, shader.shaderSize, shader.closestHitNames);
+        mDXRStateObject->bindHitGroup({ shader.hitGroupName,
+            D3D12_HIT_GROUP_TYPE::D3D12_HIT_GROUP_TYPE_TRIANGLES, shader.closestHitNames });
+        mDXRStateObject->bindLocalRootSignature(*mHitGroupLocalRootSignature, shader.hitGroupName);
+        mDXRStateObject->associateShaderInfoWithKey(
+            key++, ShaderType::HitGroup, shader.hitGroupName);
+    }
     mDXRStateObject->exportShader((void*)g_pRayGenShader, _countof(g_pRayGenShader), RAY_GEN_NAME);
     mDXRStateObject->exportShader((void*)g_pShadow, _countof(g_pShadow), MISS_SHADOW_SHADER_NAME);
-
-    mDXRStateObject->bindHitGroup({ HIT_GROUP_UFO_NAME,
-        D3D12_HIT_GROUP_TYPE::D3D12_HIT_GROUP_TYPE_TRIANGLES, CLOSEST_HIT_NORMAL_NAME });
-    mDXRStateObject->bindHitGroup({ HIT_GROUP_FLOOR_NAME,
-        D3D12_HIT_GROUP_TYPE::D3D12_HIT_GROUP_TYPE_TRIANGLES, CLOSEST_HIT_PLANE_NAME });
-    mDXRStateObject->bindHitGroup({ HIT_GROUP_SPHERE_NAME,
-        D3D12_HIT_GROUP_TYPE::D3D12_HIT_GROUP_TYPE_TRIANGLES, CLOSEST_HIT_SPHERE_NAME });
 
     UINT payloadSize
         = Framework::Math::MathUtil::mymax<UINT>({ sizeof(RayPayload), sizeof(ShadowPayload) });
@@ -600,9 +613,6 @@ auto getOffset = [&mIndexOffsets, &mVertexOffsets](LocalRootSignature::HitGroupI
     mDXRStateObject->setConfig(payloadSize, attrSize, maxRecursionDepth);
 
     mDXRStateObject->bindLocalRootSignature(*mMissLocalRootSignature, MISS_SHADER_NAME);
-    mDXRStateObject->bindLocalRootSignature(*mHitGroupLocalRootSignature, HIT_GROUP_UFO_NAME);
-    mDXRStateObject->bindLocalRootSignature(*mHitGroupLocalRootSignature, HIT_GROUP_FLOOR_NAME);
-    mDXRStateObject->bindLocalRootSignature(*mHitGroupLocalRootSignature, HIT_GROUP_SPHERE_NAME);
 
     mDXRStateObject->bindGlobalRootSignature(*mGlobalRootSignature);
 
@@ -612,13 +622,6 @@ auto getOffset = [&mIndexOffsets, &mVertexOffsets](LocalRootSignature::HitGroupI
         ShaderKey::MissShader, ShaderType::Miss, MISS_SHADER_NAME);
     mDXRStateObject->associateShaderInfoWithKey(
         ShaderKey::MissShadowShader, ShaderType::Miss, MISS_SHADOW_SHADER_NAME);
-    mDXRStateObject->associateShaderInfoWithKey(
-        ShaderKey::HitGroup_UFO, ShaderType::HitGroup, HIT_GROUP_UFO_NAME);
-    mDXRStateObject->associateShaderInfoWithKey(
-        ShaderKey::HitGroup_Floor, ShaderType::HitGroup, HIT_GROUP_FLOOR_NAME);
-    mDXRStateObject->associateShaderInfoWithKey(
-        ShaderKey::HitGroup_Sphere, ShaderType::HitGroup, HIT_GROUP_SPHERE_NAME);
-
     mDXRStateObject->createPipeline();
     mDXRStateObject->prebuild();
 
@@ -648,27 +651,22 @@ auto getOffset = [&mIndexOffsets, &mVertexOffsets](LocalRootSignature::HitGroupI
         mDXRStateObject->setShaderTableConfig(
             ShaderType::HitGroup, 4, sizeof(RootArgument), L"HitGroupShaderTable");
 
-        auto setRootArgument
-            = [&](LocalRootSignature::HitGroupIndex::MyEnum hitGroupIndex, const GLBModel& model) {
-                  RootArgument arg;
-                  arg.cb.indexOffset = std::get<0>(getOffset(hitGroupIndex));
-                  arg.cb.vertexOffset = std::get<1>(getOffset(hitGroupIndex));
-                  arg.albedo = model.mAlbedoTexture->getView().getGPUHandle();
-                  arg.normal = model.mNormalMapTexture->getView().getGPUHandle();
-                  arg.metallicRoughness = model.mMetallicRoughnessTexture->getView().getGPUHandle();
-                  arg.emissive = model.mEmissiveMapTexture->getView().getGPUHandle();
-                  arg.occlusion = model.mOcclusionMapTexture->getView().getGPUHandle();
-                  return arg;
-              };
+        auto setRootArgument = [&](const GLBModel& model) {
+            RootArgument arg;
+            arg.cb.indexOffset = model.mIndexOffset;
+            arg.cb.vertexOffset = model.mVertexOffset;
+            arg.albedo = model.mAlbedoTexture->getView().getGPUHandle();
+            arg.normal = model.mNormalMapTexture->getView().getGPUHandle();
+            arg.metallicRoughness = model.mMetallicRoughnessTexture->getView().getGPUHandle();
+            arg.emissive = model.mEmissiveMapTexture->getView().getGPUHandle();
+            arg.occlusion = model.mOcclusionMapTexture->getView().getGPUHandle();
+            return arg;
+        };
 
-        mDXRStateObject->appendShaderTable(ShaderKey::HitGroup_UFO,
-            &setRootArgument(LocalRootSignature::HitGroupIndex::UFO, mModels[0]));
-
-        mDXRStateObject->appendShaderTable(ShaderKey::HitGroup_Floor,
-            &setRootArgument(LocalRootSignature::HitGroupIndex::Floor, mModels[1]));
-
-        mDXRStateObject->appendShaderTable(ShaderKey::HitGroup_Sphere,
-            &setRootArgument(LocalRootSignature::HitGroupIndex::Sphere, mModels[2]));
+        for (auto&& model : mModels) {
+            mDXRStateObject->appendShaderTable(
+                model.second.mShaderKey, &setRootArgument(model.second));
+        }
 
         mDXRStateObject->buildShaderTable();
     }

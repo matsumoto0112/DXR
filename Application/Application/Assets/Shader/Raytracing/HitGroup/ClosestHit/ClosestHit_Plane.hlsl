@@ -21,8 +21,7 @@
     float4 color = g_sceneCB.lightAmbient;
 
     //ディフューズ
-    //float3 diffuse = SampleTexture(albedoTex, samLinear, uv).rgb;
-    float3 diffuse = float3(0.2f, 0.2f, 0.2f);
+    float3 diffuse = SampleTexture(albedoTex, samLinear, uv).rgb;
     float dotNL = saturate(dot(N, L));
     color.rgb += (diffuse * g_sceneCB.lightDiffuse.rgb) * dotNL / PI;
 
