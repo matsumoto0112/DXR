@@ -20,7 +20,8 @@ namespace Framework::DX {
         mFormat = toFormat(desc.format);
         mBuffer.initAsTexture2D(device, mFormat, desc.width, desc.height, desc.name);
         mImmediateBuffer.init(device, Buffer::Usage::ShaderResource,
-            GetRequiredIntermediateSize(mBuffer.getResource(), 0, 1), 0, L"Immediate" + desc.name);
+            static_cast<UINT>(GetRequiredIntermediateSize(mBuffer.getResource(), 0, 1)), 0,
+            L"Immediate" + desc.name);
 
         D3D12_SUBRESOURCE_DATA subresource = {};
         subresource.pData = desc.pixels.data();

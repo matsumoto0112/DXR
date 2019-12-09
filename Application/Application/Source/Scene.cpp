@@ -769,4 +769,6 @@ void Scene::createWindowDependentResources() {
         mDescriptorTable->getGPUHandle(DescriptorHeapIndex::RaytracingOutput));
 }
 
-void Scene::releaseWindowDependentResources() {}
+void Scene::releaseWindowDependentResources() {
+    mRaytracingOutput.reset();
+}

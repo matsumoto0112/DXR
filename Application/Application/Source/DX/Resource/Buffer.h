@@ -34,6 +34,10 @@ namespace Framework::DX {
          */
         ~Buffer();
         /**
+         * @brief リソースをリセットする
+         */
+        void reset();
+        /**
          * @brief 通常のバッファとして初期化
          */
         void init(

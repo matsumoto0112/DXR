@@ -19,7 +19,18 @@ namespace Framework::DX {
      * @brief デストラクタ
      */
     Buffer::~Buffer() {
-        if (mMapped) { mResource->Unmap(0, nullptr); }
+        reset();
+    }
+    void Buffer::reset() {
+        if (mMapped) {
+            mResource->Unmap(0, nullptr);
+            mMapped = nullptr;
+        }
+        if (mResource) mResource.Reset();
+        mResourceType = Usage::ConstantBuffer;
+        mCurrentState = D3D12_RESOURCE_STATES::D3D12_RESOURCE_STATE_COMMON;
+        mSize = 0;
+        mStride = 0;
     }
     /**
      * @brief 初期化
