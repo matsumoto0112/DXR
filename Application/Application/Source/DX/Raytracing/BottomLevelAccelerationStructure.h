@@ -18,18 +18,22 @@ namespace Framework::DX {
     public:
         /**
          * @brief コンストラクタ
+         */
+        BottomLevelAccelerationStructure() {}
+        /**
+         * @brief デストラクタ
+         */
+        ~BottomLevelAccelerationStructure() {}
+        /**
+         * @brief 初期化
          * @param device DXR用デバイス
          * @param vertexBuffer 頂点バッファ
          * @param vertexSize 頂点のバイトサイズ
          * @param indexBuffer インデックスバッファ
          * @param indexSize インデックスのバイトサイズ
          */
-        BottomLevelAccelerationStructure(const DXRDevice& device, const VertexBuffer& vertexBuffer,
-            UINT vertexSize, const IndexBuffer& indexBuffer, UINT indexSize);
-        /**
-         * @brief デストラクタ
-         */
-        ~BottomLevelAccelerationStructure();
+        void init(const DXRDevice& device, const VertexBuffer& vertexBuffer, UINT vertexSize,
+            const IndexBuffer& indexBuffer, UINT indexSize);
         /**
          * @brief バッファの取得
          */

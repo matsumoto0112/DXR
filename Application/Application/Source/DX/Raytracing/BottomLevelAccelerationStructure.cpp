@@ -12,8 +12,7 @@ namespace {
 } // namespace
 
 namespace Framework::DX {
-
-    BottomLevelAccelerationStructure::BottomLevelAccelerationStructure(const DXRDevice& device,
+    void BottomLevelAccelerationStructure::init(const DXRDevice& device,
         const VertexBuffer& vertexBuffer, UINT vertexSize, const IndexBuffer& indexBuffer,
         UINT indexSize) {
         const UINT indexCount
@@ -73,5 +72,4 @@ namespace Framework::DX {
         device.getDXRCommandList()->ResourceBarrier(
             1, &CD3DX12_RESOURCE_BARRIER::UAV(mBuffer.Get()));
     }
-    BottomLevelAccelerationStructure::~BottomLevelAccelerationStructure() {}
 } // namespace Framework::DX

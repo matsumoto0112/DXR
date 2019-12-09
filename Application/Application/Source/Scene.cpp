@@ -616,9 +616,9 @@ auto getOffset = [&mIndexOffsets, &mVertexOffsets](LocalRootSignature::HitGroupI
         commandList->Reset(allocator, nullptr);
 
         for (int i = 0; i < BottomLevelASType::Count; i++) {
-            mBLASBuffers[i] = std::make_unique<BottomLevelAccelerationStructure>(mDXRDevice,
-                mVertexBuffer[i], static_cast<UINT>(sizeof(Vertex)), mIndexBuffer[i],
-                static_cast<UINT>(sizeof(Index)));
+            mBLASBuffers[i] = std::make_unique<BottomLevelAccelerationStructure>();
+            mBLASBuffers[i]->init(mDXRDevice, mVertexBuffer[i], static_cast<UINT>(sizeof(Vertex)),
+                mIndexBuffer[i], static_cast<UINT>(sizeof(Index)));
         }
 
         mTLASBuffer = std::make_unique<TopLevelAccelerationStructure>();

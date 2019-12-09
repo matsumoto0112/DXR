@@ -1,3 +1,8 @@
+/**
+ * @file ShaderResourceView.h
+ * @brief シェーダーリソースビュークラス
+ */
+
 #pragma once
 #include "DX/Resource/Buffer.h"
 
