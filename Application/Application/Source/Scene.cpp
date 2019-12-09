@@ -726,15 +726,15 @@ auto getOffset = [&mIndexOffsets, &mVertexOffsets](LocalRootSignature::HitGroupI
             RootArgument arg;
             arg.cb.indexOffset = std::get<0>(getOffset(hitGroupIndex));
             arg.cb.vertexOffset = std::get<1>(getOffset(hitGroupIndex));
-            arg.albedo = mTextures[mTextureIDs[texOffset]].mView.getGPUHandle();
+            arg.albedo = mTextures[mTextureIDs[texOffset]].getView().getGPUHandle();
             arg.normal
-                = mTextures[mTextureIDs[ModelTextureType(texOffset + 1)]].mView.getGPUHandle();
+                = mTextures[mTextureIDs[ModelTextureType(texOffset + 1)]].getView().getGPUHandle();
             arg.metallicRoughness
-                = mTextures[mTextureIDs[ModelTextureType(texOffset + 2)]].mView.getGPUHandle();
+                = mTextures[mTextureIDs[ModelTextureType(texOffset + 2)]].getView().getGPUHandle();
             arg.emissive
-                = mTextures[mTextureIDs[ModelTextureType(texOffset + 3)]].mView.getGPUHandle();
+                = mTextures[mTextureIDs[ModelTextureType(texOffset + 3)]].getView().getGPUHandle();
             arg.occlusion
-                = mTextures[mTextureIDs[ModelTextureType(texOffset + 4)]].mView.getGPUHandle();
+                = mTextures[mTextureIDs[ModelTextureType(texOffset + 4)]].getView().getGPUHandle();
             return arg;
         };
 

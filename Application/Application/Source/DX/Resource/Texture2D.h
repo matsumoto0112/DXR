@@ -29,10 +29,23 @@ namespace Framework::DX {
          */
         void createSRV(ID3D12Device* device, const D3D12_CPU_DESCRIPTOR_HANDLE& cpuHandle,
             const D3D12_GPU_DESCRIPTOR_HANDLE& gpuHandle);
+        /**
+         * @brief テクスチャバッファの取得
+         */
+        const Buffer& getBuffer() const {
+            return mBuffer;
+        }
+        /**
+         * @brief ビューの取得
+         */
+        const ShaderResourceView& getView() const {
+            return mView;
+        }
 
-        //private:
+    private:
         Buffer mBuffer;
         Buffer mImmediateBuffer;
+        DXGI_FORMAT mFormat = DXGI_FORMAT::DXGI_FORMAT_UNKNOWN;
         ShaderResourceView mView;
     };
 } // namespace Framework::DX
