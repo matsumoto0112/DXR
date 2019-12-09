@@ -11,6 +11,7 @@
 
 #define NOMINMAX
 #include <Windows.h>
+#include <atlbase.h>
 #include <algorithm>
 #include <array>
 #include <filesystem>
@@ -20,6 +21,8 @@
 #include <string>
 #include <unordered_map>
 #include <vector>
+
+#include <initguid.h>
 
 #include <d3d12.h>
 #include <dxgi1_6.h>

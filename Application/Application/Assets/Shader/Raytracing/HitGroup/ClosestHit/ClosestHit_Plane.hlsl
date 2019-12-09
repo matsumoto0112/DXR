@@ -5,8 +5,7 @@
 #include "../Helper.hlsli"
 #include "../Local.hlsli"
 
-[shader("closesthit")]
-void ClosestHit_Plane(inout RayPayload payload, in MyAttr attr) {
+[shader("closesthit")] void ClosestHit_Plane(inout RayPayload payload, in MyAttr attr) {
     float3 hitPosition = hitWorldPosition();
     float3 currentRayDirection = WorldRayDirection();
     float3 N = GetNormal(attr);
@@ -22,7 +21,8 @@ void ClosestHit_Plane(inout RayPayload payload, in MyAttr attr) {
     float4 color = g_sceneCB.lightAmbient;
 
     //ディフューズ
-    float3 diffuse = SampleTexture(albedoTex, samLinear, uv).rgb;
+    //float3 diffuse = SampleTexture(albedoTex, samLinear, uv).rgb;
+    float3 diffuse = float3(0.2f, 0.2f, 0.2f);
     float dotNL = saturate(dot(N, L));
     color.rgb += (diffuse * g_sceneCB.lightDiffuse.rgb) * dotNL / PI;
 

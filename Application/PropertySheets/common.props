@@ -26,6 +26,7 @@
     <Link>
       <AdditionalDependencies>d3d12.lib;dxgi.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <SubSystem>Windows</SubSystem>
+      <DelayLoadDLLs>d3d12.lib</DelayLoadDLLs>
     </Link>
     <FxCompile>
       <ShaderModel>6.3</ShaderModel>

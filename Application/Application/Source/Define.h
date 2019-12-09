@@ -51,7 +51,6 @@ namespace LocalRootSignature {
     namespace HitGroupIndex {
         enum MyEnum {
             UFO,
-            Quad,
             Floor,
             Sphere,
 
@@ -75,7 +74,6 @@ namespace RayType {
 namespace BottomLevelASType {
     enum MyEnum {
         UFO,
-        Quad,
         Floor,
         Sphere,
 
@@ -97,30 +95,12 @@ namespace DescriptorHeapIndex {
         DefaultTexture_EmissiveMap,
         DefaultTexture_OcclusionMap,
 
-        UFO_Albedo,
-        UFO_NormalMap,
-        UFO_MetallicRoughnessMap,
-        UFO_EmissiveMap,
-        UFO_OcclusionMap,
-
-        Quad_Albedo,
-
-        Plane_Albedo,
-        Plane_NormalMap,
-        Plane_MetallicRoughnessMap,
-        Plane_EmissiveMap,
-        Plane_OcclusionMap,
-
-        Sphere_Albedo,
-        Sphere_NormalMap,
-        Sphere_MetallicRoughnessMap,
-        Sphere_EmissiveMap,
-        Sphere_OcclusionMap,
-
         Texture_Checker,
 
         ResourceIndexBuffer,
         ResourceVertexBuffer,
         RaytracingOutput,
+
+        ModelTextureStart,
     };
 }
