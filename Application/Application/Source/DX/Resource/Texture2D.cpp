@@ -18,8 +18,7 @@ namespace Framework::DX {
     void Texture2D::init(ID3D12Device* device, ID3D12GraphicsCommandList* commandList,
         const Desc::TextureDesc& desc) {
         mFormat = toFormat(desc.format);
-        mBuffer.init(
-            device, Buffer::Usage::ShaderResource, mFormat, desc.width, desc.height, desc.name);
+        mBuffer.initAsTexture2D(device, mFormat, desc.width, desc.height, desc.name);
         mImmediateBuffer.init(device, Buffer::Usage::ShaderResource,
             GetRequiredIntermediateSize(mBuffer.getResource(), 0, 1), 0, L"Immediate" + desc.name);
 

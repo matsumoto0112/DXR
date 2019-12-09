@@ -1,3 +1,8 @@
+/**
+ * @file Texture2D.h
+ * @brief テクスチャ2D
+ */
+
 #pragma once
 #include "DX/Resource/Buffer.h"
 #include "DX/Resource/ShaderResourceView.h"
@@ -43,9 +48,9 @@ namespace Framework::DX {
         }
 
     private:
+        DXGI_FORMAT mFormat = DXGI_FORMAT::DXGI_FORMAT_UNKNOWN;
         Buffer mBuffer;
         Buffer mImmediateBuffer;
-        DXGI_FORMAT mFormat = DXGI_FORMAT::DXGI_FORMAT_UNKNOWN;
         ShaderResourceView mView;
     };
 } // namespace Framework::DX

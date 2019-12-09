@@ -41,8 +41,8 @@ namespace Framework::DX {
         /**
          * @brief テクスチャ2Dとして初期化
          */
-        void init(ID3D12Device* device, Usage usage, DXGI_FORMAT format, UINT width, UINT height,
-            const std::wstring& name);
+        void initAsTexture2D(ID3D12Device* device, DXGI_FORMAT format, UINT width, UINT height,
+            const std::wstring& name, bool useUAV = false);
         /**
          * @brief メモリのマップ処理
          * @details メモリの書き込み領域の先頭を返す

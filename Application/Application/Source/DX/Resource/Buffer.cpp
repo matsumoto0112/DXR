@@ -34,17 +34,19 @@ namespace Framework::DX {
         init(device, usage, props, desc, name);
     }
 
-    /**
-     * @brief èâä˙âª
-     */
-    void Buffer::init(ID3D12Device* device, Usage usage, DXGI_FORMAT format, UINT width,
-        UINT height, const std::wstring& name) {
-        mCurrentState = D3D12_RESOURCE_STATES::D3D12_RESOURCE_STATE_COPY_DEST;
-
+    void Buffer::initAsTexture2D(ID3D12Device* device, DXGI_FORMAT format, UINT width, UINT height,
+        const std::wstring& name, bool useUAV) {
+        CD3DX12_RESOURCE_DESC desc = {};
+        if (useUAV) {
+            mCurrentState = D3D12_RESOURCE_STATES::D3D12_RESOURCE_STATE_UNORDERED_ACCESS;
+            desc = CD3DX12_RESOURCE_DESC::Tex2D(format, width, height, 1, 1, 1, 0,
+                D3D12_RESOURCE_FLAGS::D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS);
+        } else {
+            mCurrentState = D3D12_RESOURCE_STATES::D3D12_RESOURCE_STATE_COPY_DEST;
+            desc = CD3DX12_RESOURCE_DESC::Tex2D(format, width, height);
+        }
         CD3DX12_HEAP_PROPERTIES props(D3D12_HEAP_TYPE::D3D12_HEAP_TYPE_DEFAULT);
-        CD3DX12_RESOURCE_DESC desc = CD3DX12_RESOURCE_DESC::Tex2D(format, width, height);
-
-        init(device, usage, props, desc, name);
+        init(device, Usage::ShaderResource, props, desc, name);
     }
 
     /**

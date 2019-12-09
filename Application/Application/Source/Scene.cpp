@@ -256,13 +256,13 @@ void Scene::render() {
     ID3D12DescriptorHeap* heaps[] = { mDescriptorTable->getHeap() };
     commandList->SetDescriptorHeaps(_countof(heaps), heaps);
     commandList->SetComputeRootDescriptorTable(
-        GlobalRootSignature::Slot::RenderTarget, mRaytracingOutput.getGPUHandle());
+        GlobalRootSignature::Slot::RenderTarget, mRaytracingOutputUAV.getGPUHandle());
     commandList->SetComputeRootShaderResourceView(GlobalRootSignature::Slot::AccelerationStructure,
         mTLASBuffer->getBuffer()->GetGPUVirtualAddress());
     commandList->SetComputeRootConstantBufferView(
         GlobalRootSignature::Slot::SceneConstant, mSceneCB->gpuVirtualAddress());
     commandList->SetComputeRootDescriptorTable(
-        GlobalRootSignature::Slot::IndexBuffer, mResourcesIndexBuffer.mGPUHandle);
+        GlobalRootSignature::Slot::IndexBuffer, mResourceIndexBufferSRV.getGPUHandle());
     commandList->SetComputeRootDescriptorTable(
         GlobalRootSignature::Slot::VertexBuffer, mResourceVertexBufferSRV.getGPUHandle());
 
@@ -627,11 +627,9 @@ auto getOffset = [&mIndexOffsets, &mVertexOffsets](LocalRootSignature::HitGroupI
 
         mResourcesIndexBuffer.init(device, resourceIndices,
             D3D12_PRIMITIVE_TOPOLOGY::D3D_PRIMITIVE_TOPOLOGY_UNDEFINED, L"ResourceIndex");
-        mResourcesIndexBuffer.mCPUHandle
-            = (mDescriptorTable->getCPUHandle(DescriptorHeapIndex::ResourceIndexBuffer));
-        mResourcesIndexBuffer.mGPUHandle
-            = (mDescriptorTable->getGPUHandle(DescriptorHeapIndex::ResourceIndexBuffer));
-        mResourcesIndexBuffer.createSRV(device);
+        mResourceIndexBufferSRV = mResourcesIndexBuffer.createSRV(device,
+            mDescriptorTable->getCPUHandle(DescriptorHeapIndex::ResourceIndexBuffer),
+            mDescriptorTable->getGPUHandle(DescriptorHeapIndex::ResourceIndexBuffer));
 
         mResourcesVertexBuffer.init(device, resourceVertices, L"ResourceVertex");
         mResourceVertexBufferSRV.initAsBuffer(device, mResourcesVertexBuffer.getBuffer(),
@@ -764,28 +762,11 @@ void Scene::releaseDeviceDependentResources() {}
 void Scene::createWindowDependentResources() {
     ID3D12Device* device = mDeviceResource->getDevice();
     DXGI_FORMAT backBufferFormat = mDeviceResource->getBackBufferFormat();
-
-    auto uavResourceDesc = CD3DX12_RESOURCE_DESC::Tex2D(backBufferFormat, mWidth, mHeight, 1, 1, 1,
-        0, D3D12_RESOURCE_FLAGS::D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS);
-
-    auto heapProps = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE::D3D12_HEAP_TYPE_DEFAULT);
-    MY_THROW_IF_FAILED(
-        device->CreateCommittedResource(&heapProps, D3D12_HEAP_FLAGS::D3D12_HEAP_FLAG_NONE,
-            &uavResourceDesc, D3D12_RESOURCE_STATES::D3D12_RESOURCE_STATE_UNORDERED_ACCESS, nullptr,
-            IID_PPV_ARGS(&mRaytracingOutput.mResource)));
-    mRaytracingOutput.mResource->SetName(L"RaytracingOutput");
-
-    mRaytracingOutput.setCPUHandle(
-        mDescriptorTable->getCPUHandle(DescriptorHeapIndex::RaytracingOutput));
-    mRaytracingOutput.setGPUHandle(
+    mRaytracingOutput.initAsTexture2D(
+        device, backBufferFormat, mWidth, mHeight, L"RaytracingOutput", true);
+    mRaytracingOutputUAV.initAsTexture2D(device, mRaytracingOutput,
+        mDescriptorTable->getCPUHandle(DescriptorHeapIndex::RaytracingOutput),
         mDescriptorTable->getGPUHandle(DescriptorHeapIndex::RaytracingOutput));
-
-    D3D12_UNORDERED_ACCESS_VIEW_DESC uavDesc = {};
-    uavDesc.ViewDimension = D3D12_UAV_DIMENSION::D3D12_UAV_DIMENSION_TEXTURE2D;
-    device->CreateUnorderedAccessView(
-        mRaytracingOutput.mResource.Get(), nullptr, &uavDesc, mRaytracingOutput.mCPUHandle);
 }
 
-void Scene::releaseWindowDependentResources() {
-    mRaytracingOutput.mResource.Reset();
-}
+void Scene::releaseWindowDependentResources() {}

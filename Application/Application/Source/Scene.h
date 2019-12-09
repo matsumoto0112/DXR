@@ -11,6 +11,7 @@
 #include "DX/Resource/IndexBuffer.h"
 #include "DX/Resource/ShaderResourceView.h"
 #include "DX/Resource/Texture2D.h"
+#include "DX/Resource/UnorderedAccessView.h"
 #include "DX/Resource/VertexBuffer.h"
 #include "DX/Shader/RootSignature.h"
 #include "Define.h"
@@ -65,9 +66,12 @@ private:
     std::unique_ptr<Framework::DX::RootSignature> mHitGroupLocalRootSignature;
     std::unique_ptr<Framework::DX::DescriptorTable> mDescriptorTable;
     Framework::DX::IndexBuffer mResourcesIndexBuffer;
+    Framework::DX::ShaderResourceView mResourceIndexBufferSRV;
     Framework::DX::VertexBuffer mResourcesVertexBuffer;
     Framework::DX::ShaderResourceView mResourceVertexBufferSRV;
-    Framework::DX::IBuffer mRaytracingOutput;
+    Framework::DX::Buffer mRaytracingOutput;
+    Framework::DX::UnorderedAccessView mRaytracingOutputUAV;
+    //Framework::DX::IBuffer mRaytracingOutput;
     std::vector<Framework::DX::Texture2D> mTextures;
 
     std::unique_ptr<Framework::DX::DXRPipelineStateObject> mDXRStateObject;
