@@ -3,11 +3,9 @@
 namespace GlobalRootSignature {
     namespace Slot {
         enum MyEnum {
-            RenderTarget,
-            AccelerationStructure,
-            SceneConstant,
-            IndexBuffer,
-            VertexBuffer,
+            Cbv,
+            Srv,
+            Uav,
 
             Count
         };
