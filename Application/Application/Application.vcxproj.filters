@@ -64,7 +64,6 @@
     <ClInclude Include="Assets\Shader\Raytracing\Util\MissCompat.h" />
     <ClInclude Include="Assets\Shader\Raytracing\Util\HitGroupCompat.h" />
     <ClInclude Include="Assets\Shader\Raytracing\Util\PBR.hlsli" />
-    <ClInclude Include="Source\DX\ConstantBuffer.h" />
     <ClInclude Include="Source\DX\DescriptorTable.h" />
     <ClInclude Include="Source\DX\DeviceResource.h" />
     <ClInclude Include="Source\DX\ModelCompat.h" />
@@ -136,6 +135,7 @@
     <ClInclude Include="Source\DX\Resource\VertexBuffer.h" />
     <ClInclude Include="Source\DX\Resource\VertexBufferView.h" />
     <ClInclude Include="Source\DX\Resource\UnorderedAccessView.h" />
+    <ClInclude Include="Source\DX\ConstantBuffer.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />

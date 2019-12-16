@@ -1,7 +1,8 @@
 #include "ShaderResourceView.h"
+#include "DX/DeviceResource.h"
 
 namespace Framework::DX {
-    void ShaderResourceView::initAsTexture2D(ID3D12Device* device, const Buffer& buffer,
+    void ShaderResourceView::initAsTexture2D(DeviceResource* device, const Buffer& buffer,
         DXGI_FORMAT format, const D3D12_CPU_DESCRIPTOR_HANDLE& cpuHandle,
         const D3D12_GPU_DESCRIPTOR_HANDLE& gpuHandle) {
         mCPUHandle = cpuHandle;
@@ -17,9 +18,9 @@ namespace Framework::DX {
         srvDesc.Texture2D.PlaneSlice = 0;
         srvDesc.Texture2D.ResourceMinLODClamp = 0.0f;
 
-        device->CreateShaderResourceView(buffer.getResource(), &srvDesc, mCPUHandle);
+        device->getDevice()->CreateShaderResourceView(buffer.getResource(), &srvDesc, mCPUHandle);
     }
-    void ShaderResourceView::initAsBuffer(ID3D12Device* device, const Buffer& buffer,
+    void ShaderResourceView::initAsBuffer(DeviceResource* device, const Buffer& buffer,
         const D3D12_CPU_DESCRIPTOR_HANDLE& cpuHandle,
         const D3D12_GPU_DESCRIPTOR_HANDLE& gpuHandle) {
         mCPUHandle = cpuHandle;
@@ -33,9 +34,9 @@ namespace Framework::DX {
         srvDesc.Buffer.NumElements = bufferNum;
         srvDesc.Buffer.Flags = D3D12_BUFFER_SRV_FLAGS::D3D12_BUFFER_SRV_FLAG_NONE;
         srvDesc.Buffer.StructureByteStride = buffer.getStride();
-        device->CreateShaderResourceView(buffer.getResource(), &srvDesc, mCPUHandle);
+        device->getDevice()->CreateShaderResourceView(buffer.getResource(), &srvDesc, mCPUHandle);
     }
-    void ShaderResourceView::initAsRawBuffer(ID3D12Device* device, const Buffer& buffer,
+    void ShaderResourceView::initAsRawBuffer(DeviceResource* device, const Buffer& buffer,
         UINT numElements, const D3D12_CPU_DESCRIPTOR_HANDLE& cpuHandle,
         const D3D12_GPU_DESCRIPTOR_HANDLE& gpuHandle) {
         mCPUHandle = cpuHandle;
@@ -48,6 +49,6 @@ namespace Framework::DX {
         srvDesc.Buffer.NumElements = numElements;
         srvDesc.Buffer.Flags = D3D12_BUFFER_SRV_FLAGS::D3D12_BUFFER_SRV_FLAG_RAW;
         srvDesc.Buffer.StructureByteStride = 0;
-        device->CreateShaderResourceView(buffer.getResource(), &srvDesc, mCPUHandle);
+        device->getDevice()->CreateShaderResourceView(buffer.getResource(), &srvDesc, mCPUHandle);
     }
 } // namespace Framework::DX

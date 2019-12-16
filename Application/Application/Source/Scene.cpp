@@ -197,7 +197,7 @@ namespace {
             const D3D12_GPU_DESCRIPTOR_HANDLE& gpuHandle) {
             TexturePtr texture = std::make_shared<Texture2D>();
             texture->init(device, commandList, desc);
-            texture->createSRV(device->getDevice(), cpuHandle, gpuHandle);
+            texture->createSRV(device, cpuHandle, gpuHandle);
             return texture;
         }
 
@@ -488,7 +488,7 @@ void Scene::createDeviceDependentResources() {
                       std::shared_ptr<Texture2D> texture = std::make_shared<Texture2D>();
                       texture->init(mDeviceResource, commandList, createUnitTexture(col, name));
 
-                      texture->createSRV(device, mDescriptorTable->getCPUHandle(heapIndex),
+                      texture->createSRV(mDeviceResource, mDescriptorTable->getCPUHandle(heapIndex),
                           mDescriptorTable->getGPUHandle(heapIndex));
                       return texture;
                   };
@@ -579,12 +579,12 @@ void Scene::createDeviceDependentResources() {
 
         mResourcesIndexBuffer.init(mDeviceResource, resourceIndices,
             D3D12_PRIMITIVE_TOPOLOGY::D3D_PRIMITIVE_TOPOLOGY_UNDEFINED, L"ResourceIndex");
-        mResourceIndexBufferSRV = mResourcesIndexBuffer.createSRV(device,
+        mResourceIndexBufferSRV = mResourcesIndexBuffer.createSRV(mDeviceResource,
             mDescriptorTable->getCPUHandle(DescriptorHeapIndex::ResourceIndexBuffer),
             mDescriptorTable->getGPUHandle(DescriptorHeapIndex::ResourceIndexBuffer));
 
         mResourcesVertexBuffer.init(mDeviceResource, resourceVertices, L"ResourceVertex");
-        mResourceVertexBufferSRV.initAsBuffer(device, mResourcesVertexBuffer.getBuffer(),
+        mResourceVertexBufferSRV.initAsBuffer(mDeviceResource, mResourcesVertexBuffer.getBuffer(),
             mDescriptorTable->getCPUHandle(DescriptorHeapIndex::ResourceVertexBuffer),
             mDescriptorTable->getGPUHandle(DescriptorHeapIndex::ResourceVertexBuffer));
     }
@@ -690,7 +690,7 @@ void Scene::createWindowDependentResources() {
     desc.format = backBufferFormat;
 
     mRaytracingOutput.init(mDeviceResource, desc);
-    mRaytracingOutputUAV.initAsTexture2D(device, mRaytracingOutput,
+    mRaytracingOutputUAV.initAsTexture2D(mDeviceResource, mRaytracingOutput,
         mDescriptorTable->getCPUHandle(DescriptorHeapIndex::RaytracingOutput),
         mDescriptorTable->getGPUHandle(DescriptorHeapIndex::RaytracingOutput));
 }

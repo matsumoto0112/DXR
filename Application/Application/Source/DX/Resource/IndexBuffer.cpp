@@ -10,7 +10,7 @@ namespace Framework::DX {
     void IndexBuffer::draw(ID3D12GraphicsCommandList* commandList) {
         commandList->DrawIndexedInstanced(mIndexNum, 1, 0, 0, 0);
     }
-    ShaderResourceView IndexBuffer::createSRV(ID3D12Device* device,
+    ShaderResourceView IndexBuffer::createSRV(DeviceResource* device,
         const D3D12_CPU_DESCRIPTOR_HANDLE& cpuHandle,
         const D3D12_GPU_DESCRIPTOR_HANDLE& gpuHandle) {
         ShaderResourceView view;

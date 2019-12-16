@@ -7,6 +7,7 @@
 #include "DX/Resource/Buffer.h"
 
 namespace Framework::DX {
+    class DeviceResource;
     /**
      * @class ShaderResourceView
      * @brief シェーダーリソースビュー
@@ -21,13 +22,13 @@ namespace Framework::DX {
          * @brief デストラクタ
          */
         ~ShaderResourceView() {}
-        void initAsTexture2D(ID3D12Device* device, const Buffer& buffer, DXGI_FORMAT format,
+        void initAsTexture2D(DeviceResource* device, const Buffer& buffer, DXGI_FORMAT format,
             const D3D12_CPU_DESCRIPTOR_HANDLE& cpuHandle,
             const D3D12_GPU_DESCRIPTOR_HANDLE& gpuHandle);
-        void initAsBuffer(ID3D12Device* device, const Buffer& buffer,
+        void initAsBuffer(DeviceResource* device, const Buffer& buffer,
             const D3D12_CPU_DESCRIPTOR_HANDLE& cpuHandle,
             const D3D12_GPU_DESCRIPTOR_HANDLE& gpuHandle);
-        void initAsRawBuffer(ID3D12Device* device, const Buffer& buffer, UINT numElements,
+        void initAsRawBuffer(DeviceResource* device, const Buffer& buffer, UINT numElements,
             const D3D12_CPU_DESCRIPTOR_HANDLE& cpuHandle,
             const D3D12_GPU_DESCRIPTOR_HANDLE& gpuHandle);
         const D3D12_CPU_DESCRIPTOR_HANDLE& getCPUHandle() const {
