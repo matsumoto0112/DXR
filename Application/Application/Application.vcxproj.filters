@@ -53,6 +53,7 @@
     <ClCompile Include="Source\DX\Resource\VertexBufferView.cpp" />
     <ClCompile Include="Source\DX\Resource\ShaderResourceView.cpp" />
     <ClCompile Include="Source\DX\Resource\UnorderedAccessView.cpp" />
+    <ClCompile Include="Source\DX\Resource\ConstantBufferView.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Source\stdafx.h" />
@@ -135,7 +136,8 @@
     <ClInclude Include="Source\DX\Resource\VertexBuffer.h" />
     <ClInclude Include="Source\DX\Resource\VertexBufferView.h" />
     <ClInclude Include="Source\DX\Resource\UnorderedAccessView.h" />
-    <ClInclude Include="Source\DX\ConstantBuffer.h" />
+    <ClInclude Include="Source\DX\Resource\ConstantBuffer.h" />
+    <ClInclude Include="Source\DX\Resource\ConstantBufferView.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />

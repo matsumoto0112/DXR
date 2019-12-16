@@ -87,6 +87,7 @@
     <ClCompile Include="Source\DX\Raytracing\DXRPipelineStateObject.cpp" />
     <ClCompile Include="Source\DX\Raytracing\TopLevelAccelerationStructure.cpp" />
     <ClCompile Include="Source\DX\Resource\Buffer.cpp" />
+    <ClCompile Include="Source\DX\Resource\ConstantBufferView.cpp" />
     <ClCompile Include="Source\DX\Resource\IndexBuffer.cpp" />
     <ClCompile Include="Source\DX\Resource\IndexBufferView.cpp" />
     <ClCompile Include="Source\DX\Resource\ShaderResourceView.cpp" />
@@ -146,7 +147,6 @@
     <ClInclude Include="Source\Desc\TextureDesc.h" />
     <ClInclude Include="Source\Device\GameDevice.h" />
     <ClInclude Include="Source\Device\ISystemEventNotify.h" />
-    <ClInclude Include="Source\DX\ConstantBuffer.h" />
     <ClInclude Include="Source\DX\DescriptorTable.h" />
     <ClInclude Include="Source\DX\DeviceResource.h" />
     <ClInclude Include="Source\DX\ModelCompat.h" />
@@ -157,6 +157,8 @@
     <ClInclude Include="Source\DX\Raytracing\Shader\ShaderTable.h" />
     <ClInclude Include="Source\DX\Raytracing\TopLevelAccelerationStructure.h" />
     <ClInclude Include="Source\DX\Resource\Buffer.h" />
+    <ClInclude Include="Source\DX\Resource\ConstantBuffer.h" />
+    <ClInclude Include="Source\DX\Resource\ConstantBufferView.h" />
     <ClInclude Include="Source\DX\Resource\IndexBuffer.h" />
     <ClInclude Include="Source\DX\Resource\IndexBufferView.h" />
     <ClInclude Include="Source\DX\Resource\ShaderResourceView.h" />

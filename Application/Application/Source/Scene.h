@@ -1,12 +1,12 @@
 #pragma once
 #include "Assets/Shader/Raytracing/Util/GlobalCompat.h"
-#include "DX/ConstantBuffer.h"
 #include "DX/DescriptorTable.h"
 #include "DX/DeviceResource.h"
 #include "DX/Raytracing/BottomLevelAccelerationStructure.h"
 #include "DX/Raytracing/DXRDevice.h"
 #include "DX/Raytracing/DXRPipelineStateObject.h"
 #include "DX/Raytracing/TopLevelAccelerationStructure.h"
+#include "DX/Resource/ConstantBuffer.h"
 #include "DX/Resource/IndexBuffer.h"
 #include "DX/Resource/ShaderResourceView.h"
 #include "DX/Resource/Texture2D.h"
@@ -67,7 +67,7 @@ private:
         std::unique_ptr<Framework::DX::BottomLevelAccelerationStructure>>
         mBLASBuffers;
     std::unique_ptr<Framework::DX::TopLevelAccelerationStructure> mTLASBuffer;
-    std::unique_ptr<Framework::DX::ConstantBuffer<SceneConstantBuffer>> mSceneCB;
+    Framework::DX::ConstantBuffer<SceneConstantBuffer> mSceneCB;
 
 private:
     std::unique_ptr<Framework::DX::RootSignature> mGlobalRootSignature;

@@ -100,6 +100,7 @@ namespace DescriptorHeapIndex {
         ResourceIndexBuffer,
         ResourceVertexBuffer,
         RaytracingOutput,
+        SceneConstants,
 
         ModelTextureStart,
     };
