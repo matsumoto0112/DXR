@@ -54,6 +54,11 @@
     <ClCompile Include="Source\DX\Resource\ShaderResourceView.cpp" />
     <ClCompile Include="Source\DX\Resource\UnorderedAccessView.cpp" />
     <ClCompile Include="Source\DX\Resource\ConstantBufferView.cpp" />
+    <ClCompile Include="Source\DX\Descriptor\DescriptorAllocator.cpp" />
+    <ClCompile Include="Source\DX\Descriptor\DescriptorSet.cpp" />
+    <ClCompile Include="Source\DX\Descriptor\GlobalDescriptorHeap.cpp" />
+    <ClCompile Include="Source\DX\Descriptor\LocalDescriptorHeap.cpp" />
+    <ClCompile Include="Source\DX\Descriptor\RaytracingDescriptorManager.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Source\stdafx.h" />
@@ -138,6 +143,13 @@
     <ClInclude Include="Source\DX\Resource\UnorderedAccessView.h" />
     <ClInclude Include="Source\DX\Resource\ConstantBuffer.h" />
     <ClInclude Include="Source\DX\Resource\ConstantBufferView.h" />
+    <ClInclude Include="Source\DX\Descriptor\DescriptorAllocator.h" />
+    <ClInclude Include="Source\DX\Descriptor\DescriptorInfo.h" />
+    <ClInclude Include="Source\DX\Descriptor\DescriptorParameter.h" />
+    <ClInclude Include="Source\DX\Descriptor\DescriptorSet.h" />
+    <ClInclude Include="Source\DX\Descriptor\GlobalDescriptorHeap.h" />
+    <ClInclude Include="Source\DX\Descriptor\LocalDescriptorHeap.h" />
+    <ClInclude Include="Source\DX\Descriptor\RaytracingDescriptorManager.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />

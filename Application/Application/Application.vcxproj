@@ -82,6 +82,11 @@
     <ClCompile Include="Source\Camera\Perspective.cpp" />
     <ClCompile Include="Source\Device\GameDevice.cpp" />
     <ClCompile Include="Source\DX\DescriptorTable.cpp" />
+    <ClCompile Include="Source\DX\Descriptor\DescriptorAllocator.cpp" />
+    <ClCompile Include="Source\DX\Descriptor\DescriptorSet.cpp" />
+    <ClCompile Include="Source\DX\Descriptor\GlobalDescriptorHeap.cpp" />
+    <ClCompile Include="Source\DX\Descriptor\LocalDescriptorHeap.cpp" />
+    <ClCompile Include="Source\DX\Descriptor\RaytracingDescriptorManager.cpp" />
     <ClCompile Include="Source\DX\DeviceResource.cpp" />
     <ClCompile Include="Source\DX\Raytracing\BottomLevelAccelerationStructure.cpp" />
     <ClCompile Include="Source\DX\Raytracing\DXRPipelineStateObject.cpp" />
@@ -148,6 +153,13 @@
     <ClInclude Include="Source\Device\GameDevice.h" />
     <ClInclude Include="Source\Device\ISystemEventNotify.h" />
     <ClInclude Include="Source\DX\DescriptorTable.h" />
+    <ClInclude Include="Source\DX\Descriptor\DescriptorAllocator.h" />
+    <ClInclude Include="Source\DX\Descriptor\DescriptorInfo.h" />
+    <ClInclude Include="Source\DX\Descriptor\DescriptorParameter.h" />
+    <ClInclude Include="Source\DX\Descriptor\DescriptorSet.h" />
+    <ClInclude Include="Source\DX\Descriptor\GlobalDescriptorHeap.h" />
+    <ClInclude Include="Source\DX\Descriptor\LocalDescriptorHeap.h" />
+    <ClInclude Include="Source\DX\Descriptor\RaytracingDescriptorManager.h" />
     <ClInclude Include="Source\DX\DeviceResource.h" />
     <ClInclude Include="Source\DX\ModelCompat.h" />
     <ClInclude Include="Source\DX\Raytracing\BottomLevelAccelerationStructure.h" />

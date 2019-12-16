@@ -166,6 +166,8 @@ namespace Framework::DX {
             mDevice->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE::D3D12_COMMAND_LIST_TYPE_DIRECT,
                 mCommandAllocators[0].Get(), nullptr, IID_PPV_ARGS(&mCommandList)));
 
+        mRaytracingDescriptor.init(this);
+
         //ƒtƒFƒ“ƒXì¬
         MY_THROW_IF_FAILED(mDevice->CreateFence(mFenceValues[mBackBufferIndex],
             D3D12_FENCE_FLAGS::D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&mFence)));

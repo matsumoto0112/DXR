@@ -1,4 +1,5 @@
 #pragma once
+#include "DX/Descriptor/RaytracingDescriptorManager.h"
 #include "DX/DescriptorTable.h"
 #include "Window/Window.h"
 
@@ -249,6 +250,9 @@ namespace Framework::DX {
         CD3DX12_CPU_DESCRIPTOR_HANDLE getDepthStencilView() const {
             return mDSVHeap->getCPUHandle(0);
         }
+        RaytracingDescriptorManager* getRaytracingDescriptorManager() {
+            return &mRaytracingDescriptor;
+        }
 
     private:
         /**
@@ -289,5 +293,7 @@ namespace Framework::DX {
         UINT mOptions; //!< デバイスのオプション
         Window::Window* mWindow; //!< ウィンドウ
         IDeviceNotify* mDeviceNotify; //!< デバイスイベントの通知先
+
+        RaytracingDescriptorManager mRaytracingDescriptor;
     };
 } // namespace Framework::DX
