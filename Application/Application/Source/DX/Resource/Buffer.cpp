@@ -16,23 +16,6 @@ namespace {
 
 namespace Framework::DX {
     /**
-     * @brief デストラクタ
-     */
-    Buffer::~Buffer() {
-        reset();
-    }
-    void Buffer::reset() {
-        if (mMapped) {
-            mResource->Unmap(0, nullptr);
-            mMapped = nullptr;
-        }
-        if (mResource) mResource.Reset();
-        mResourceType = Usage::ConstantBuffer;
-        mCurrentState = D3D12_RESOURCE_STATES::D3D12_RESOURCE_STATE_COMMON;
-        mSize = 0;
-        mStride = 0;
-    }
-    /**
      * @brief 初期化
      */
     void Buffer::init(
@@ -58,30 +41,23 @@ namespace Framework::DX {
         CD3DX12_HEAP_PROPERTIES props(D3D12_HEAP_TYPE::D3D12_HEAP_TYPE_DEFAULT);
         init(device, Usage::ShaderResource, props, desc, texDesc.name);
     }
-
-    /**
-     * @brief メモリのマップ
-     */
+    //メモリのマップ処理
     void* Buffer::map() {
-        if (mMapped) return mMapped;
-        MY_THROW_IF_FAILED(mResource->Map(0, nullptr, &mMapped));
-        return mMapped;
+        void* mapped;
+        MY_THROW_IF_FAILED(mResource->Map(0, nullptr, &mapped));
+        return mapped;
     }
-    /**
-     * @brief メモリのアンマップ
-     */
+    //メモリのアンマップ処理
     void Buffer::unmap() {
         mResource->Unmap(0, nullptr);
-        mMapped = nullptr;
     }
-    /**
-     * @brief リソースにデータを書き込む
-     */
-    void Buffer::writeResource(const void* data, UINT size) {
+    //リソースにデータを書き込む
+    void Buffer::writeResource(const void* data, UINT64 size) {
         void* mapped = map();
         memcpy(mapped, data, size);
         unmap();
     }
+    //リソースの状態の遷移
     void Buffer::transition(
         ID3D12GraphicsCommandList* commandList, D3D12_RESOURCE_STATES nextState) {
         if (mCurrentState == nextState) return;

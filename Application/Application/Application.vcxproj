@@ -157,7 +157,6 @@
     <ClInclude Include="Source\DX\Raytracing\Shader\ShaderTable.h" />
     <ClInclude Include="Source\DX\Raytracing\TopLevelAccelerationStructure.h" />
     <ClInclude Include="Source\DX\Resource\Buffer.h" />
-    <ClInclude Include="Source\DX\Resource\IBuffer.h" />
     <ClInclude Include="Source\DX\Resource\IndexBuffer.h" />
     <ClInclude Include="Source\DX\Resource\IndexBufferView.h" />
     <ClInclude Include="Source\DX\Resource\ShaderResourceView.h" />

@@ -135,7 +135,6 @@
     <ClInclude Include="Source\DX\Resource\ShaderResourceView.h" />
     <ClInclude Include="Source\DX\Resource\VertexBuffer.h" />
     <ClInclude Include="Source\DX\Resource\VertexBufferView.h" />
-    <ClInclude Include="Source\DX\Resource\IBuffer.h" />
     <ClInclude Include="Source\DX\Resource\UnorderedAccessView.h" />
   </ItemGroup>
   <ItemGroup>

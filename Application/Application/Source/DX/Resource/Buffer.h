@@ -33,11 +33,7 @@ namespace Framework::DX {
         /**
          * @brief デストラクタ
          */
-        ~Buffer();
-        /**
-         * @brief リソースをリセットする
-         */
-        void reset();
+        ~Buffer() {}
         /**
          * @brief 通常のバッファとして初期化
          */
@@ -56,7 +52,7 @@ namespace Framework::DX {
         /**
          * @brief リソースの書き込み
          */
-        void writeResource(const void* data, UINT size);
+        void writeResource(const void* data, UINT64 size);
         /**
          * @brief リソースの状態を移行する
          */
@@ -76,7 +72,7 @@ namespace Framework::DX {
         /**
          * @brief リソースのメモリサイズを取得する
          */
-        UINT getSize() const {
+        UINT64 getSize() const {
             return mSize;
         }
         /**
@@ -91,11 +87,10 @@ namespace Framework::DX {
             const CD3DX12_RESOURCE_DESC& desc, const std::wstring& name);
 
     private:
-        Comptr<ID3D12Resource> mResource{ nullptr };
+        Comptr<ID3D12Resource> mResource;
         Usage mResourceType = Usage::ConstantBuffer;
         D3D12_RESOURCE_STATES mCurrentState = D3D12_RESOURCE_STATES::D3D12_RESOURCE_STATE_COMMON;
-        UINT mSize = 0;
+        UINT64 mSize = 0;
         UINT mStride = 0;
-        void* mMapped = nullptr;
     };
 } // namespace Framework::DX

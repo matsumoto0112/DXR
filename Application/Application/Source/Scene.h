@@ -7,7 +7,6 @@
 #include "DX/Raytracing/DXRDevice.h"
 #include "DX/Raytracing/DXRPipelineStateObject.h"
 #include "DX/Raytracing/TopLevelAccelerationStructure.h"
-#include "DX/Resource/IBuffer.h"
 #include "DX/Resource/IndexBuffer.h"
 #include "DX/Resource/ShaderResourceView.h"
 #include "DX/Resource/Texture2D.h"
