@@ -51,4 +51,18 @@ namespace Framework::DX {
         srvDesc.Buffer.StructureByteStride = 0;
         device->getDevice()->CreateShaderResourceView(buffer.getResource(), &srvDesc, mCPUHandle);
     }
+    void ShaderResourceView::initAsRaytracingAccelerationStructure(DeviceResource* device,
+        const Buffer& buffer, const D3D12_CPU_DESCRIPTOR_HANDLE& cpuHandle,
+        const D3D12_GPU_DESCRIPTOR_HANDLE& gpuHandle) {
+        mCPUHandle = cpuHandle;
+        mGPUHandle = gpuHandle;
+
+        D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
+        srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
+        srvDesc.ViewDimension
+            = D3D12_SRV_DIMENSION::D3D12_SRV_DIMENSION_RAYTRACING_ACCELERATION_STRUCTURE;
+        srvDesc.RaytracingAccelerationStructure.Location
+            = buffer.getResource()->GetGPUVirtualAddress();
+        device->getDevice()->CreateShaderResourceView(nullptr, &srvDesc, mCPUHandle);
+    }
 } // namespace Framework::DX

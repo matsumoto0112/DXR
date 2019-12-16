@@ -31,8 +31,11 @@ namespace Framework::DX {
         mInstanceDescs.emplace_back(instanceDesc);
     }
 
-    void TopLevelAccelerationStructure::build(
-        const DXRDevice& device, D3D12_RAYTRACING_ACCELERATION_STRUCTURE_BUILD_FLAGS buildFlag) {
+    void TopLevelAccelerationStructure::build(const DXRDevice& device,
+        DeviceResource* deviceResource,
+        D3D12_RAYTRACING_ACCELERATION_STRUCTURE_BUILD_FLAGS buildFlag,
+        const D3D12_CPU_DESCRIPTOR_HANDLE& cpuHandle,
+        const D3D12_GPU_DESCRIPTOR_HANDLE& gpuHandle) {
         const UINT size
             = static_cast<UINT>(mInstanceDescs.size() * sizeof(D3D12_RAYTRACING_INSTANCE_DESC));
         //前のディスクの状態から更新する必要があるなら更新する
@@ -43,6 +46,7 @@ namespace Framework::DX {
         }
         writeToResource(mInstance.Get(), mInstanceDescs.data(), size);
         device.getDXRCommandList()->BuildRaytracingAccelerationStructure(&mDesc, 0, nullptr);
+        mSRV.initAsRaytracingAccelerationStructure(deviceResource, mBuffer, cpuHandle, gpuHandle);
     }
 
     void TopLevelAccelerationStructure::clear() {
@@ -68,13 +72,16 @@ namespace Framework::DX {
         mScratch = createUAVBuffer(device, preInfo.ScratchDataSizeInBytes,
             D3D12_RESOURCE_STATES::D3D12_RESOURCE_STATE_UNORDERED_ACCESS, L"ScratchResource");
 
-        mBuffer = createUAVBuffer(device, preInfo.ResultDataMaxSizeInBytes,
+        Comptr<ID3D12Resource> res = createUAVBuffer(device, preInfo.ResultDataMaxSizeInBytes,
             D3D12_RESOURCE_STATES::D3D12_RESOURCE_STATE_RAYTRACING_ACCELERATION_STRUCTURE,
             L"TopLevelAS");
+        mBuffer.init(
+            res, D3D12_RESOURCE_STATES::D3D12_RESOURCE_STATE_RAYTRACING_ACCELERATION_STRUCTURE);
+
         D3D12_RESOURCE_STATES initResourceState
             = D3D12_RESOURCE_STATES::D3D12_RESOURCE_STATE_RAYTRACING_ACCELERATION_STRUCTURE;
 
-        mDesc.DestAccelerationStructureData = mBuffer->GetGPUVirtualAddress();
+        mDesc.DestAccelerationStructureData = mBuffer.getResource()->GetGPUVirtualAddress();
         mDesc.ScratchAccelerationStructureData = mScratch->GetGPUVirtualAddress();
     }
 

@@ -31,6 +31,9 @@ namespace Framework::DX {
         void initAsRawBuffer(DeviceResource* device, const Buffer& buffer, UINT numElements,
             const D3D12_CPU_DESCRIPTOR_HANDLE& cpuHandle,
             const D3D12_GPU_DESCRIPTOR_HANDLE& gpuHandle);
+        void initAsRaytracingAccelerationStructure(DeviceResource* device, const Buffer& buffer,
+            const D3D12_CPU_DESCRIPTOR_HANDLE& cpuHandle,
+            const D3D12_GPU_DESCRIPTOR_HANDLE& gpuHandle);
         const D3D12_CPU_DESCRIPTOR_HANDLE& getCPUHandle() const {
             return mCPUHandle;
         }

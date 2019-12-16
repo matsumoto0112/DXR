@@ -64,7 +64,7 @@ namespace {
 
     static constexpr UINT UFO_COUNT = 1;
     static constexpr UINT FLOOR_COUNT = 1;
-    static constexpr UINT SPHERE_COUNT = 100;
+    static int SPHERE_COUNT = 100;
 
     template <class T>
     inline std::vector<T> toLinearList(const std::vector<std::vector<T>>& list) {
@@ -290,6 +290,7 @@ void Scene::update() {
             ImGui::DragFloat("Z", &mLightPosition.z, 1.0f);
             ImGui::TreePop();
         }
+        ImGui::DragInt("Count", &SPHERE_COUNT);
     }
     ImGui::End();
 
@@ -339,9 +340,11 @@ void Scene::render() {
         mTLASBuffer->add(instanceDesc);
     }
 
-    mTLASBuffer->build(mDXRDevice,
+    mTLASBuffer->build(mDXRDevice, mDeviceResource,
         D3D12_RAYTRACING_ACCELERATION_STRUCTURE_BUILD_FLAGS::
-            D3D12_RAYTRACING_ACCELERATION_STRUCTURE_BUILD_FLAG_PREFER_FAST_TRACE);
+            D3D12_RAYTRACING_ACCELERATION_STRUCTURE_BUILD_FLAG_PREFER_FAST_TRACE,
+        mDescriptorTable->getCPUHandle(DescriptorHeapIndex::AccelerationStructure),
+        mDescriptorTable->getGPUHandle(DescriptorHeapIndex::AccelerationStructure));
 
     ID3D12GraphicsCommandList* commandList = mDeviceResource->getCommandList();
     UINT frameIndex = mDeviceResource->getCurrentFrameIndex();
@@ -352,8 +355,12 @@ void Scene::render() {
     commandList->SetDescriptorHeaps(_countof(heaps), heaps);
     commandList->SetComputeRootDescriptorTable(
         GlobalRootSignature::Slot::RenderTarget, mRaytracingOutputUAV.getGPUHandle());
-    commandList->SetComputeRootShaderResourceView(GlobalRootSignature::Slot::AccelerationStructure,
-        mTLASBuffer->getBuffer()->GetGPUVirtualAddress());
+
+    commandList->SetComputeRootDescriptorTable(
+        GlobalRootSignature::Slot::AccelerationStructure, mTLASBuffer->getView().getGPUHandle());
+
+    //commandList->SetComputeRootDescriptorTable(GlobalRootSignature::Slot::AccelerationStructure,
+    //    mTLASBuffer->getBuffer()->GetGPUVirtualAddress());
     commandList->SetComputeRootDescriptorTable(
         GlobalRootSignature::Slot::SceneConstant, mSceneCB.getView().mGPUHandle);
     commandList->SetComputeRootDescriptorTable(
@@ -400,15 +407,17 @@ void Scene::createDeviceDependentResources() {
     }
     //グローバルルートシグネチャ
     {
-        CD3DX12_DESCRIPTOR_RANGE ranges[4];
+        CD3DX12_DESCRIPTOR_RANGE ranges[5];
         ranges[0].Init(D3D12_DESCRIPTOR_RANGE_TYPE::D3D12_DESCRIPTOR_RANGE_TYPE_UAV, 1, 0);
         ranges[1].Init(D3D12_DESCRIPTOR_RANGE_TYPE::D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 1);
         ranges[2].Init(D3D12_DESCRIPTOR_RANGE_TYPE::D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 2);
         ranges[3].Init(D3D12_DESCRIPTOR_RANGE_TYPE::D3D12_DESCRIPTOR_RANGE_TYPE_CBV, 1, 0);
+        ranges[4].Init(D3D12_DESCRIPTOR_RANGE_TYPE::D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 0);
 
         std::vector<CD3DX12_ROOT_PARAMETER> rootParams(GlobalRootSignature::Slot::Count);
         rootParams[GlobalRootSignature::Slot::RenderTarget].InitAsDescriptorTable(1, &ranges[0]);
-        rootParams[GlobalRootSignature::Slot::AccelerationStructure].InitAsShaderResourceView(0);
+        rootParams[GlobalRootSignature::Slot::AccelerationStructure].InitAsDescriptorTable(
+            1, &ranges[4]);
         rootParams[GlobalRootSignature::Slot::IndexBuffer].InitAsDescriptorTable(1, &ranges[1]);
         rootParams[GlobalRootSignature::Slot::VertexBuffer].InitAsDescriptorTable(1, &ranges[2]);
         rootParams[GlobalRootSignature::Slot::SceneConstant].InitAsDescriptorTable(1, &ranges[3]);

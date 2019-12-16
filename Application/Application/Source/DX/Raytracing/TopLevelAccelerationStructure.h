@@ -8,6 +8,7 @@
 #include <DirectXMath.h>
 #include "DX/Raytracing/BottomLevelAccelerationStructure.h"
 #include "DX/Raytracing/DXRDevice.h"
+#include "DX/Resource/Buffer.h"
 
 namespace Framework::DX {
     /**
@@ -51,8 +52,10 @@ namespace Framework::DX {
          * @param device デバイス
          * @param buildFlag TLASの構築フラグ
          */
-        void build(
-            const DXRDevice& device, D3D12_RAYTRACING_ACCELERATION_STRUCTURE_BUILD_FLAGS buildFlag);
+        void build(const DXRDevice& device, DeviceResource* deviceResource,
+            D3D12_RAYTRACING_ACCELERATION_STRUCTURE_BUILD_FLAGS buildFlag,
+            const D3D12_CPU_DESCRIPTOR_HANDLE& cpuHandle,
+            const D3D12_GPU_DESCRIPTOR_HANDLE& gpuHandle);
         /**
          * @brief ディスクをクリアする
          */
@@ -60,8 +63,11 @@ namespace Framework::DX {
         /**
          * @brief バッファを取得する
          */
-        ID3D12Resource* getBuffer() const {
-            return mBuffer.Get();
+        const Buffer& getBuffer() const {
+            return mBuffer;
+        }
+        const ShaderResourceView& getView() const {
+            return mSRV;
         }
 
     private:
@@ -78,6 +84,8 @@ namespace Framework::DX {
         std::vector<D3D12_RAYTRACING_INSTANCE_DESC> mInstanceDescs; //!< シーン情報ディスク
         Comptr<ID3D12Resource> mScratch; //!< スクラッチリソース
         Comptr<ID3D12Resource> mInstance; //!< 一時的なリソース
-        Comptr<ID3D12Resource> mBuffer; //!< TLASバッファ
+        Buffer mBuffer;
+        //Comptr<ID3D12Resource> mBuffer; //!< TLASバッファ
+        ShaderResourceView mSRV;
     };
 } // namespace Framework::DX
