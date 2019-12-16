@@ -21,5 +21,8 @@ namespace Framework::Utility {
          * @brief メモリからテクスチャを読み込む
          */
         static Desc::TextureDesc loadFromMemory(const std::vector<BYTE>& data);
+
+    private:
+        static constexpr UINT BYTES_PER_PIXEL = 4;
     };
 } // namespace Framework::Utility

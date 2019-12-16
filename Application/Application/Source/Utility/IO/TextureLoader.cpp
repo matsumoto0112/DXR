@@ -7,40 +7,18 @@
 
 #include "Utility/Debug.h"
 
-namespace {
-    /**
-     * @brief RGBAのフォーマットに変換する
-     */
-    inline std::vector<BYTE> toRGBAFormat(int width, int height, int bpp, const BYTE* data) {
-        const size_t size = width * height * 4;
-        //もともとRGBAならそのまま配列にする
-        if (bpp == 4) return std::vector<BYTE>(data, data + size);
-        //RGBしかなければアルファを追加する
-        std::vector<BYTE> result(size);
-        int src, dst;
-        for (src = 0, dst = 0; src < width * height * 3; src++, dst++) {
-            result[dst] = data[src];
-            if (src % 3 == 2) {
-                dst++;
-                result[dst] = 0xff;
-            }
-        }
-        return result;
-    }
-} // namespace
-
 namespace Framework::Utility {
     //テクスチャの読み込み
     Desc::TextureDesc TextureLoader::load(const std::filesystem::path& filepath) {
         int w, h, bpp;
-        BYTE* data = stbi_load(toString(filepath.c_str()).c_str(), &w, &h, &bpp, 0);
+        BYTE* data = stbi_load(toString(filepath.c_str()).c_str(), &w, &h, &bpp, 4);
         MY_ASSERTION(data, "テクスチャの読み込みに失敗しました。\n%s\n", filepath.string().c_str());
 
         Desc::TextureDesc desc = {};
         desc.format = Desc::TextureFormat::R8G8B8A8;
-        desc.pixels = toRGBAFormat(w, h, bpp, data);
         desc.width = w;
         desc.height = h;
+        desc.pixels = std::vector<BYTE>(data, data + w * h * BYTES_PER_PIXEL);
         desc.name = filepath.filename().replace_extension();
 
         stbi_image_free(data);
@@ -50,11 +28,11 @@ namespace Framework::Utility {
     Desc::TextureDesc TextureLoader::loadFromMemory(const std::vector<BYTE>& data) {
         int w, h, bpp;
         BYTE* texByte = stbi_load_from_memory(reinterpret_cast<const stbi_uc*>(data.data()),
-            static_cast<int>(data.size()), &w, &h, &bpp, 0);
+            static_cast<int>(data.size()), &w, &h, &bpp, 4);
 
         Desc::TextureDesc desc = {};
         desc.format = Desc::TextureFormat::R8G8B8A8;
-        desc.pixels = toRGBAFormat(w, h, bpp, texByte);
+        desc.pixels = std::vector<BYTE>(texByte, texByte + w * h * BYTES_PER_PIXEL);
         desc.width = w;
         desc.height = h;
 
