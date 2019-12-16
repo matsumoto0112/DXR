@@ -5,6 +5,7 @@
 
 #pragma once
 #include "DX/DeviceResource.h"
+#include "Desc/TextureDesc.h"
 
 namespace Framework::DX {
     /**
@@ -42,11 +43,7 @@ namespace Framework::DX {
          */
         void init(
             ID3D12Device* device, Usage usage, UINT size, UINT stride, const std::wstring& name);
-        /**
-         * @brief テクスチャ2Dとして初期化
-         */
-        void initAsTexture2D(ID3D12Device* device, DXGI_FORMAT format, UINT width, UINT height,
-            const std::wstring& name, bool useUAV = false);
+        void init(ID3D12Device* device, const Desc::TextureDesc& desc);
         /**
          * @brief メモリのマップ処理
          * @details メモリの書き込み領域の先頭を返す

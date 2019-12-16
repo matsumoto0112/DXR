@@ -472,7 +472,7 @@ void Scene::createDeviceDependentResources() {
         {
             auto createUnitTexture = [](const Color4& color, const std::wstring& name) {
                 Framework::Desc::TextureDesc desc;
-                desc.format = Framework::Desc::TextureFormat::R8G8B8A8;
+                desc.format = DXGI_FORMAT::DXGI_FORMAT_R8G8B8A8_UNORM;
                 desc.width = 1;
                 desc.height = 1;
                 desc.pixels.resize(desc.width * desc.height * 4);
@@ -678,8 +678,15 @@ void Scene::releaseDeviceDependentResources() {}
 void Scene::createWindowDependentResources() {
     ID3D12Device* device = mDeviceResource->getDevice();
     DXGI_FORMAT backBufferFormat = mDeviceResource->getBackBufferFormat();
-    mRaytracingOutput.initAsTexture2D(
-        device, backBufferFormat, mWidth, mHeight, L"RaytracingOutput", true);
+
+    TextureDesc desc = {};
+    desc.width = mWidth;
+    desc.height = mHeight;
+    desc.name = L"RaytracingOutput";
+    desc.flags = TextureFlags::UnorderedAccess;
+    desc.format = backBufferFormat;
+
+    mRaytracingOutput.init(device, desc);
     mRaytracingOutputUAV.initAsTexture2D(device, mRaytracingOutput,
         mDescriptorTable->getCPUHandle(DescriptorHeapIndex::RaytracingOutput),
         mDescriptorTable->getGPUHandle(DescriptorHeapIndex::RaytracingOutput));

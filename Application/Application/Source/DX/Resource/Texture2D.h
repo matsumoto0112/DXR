@@ -48,7 +48,7 @@ namespace Framework::DX {
         }
 
     private:
-        DXGI_FORMAT mFormat = DXGI_FORMAT::DXGI_FORMAT_UNKNOWN;
+        Desc::TextureDesc mTextureInfo;
         Buffer mBuffer;
         Buffer mImmediateBuffer;
         ShaderResourceView mView;

@@ -15,7 +15,7 @@ namespace Framework::Utility {
         MY_ASSERTION(data, "テクスチャの読み込みに失敗しました。\n%s\n", filepath.string().c_str());
 
         Desc::TextureDesc desc = {};
-        desc.format = Desc::TextureFormat::R8G8B8A8;
+        desc.format = DXGI_FORMAT::DXGI_FORMAT_R8G8B8A8_UNORM;
         desc.width = w;
         desc.height = h;
         desc.pixels = std::vector<BYTE>(data, data + w * h * BYTES_PER_PIXEL);
@@ -31,7 +31,7 @@ namespace Framework::Utility {
             static_cast<int>(data.size()), &w, &h, &bpp, 4);
 
         Desc::TextureDesc desc = {};
-        desc.format = Desc::TextureFormat::R8G8B8A8;
+        desc.format = DXGI_FORMAT::DXGI_FORMAT_R8G8B8A8_UNORM;
         desc.pixels = std::vector<BYTE>(texByte, texByte + w * h * BYTES_PER_PIXEL);
         desc.width = w;
         desc.height = h;

@@ -7,10 +7,14 @@
 
 namespace Framework::Desc {
     /**
-     * @enum TextureFormat
-     * @brief テクスチャのフォーマット
+     * @brief テクスチャの使用フラグ
      */
-    enum class TextureFormat { R8G8B8A8, UNKNOWN };
+    enum class TextureFlags {
+        None,
+        RenderTarget,
+        DepthStencil,
+        UnorderedAccess,
+    };
 
     /**
      * @struct TextureDesc
@@ -21,6 +25,7 @@ namespace Framework::Desc {
         std::vector<BYTE> pixels; //!< ピクセルデータ
         UINT width; //!< 幅
         UINT height; //!< 高さ
-        TextureFormat format; //!< フォーマット
+        DXGI_FORMAT format; //!< フォーマット
+        TextureFlags flags = TextureFlags::None; //!< テクスチャの使用フラグ
     };
 } // namespace Framework::Desc
