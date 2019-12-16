@@ -27,7 +27,7 @@ namespace Framework::DX {
          * @brief 初期化処理
          */
         template <class T>
-        void init(ID3D12Device* device, const std::vector<T>& indices,
+        void init(DeviceResource* device, const std::vector<T>& indices,
             D3D_PRIMITIVE_TOPOLOGY topology, const std::wstring& name);
         /**
          * @brief コマンドリストにセットする
@@ -59,7 +59,7 @@ namespace Framework::DX {
     };
     //初期化
     template <class T>
-    inline void IndexBuffer::init(ID3D12Device* device, const std::vector<T>& indices,
+    inline void IndexBuffer::init(DeviceResource* device, const std::vector<T>& indices,
         D3D_PRIMITIVE_TOPOLOGY topology, const std::wstring& name) {
         mIndexNum = static_cast<UINT>(indices.size());
         mTopology = topology;

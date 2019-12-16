@@ -23,7 +23,7 @@ namespace Framework::DX {
          * @tparam T 頂点構造体
          */
         template <class T>
-        void init(ID3D12Device* device, const std::vector<T>& vertices, const std::wstring& name);
+        void init(DeviceResource* device, const std::vector<T>& vertices, const std::wstring& name);
         /**
          * @brief コマンドリストにセットする
          */
@@ -42,7 +42,7 @@ namespace Framework::DX {
     };
     template <class T>
     inline void VertexBuffer::init(
-        ID3D12Device* device, const std::vector<T>& vertices, const std::wstring& name) {
+        DeviceResource* device, const std::vector<T>& vertices, const std::wstring& name) {
         mVertexCount = static_cast<UINT>(vertices.size());
         mBuffer.init(device, Buffer::Usage::VertexBuffer,
             static_cast<UINT>(mVertexCount * sizeof(T)), static_cast<UINT>(sizeof(T)), name);

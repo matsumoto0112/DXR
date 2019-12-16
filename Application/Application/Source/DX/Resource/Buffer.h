@@ -4,10 +4,10 @@
  */
 
 #pragma once
-#include "DX/DeviceResource.h"
 #include "Desc/TextureDesc.h"
 
 namespace Framework::DX {
+    class DeviceResource;
     /**
      * @class Buffer
      * @brief バッファクラス
@@ -37,9 +37,14 @@ namespace Framework::DX {
         /**
          * @brief 通常のバッファとして初期化
          */
-        void init(
-            ID3D12Device* device, Usage usage, UINT size, UINT stride, const std::wstring& name);
-        void init(ID3D12Device* device, const Desc::TextureDesc& desc);
+        void init(DeviceResource* device, Usage usage, UINT64 size, UINT stride,
+            const std::wstring& name);
+        void init(DeviceResource* device, const Desc::TextureDesc& desc,
+            const D3D12_CLEAR_VALUE* clearValue = nullptr);
+        /**
+         * @brief リソースから初期化
+         */
+        void init(Comptr<ID3D12Resource> resource, D3D12_RESOURCE_STATES state);
         /**
          * @brief メモリのマップ処理
          * @details メモリの書き込み領域の先頭を返す
@@ -70,6 +75,12 @@ namespace Framework::DX {
             return mResourceType;
         }
         /**
+         * @brief 現在のリソースの状態を取得する
+         */
+        D3D12_RESOURCE_STATES getCurrentState() const {
+            return mCurrentState;
+        }
+        /**
          * @brief リソースのメモリサイズを取得する
          */
         UINT64 getSize() const {
@@ -81,10 +92,6 @@ namespace Framework::DX {
         UINT getStride() const {
             return mStride;
         }
-
-    private:
-        void init(ID3D12Device* device, Usage usage, const CD3DX12_HEAP_PROPERTIES& props,
-            const CD3DX12_RESOURCE_DESC& desc, const std::wstring& name);
 
     private:
         Comptr<ID3D12Resource> mResource;

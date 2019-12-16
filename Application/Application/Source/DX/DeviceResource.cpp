@@ -248,7 +248,6 @@ namespace Framework::DX {
         //バックバッファのレンダーターゲットの作成
         for (UINT n = 0; n < BACK_BUFFER_COUNT; n++) {
             MY_THROW_IF_FAILED(mSwapChain->GetBuffer(n, IID_PPV_ARGS(&mRenderTargets[n])));
-
             mRenderTargets[n]->SetName(Utility::format(L"RenderTarget[%u]", n).c_str());
             D3D12_RENDER_TARGET_VIEW_DESC rtvDesc = {};
             rtvDesc.Format = mBackBufferFormat;

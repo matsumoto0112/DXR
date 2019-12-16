@@ -9,6 +9,7 @@
 #include "Desc/TextureDesc.h"
 
 namespace Framework::DX {
+    class DeviceResource;
     /**
      * @class Texture2D
      * @brief 2Dテクスチャクラス
@@ -26,7 +27,7 @@ namespace Framework::DX {
         /**
          * @brief 初期化処理
          */
-        void init(ID3D12Device* device, ID3D12GraphicsCommandList* commandList,
+        void init(DeviceResource* device, ID3D12GraphicsCommandList* commandList,
             const Desc::TextureDesc& desc);
         /**
          * @brief シェーダーリソースビューを作成する

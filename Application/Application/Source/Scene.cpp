@@ -127,7 +127,7 @@ namespace {
          * @brief
          */
         ~GLBModel() {}
-        void init(ID3D12Device* device, ID3D12GraphicsCommandList* commandList,
+        void init(DeviceResource* device, ID3D12GraphicsCommandList* commandList,
             const std::filesystem::path& filepath, DescriptorTable* table, UINT& heapIndex) {
             Framework::Utility::GLBLoader loader(filepath);
             //インデックス配列を二次元配列から線形に変換する
@@ -177,7 +177,7 @@ namespace {
             default: return 0;
             }
         }
-        TexturePtr createTextureIfExist(ID3D12Device* device,
+        TexturePtr createTextureIfExist(DeviceResource* device,
             ID3D12GraphicsCommandList* commandList, TextureType type, bool expr,
             const std::vector<TextureDesc>& descs, const GlbMaterial& material,
             DescriptorTable* table, UINT& heapIndex) {
@@ -192,12 +192,12 @@ namespace {
             }
         }
 
-        TexturePtr createTexture(ID3D12Device* device, ID3D12GraphicsCommandList* commandList,
+        TexturePtr createTexture(DeviceResource* device, ID3D12GraphicsCommandList* commandList,
             const TextureDesc& desc, const D3D12_CPU_DESCRIPTOR_HANDLE& cpuHandle,
             const D3D12_GPU_DESCRIPTOR_HANDLE& gpuHandle) {
             TexturePtr texture = std::make_shared<Texture2D>();
             texture->init(device, commandList, desc);
-            texture->createSRV(device, cpuHandle, gpuHandle);
+            texture->createSRV(device->getDevice(), cpuHandle, gpuHandle);
             return texture;
         }
 
@@ -486,7 +486,7 @@ void Scene::createDeviceDependentResources() {
             auto createDefaultTexture
                 = [&](const std::wstring& name, const Color4& col, UINT heapIndex) {
                       std::shared_ptr<Texture2D> texture = std::make_shared<Texture2D>();
-                      texture->init(device, commandList, createUnitTexture(col, name));
+                      texture->init(mDeviceResource, commandList, createUnitTexture(col, name));
 
                       texture->createSRV(device, mDescriptorTable->getCPUHandle(heapIndex),
                           mDescriptorTable->getGPUHandle(heapIndex));
@@ -511,8 +511,9 @@ void Scene::createDeviceDependentResources() {
 
         {
             GLBModel model;
-            model.init(device, commandList, modelPath / MODEL_NAMES.at(BottomLevelASType::UFO),
-                mDescriptorTable.get(), heapStartIndex);
+            model.init(mDeviceResource, commandList,
+                modelPath / MODEL_NAMES.at(BottomLevelASType::UFO), mDescriptorTable.get(),
+                heapStartIndex);
             resourceIndices.insert(
                 resourceIndices.end(), model.mIndices.begin(), model.mIndices.end());
             resourceVertices.insert(
@@ -526,8 +527,9 @@ void Scene::createDeviceDependentResources() {
         }
         {
             GLBModel model;
-            model.init(device, commandList, modelPath / MODEL_NAMES.at(BottomLevelASType::Floor),
-                mDescriptorTable.get(), heapStartIndex);
+            model.init(mDeviceResource, commandList,
+                modelPath / MODEL_NAMES.at(BottomLevelASType::Floor), mDescriptorTable.get(),
+                heapStartIndex);
             resourceIndices.insert(
                 resourceIndices.end(), model.mIndices.begin(), model.mIndices.end());
             resourceVertices.insert(
@@ -541,8 +543,9 @@ void Scene::createDeviceDependentResources() {
         }
         {
             GLBModel model;
-            model.init(device, commandList, modelPath / MODEL_NAMES.at(BottomLevelASType::Sphere),
-                mDescriptorTable.get(), heapStartIndex);
+            model.init(mDeviceResource, commandList,
+                modelPath / MODEL_NAMES.at(BottomLevelASType::Sphere), mDescriptorTable.get(),
+                heapStartIndex);
             resourceIndices.insert(
                 resourceIndices.end(), model.mIndices.begin(), model.mIndices.end());
             resourceVertices.insert(
@@ -574,13 +577,13 @@ void Scene::createDeviceDependentResources() {
         mDeviceResource->executeCommandList();
         mDeviceResource->waitForGPU();
 
-        mResourcesIndexBuffer.init(device, resourceIndices,
+        mResourcesIndexBuffer.init(mDeviceResource, resourceIndices,
             D3D12_PRIMITIVE_TOPOLOGY::D3D_PRIMITIVE_TOPOLOGY_UNDEFINED, L"ResourceIndex");
         mResourceIndexBufferSRV = mResourcesIndexBuffer.createSRV(device,
             mDescriptorTable->getCPUHandle(DescriptorHeapIndex::ResourceIndexBuffer),
             mDescriptorTable->getGPUHandle(DescriptorHeapIndex::ResourceIndexBuffer));
 
-        mResourcesVertexBuffer.init(device, resourceVertices, L"ResourceVertex");
+        mResourcesVertexBuffer.init(mDeviceResource, resourceVertices, L"ResourceVertex");
         mResourceVertexBufferSRV.initAsBuffer(device, mResourcesVertexBuffer.getBuffer(),
             mDescriptorTable->getCPUHandle(DescriptorHeapIndex::ResourceVertexBuffer),
             mDescriptorTable->getGPUHandle(DescriptorHeapIndex::ResourceVertexBuffer));
@@ -686,7 +689,7 @@ void Scene::createWindowDependentResources() {
     desc.flags = TextureFlags::UnorderedAccess;
     desc.format = backBufferFormat;
 
-    mRaytracingOutput.init(device, desc);
+    mRaytracingOutput.init(mDeviceResource, desc);
     mRaytracingOutputUAV.initAsTexture2D(device, mRaytracingOutput,
         mDescriptorTable->getCPUHandle(DescriptorHeapIndex::RaytracingOutput),
         mDescriptorTable->getGPUHandle(DescriptorHeapIndex::RaytracingOutput));

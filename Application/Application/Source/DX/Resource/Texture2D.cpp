@@ -6,7 +6,7 @@ namespace {
 
 namespace Framework::DX {
     //èâä˙âª
-    void Texture2D::init(ID3D12Device* device, ID3D12GraphicsCommandList* commandList,
+    void Texture2D::init(DeviceResource* device, ID3D12GraphicsCommandList* commandList,
         const Desc::TextureDesc& desc) {
         mTextureInfo = desc;
 
