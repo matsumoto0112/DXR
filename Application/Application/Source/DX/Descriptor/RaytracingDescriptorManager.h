@@ -22,19 +22,16 @@ namespace Framework::DX {
         DescriptorAllocator* getGlobalView() {
             return &mGlobalView;
         }
-        DescriptorAllocator* getLocalView() {
-            return &mLocalView;
+        GlobalDescriptorHeap* getLocalView() {
+            return &mGlobal;
         }
         void copyAndSetComputeDescriptorTable(DeviceResource* device,
-            ID3D12GraphicsCommandList* commandList, const DescriptorSet& globalSet,
-            const DescriptorSet& localSet);
+            ID3D12GraphicsCommandList* commandList, const DescriptorSet& globalSet);
 
-    private:
+        //private:
         GlobalDescriptorHeap mGlobal;
         DescriptorAllocator mGlobalView;
-        DescriptorAllocator mLocalView;
 
         DescriptorInfo mDefaultGlobalView;
-        DescriptorInfo mDefaultLocalView;
     };
 } // namespace Framework::DX

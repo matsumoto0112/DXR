@@ -25,9 +25,8 @@ namespace Framework::DX {
         mBuffer.transition(commandList, D3D12_RESOURCE_STATES::D3D12_RESOURCE_STATE_GENERIC_READ);
     }
     //シェーダーリソースビューを作成
-    void Texture2D::createSRV(DeviceResource* device, const D3D12_CPU_DESCRIPTOR_HANDLE& cpuHandle,
-        const D3D12_GPU_DESCRIPTOR_HANDLE& gpuHandle) {
-        mView.initAsTexture2D(device, mBuffer, mTextureInfo.format, cpuHandle, gpuHandle);
+    void Texture2D::createSRV(DeviceResource* device, bool isGlobal) {
+        mView.initAsTexture2D(device, mBuffer, mTextureInfo.format, isGlobal);
     }
 
 } // namespace Framework::DX

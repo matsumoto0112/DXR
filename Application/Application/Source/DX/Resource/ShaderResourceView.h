@@ -4,6 +4,7 @@
  */
 
 #pragma once
+#include "DX/Descriptor/DescriptorInfo.h"
 #include "DX/Resource/Buffer.h"
 
 namespace Framework::DX {
@@ -22,28 +23,22 @@ namespace Framework::DX {
          * @brief デストラクタ
          */
         ~ShaderResourceView() {}
-        void initAsTexture2D(DeviceResource* device, const Buffer& buffer, DXGI_FORMAT format,
-            const D3D12_CPU_DESCRIPTOR_HANDLE& cpuHandle,
-            const D3D12_GPU_DESCRIPTOR_HANDLE& gpuHandle);
-        void initAsBuffer(DeviceResource* device, const Buffer& buffer,
-            const D3D12_CPU_DESCRIPTOR_HANDLE& cpuHandle,
-            const D3D12_GPU_DESCRIPTOR_HANDLE& gpuHandle);
-        void initAsRawBuffer(DeviceResource* device, const Buffer& buffer, UINT numElements,
-            const D3D12_CPU_DESCRIPTOR_HANDLE& cpuHandle,
-            const D3D12_GPU_DESCRIPTOR_HANDLE& gpuHandle);
-        void initAsRaytracingAccelerationStructure(DeviceResource* device, const Buffer& buffer,
-            const D3D12_CPU_DESCRIPTOR_HANDLE& cpuHandle,
-            const D3D12_GPU_DESCRIPTOR_HANDLE& gpuHandle);
-        const D3D12_CPU_DESCRIPTOR_HANDLE& getCPUHandle() const {
-            return mCPUHandle;
-        }
-        const D3D12_GPU_DESCRIPTOR_HANDLE& getGPUHandle() const {
-            return mGPUHandle;
+        void initAsTexture2D(
+            DeviceResource* device, const Buffer& buffer, DXGI_FORMAT format, bool isGlobal = true);
+        void initAsBuffer(DeviceResource* device, const Buffer& buffer, bool isGlobal = true);
+        void initAsRawBuffer(
+            DeviceResource* device, const Buffer& buffer, UINT numElements, bool isGlobal = true);
+        void initAsRaytracingAccelerationStructure(
+            DeviceResource* device, const Buffer& buffer, bool isGlobal = true);
+        const DescriptorInfo& getInfo() const {
+            return mInfo;
         }
 
     private:
-        D3D12_SHADER_RESOURCE_VIEW_DESC mView;
-        D3D12_CPU_DESCRIPTOR_HANDLE mCPUHandle;
-        D3D12_GPU_DESCRIPTOR_HANDLE mGPUHandle;
+        void createShaderResourceView(DeviceResource* device, ID3D12Resource* resource,
+            const D3D12_SHADER_RESOURCE_VIEW_DESC& desc, bool isGlobal);
+
+    private:
+        DescriptorInfo mInfo;
     };
 } // namespace Framework::DX

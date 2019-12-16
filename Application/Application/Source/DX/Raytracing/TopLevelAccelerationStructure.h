@@ -53,9 +53,7 @@ namespace Framework::DX {
          * @param buildFlag TLASの構築フラグ
          */
         void build(const DXRDevice& device, DeviceResource* deviceResource,
-            D3D12_RAYTRACING_ACCELERATION_STRUCTURE_BUILD_FLAGS buildFlag,
-            const D3D12_CPU_DESCRIPTOR_HANDLE& cpuHandle,
-            const D3D12_GPU_DESCRIPTOR_HANDLE& gpuHandle);
+            D3D12_RAYTRACING_ACCELERATION_STRUCTURE_BUILD_FLAGS buildFlag);
         /**
          * @brief ディスクをクリアする
          */

@@ -4,6 +4,7 @@
  */
 
 #pragma once
+#include "DX/Descriptor/DescriptorInfo.h"
 #include "DX/Resource/Buffer.h"
 
 namespace Framework::DX {
@@ -22,18 +23,12 @@ namespace Framework::DX {
          * @brief
          */
         ~UnorderedAccessView() {}
-        void initAsTexture2D(DeviceResource* device, const Buffer& buffer,
-            const D3D12_CPU_DESCRIPTOR_HANDLE& cpuHandle,
-            const D3D12_GPU_DESCRIPTOR_HANDLE& gpuHandle);
-        const D3D12_CPU_DESCRIPTOR_HANDLE& getCPUHandle() const {
-            return mCPUHandle;
-        }
-        const D3D12_GPU_DESCRIPTOR_HANDLE& getGPUHandle() const {
-            return mGPUHandle;
+        void initAsTexture2D(DeviceResource* device, const Buffer& buffer, bool isGlobal = true);
+        const DescriptorInfo& getInfo() const {
+            return mInfo;
         }
 
     private:
-        D3D12_CPU_DESCRIPTOR_HANDLE mCPUHandle;
-        D3D12_GPU_DESCRIPTOR_HANDLE mGPUHandle;
+        DescriptorInfo mInfo;
     };
 } // namespace Framework::DX

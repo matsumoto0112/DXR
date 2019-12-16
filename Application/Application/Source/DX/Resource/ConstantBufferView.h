@@ -1,4 +1,5 @@
 #pragma once
+#include "DX/Descriptor/DescriptorInfo.h"
 #include "DX/Resource/Buffer.h"
 
 namespace Framework::DX {
@@ -17,10 +18,12 @@ namespace Framework::DX {
          * @brief デストラクタ
          */
         ~ConstantBufferView() {}
-        void init(DeviceResource* device, const Buffer& buffer,
-            const D3D12_CPU_DESCRIPTOR_HANDLE& cpuHandle,
-            const D3D12_GPU_DESCRIPTOR_HANDLE& gpuHandle);
-        D3D12_CPU_DESCRIPTOR_HANDLE mCPUHandle;
-        D3D12_GPU_DESCRIPTOR_HANDLE mGPUHandle;
+        void init(DeviceResource* device, const Buffer& buffer, bool isGlobal);
+        const DescriptorInfo& getInfo() const {
+            return mInfo;
+        }
+
+    private:
+        DescriptorInfo mInfo;
     };
 } // namespace Framework::DX

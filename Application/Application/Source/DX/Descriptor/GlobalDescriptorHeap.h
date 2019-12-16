@@ -1,4 +1,5 @@
 #pragma once
+#include "DX/Descriptor/DescriptorInfo.h"
 
 namespace Framework::DX {
     class DescriptorSet;
@@ -31,11 +32,23 @@ namespace Framework::DX {
         bool canCopy(UINT num) const {
             return mAllocatedNum + num < mDescriptorHeap->GetDesc().NumDescriptors;
         }
+        DescriptorInfo allocate(ID3D12Device* device) {
+            DescriptorInfo info;
+            info.cpuHandle = CD3DX12_CPU_DESCRIPTOR_HANDLE(
+                mDescriptorHeap->GetCPUDescriptorHandleForHeapStart(), mLocalAreaIndex,
+                mDescriptorHeapSize);
+            info.gpuHandle = CD3DX12_GPU_DESCRIPTOR_HANDLE(
+                mDescriptorHeap->GetGPUDescriptorHandleForHeapStart(), mLocalAreaIndex,
+                mDescriptorHeapSize);
+            mLocalAreaIndex++;
+            return info;
+        }
 
-    //private:
+        //private:
         Comptr<ID3D12DescriptorHeap> mDescriptorHeap;
         UINT mDescriptorHeapSize = 0;
         UINT mAllocatedNum = 0;
+        UINT mLocalAreaIndex = 0;
         D3D12_DESCRIPTOR_HEAP_TYPE mType = {};
     };
 } // namespace Framework::DX

@@ -46,9 +46,7 @@ namespace Framework::DX {
         /**
          * @brief シェーダーリソースビューを作成する
          */
-        ShaderResourceView createSRV(DeviceResource* device,
-            const D3D12_CPU_DESCRIPTOR_HANDLE& cpuHandle,
-            const D3D12_GPU_DESCRIPTOR_HANDLE& gpuHandle);
+        ShaderResourceView createSRV(DeviceResource* device, bool isGlobal);
 
     private:
         Buffer mBuffer; //!< バッファ

@@ -34,8 +34,7 @@ namespace Framework::DX {
          * @brief シェーダーリソースビューを作成する
          * @param device デバイス
          */
-        void createCBV(DeviceResource* device, const D3D12_CPU_DESCRIPTOR_HANDLE& cpuHandle,
-            const D3D12_GPU_DESCRIPTOR_HANDLE& gpuHandle);
+        void createCBV(DeviceResource* device, bool isGlobal);
         /**
          * @brief ステージング内容へのアクセス演算子
          */
@@ -96,10 +95,8 @@ namespace Framework::DX {
         mMapped = mBuffer.map();
     }
     template <class T>
-    inline void ConstantBuffer<T>::createCBV(DeviceResource* device,
-        const D3D12_CPU_DESCRIPTOR_HANDLE& cpuHandle,
-        const D3D12_GPU_DESCRIPTOR_HANDLE& gpuHandle) {
-        mCBV.init(device, mBuffer, cpuHandle, gpuHandle);
+    inline void ConstantBuffer<T>::createCBV(DeviceResource* device, bool isGlobal) {
+        mCBV.init(device, mBuffer, isGlobal);
     }
     //ステージングの更新
     template <class T>

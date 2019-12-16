@@ -33,9 +33,7 @@ namespace Framework::DX {
 
     void TopLevelAccelerationStructure::build(const DXRDevice& device,
         DeviceResource* deviceResource,
-        D3D12_RAYTRACING_ACCELERATION_STRUCTURE_BUILD_FLAGS buildFlag,
-        const D3D12_CPU_DESCRIPTOR_HANDLE& cpuHandle,
-        const D3D12_GPU_DESCRIPTOR_HANDLE& gpuHandle) {
+        D3D12_RAYTRACING_ACCELERATION_STRUCTURE_BUILD_FLAGS buildFlag) {
         const UINT size
             = static_cast<UINT>(mInstanceDescs.size() * sizeof(D3D12_RAYTRACING_INSTANCE_DESC));
         //前のディスクの状態から更新する必要があるなら更新する
@@ -46,7 +44,7 @@ namespace Framework::DX {
         }
         writeToResource(mInstance.Get(), mInstanceDescs.data(), size);
         device.getDXRCommandList()->BuildRaytracingAccelerationStructure(&mDesc, 0, nullptr);
-        mSRV.initAsRaytracingAccelerationStructure(deviceResource, mBuffer, cpuHandle, gpuHandle);
+        mSRV.initAsRaytracingAccelerationStructure(deviceResource, mBuffer, true);
     }
 
     void TopLevelAccelerationStructure::clear() {

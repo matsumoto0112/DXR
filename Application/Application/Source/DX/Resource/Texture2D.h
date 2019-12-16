@@ -33,8 +33,7 @@ namespace Framework::DX {
          * @brief シェーダーリソースビューを作成する
          * @param device デバイス
          */
-        void createSRV(DeviceResource* device, const D3D12_CPU_DESCRIPTOR_HANDLE& cpuHandle,
-            const D3D12_GPU_DESCRIPTOR_HANDLE& gpuHandle);
+        void createSRV(DeviceResource* device, bool isGlobal);
         /**
          * @brief テクスチャバッファの取得
          */

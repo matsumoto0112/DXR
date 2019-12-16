@@ -1,6 +1,7 @@
 #include "Scene.h"
 #include <DirectXMath.h>
 #include <numeric>
+#include "DX/Descriptor/DescriptorSet.h"
 #include "DX/Raytracing/Shader/ShaderTable.h"
 #include "DX/Util/Helper.h"
 #include "ImGui/ImGuiManager.h"
@@ -26,28 +27,6 @@ using namespace Framework::Utility;
 using namespace DirectX;
 
 namespace {
-
-    Comptr<ID3D12DescriptorHeap> mGlobalHeap;
-    Comptr<ID3D12DescriptorHeap> mLocalHeap;
-    UINT mTLASBufferIndex = 0;
-
-    UINT mGlobalHeapCount;
-    UINT mHeapSize;
-    UINT mLocalHeapAllocatedCount;
-
-#define CPU_HANDLE                 \
-    CD3DX12_CPU_DESCRIPTOR_HANDLE( \
-        mLocalHeap->GetCPUDescriptorHandleForHeapStart(), mLocalHeapAllocatedCount, mHeapSize)
-#define GLOBAL_CPU_HANDLE          \
-    CD3DX12_CPU_DESCRIPTOR_HANDLE( \
-        mGlobalHeap->GetCPUDescriptorHandleForHeapStart(), mGlobalHeapCount, mHeapSize)
-#define GPU_HANDLE                 \
-    CD3DX12_GPU_DESCRIPTOR_HANDLE( \
-        mLocalHeap->GetGPUDescriptorHandleForHeapStart(), mLocalHeapAllocatedCount, mHeapSize)
-#define GLOBAL_GPU_HANDLE          \
-    CD3DX12_GPU_DESCRIPTOR_HANDLE( \
-        mGlobalHeap->GetGPUDescriptorHandleForHeapStart(), mGlobalHeapCount, mHeapSize)
-
     namespace ShaderKey {
         enum MyEnum {
             RayGenShader,
@@ -202,9 +181,7 @@ namespace {
             const std::vector<TextureDesc>& descs, const GlbMaterial& material) {
             if (expr) {
                 UINT descIndex = getDescIndex(type, material);
-                auto tex = createTexture(
-                    device, commandList, descs[0], GLOBAL_CPU_HANDLE, GLOBAL_GPU_HANDLE);
-                mGlobalHeapCount++;
+                auto tex = createTexture(device, commandList, descs[0]);
                 return tex;
             } else {
                 return mDefaultTextures[type];
@@ -212,11 +189,10 @@ namespace {
         }
 
         TexturePtr createTexture(DeviceResource* device, ID3D12GraphicsCommandList* commandList,
-            const TextureDesc& desc, const D3D12_CPU_DESCRIPTOR_HANDLE& cpuHandle,
-            const D3D12_GPU_DESCRIPTOR_HANDLE& gpuHandle) {
+            const TextureDesc& desc) {
             TexturePtr texture = std::make_shared<Texture2D>();
             texture->init(device, commandList, desc);
-            texture->createSRV(device, cpuHandle, gpuHandle);
+            texture->createSRV(device, false);
             return texture;
         }
 
@@ -245,28 +221,6 @@ Scene::Scene(Framework::DX::DeviceResource* device, Framework::Input::InputManag
       mDXRDevice(),
       mWidth(width),
       mHeight(height) {
-    //Global
-    {
-        D3D12_DESCRIPTOR_HEAP_DESC desc = {};
-        desc.NumDescriptors = 10000;
-        desc.Flags = D3D12_DESCRIPTOR_HEAP_FLAGS::D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
-        desc.Type = D3D12_DESCRIPTOR_HEAP_TYPE::D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
-        MY_THROW_IF_FAILED(
-            mDeviceResource->getDevice()->CreateDescriptorHeap(&desc, IID_PPV_ARGS(&mGlobalHeap)));
-    }
-    //Local
-    {
-        D3D12_DESCRIPTOR_HEAP_DESC desc = {};
-        desc.NumDescriptors = 10000;
-        desc.Flags = D3D12_DESCRIPTOR_HEAP_FLAGS::D3D12_DESCRIPTOR_HEAP_FLAG_NONE;
-        desc.Type = D3D12_DESCRIPTOR_HEAP_TYPE::D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
-        MY_THROW_IF_FAILED(
-            mDeviceResource->getDevice()->CreateDescriptorHeap(&desc, IID_PPV_ARGS(&mLocalHeap)));
-    }
-    mHeapSize = mDeviceResource->getDevice()->GetDescriptorHandleIncrementSize(
-        D3D12_DESCRIPTOR_HEAP_TYPE::D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
-    mGlobalHeapCount = 0;
-    mLocalHeapAllocatedCount = 0;
 
     mCameraPosition = Vec3(0, 0, -10);
     mLightPosition = Vec3(0, 100, -100);
@@ -284,8 +238,7 @@ void Scene::create() {
         ID3D12Device* device = mDeviceResource->getDevice();
         UINT backBufferCount = mDeviceResource->getBackBufferCount();
         mSceneCB.init(mDeviceResource, L"SceneConstantBuffer");
-        mSceneCB.createCBV(mDeviceResource, CPU_HANDLE, GPU_HANDLE);
-        mLocalHeapAllocatedCount++;
+        mSceneCB.createCBV(mDeviceResource, true);
     }
 }
 
@@ -298,7 +251,7 @@ void Scene::reset() {
 void Scene::update() {
     mTime.update();
     ImGui::Begin("Status");
-    { ImGui::Text("FPS:%0.3f", mTime.getFPS()); }
+    ImGui::Text("FPS:%0.3f", mTime.getFPS());
     ImGui::End();
 
     ImGui::Begin("Parameter");
@@ -380,56 +333,27 @@ void Scene::render() {
 
     mTLASBuffer->build(mDXRDevice, mDeviceResource,
         D3D12_RAYTRACING_ACCELERATION_STRUCTURE_BUILD_FLAGS::
-            D3D12_RAYTRACING_ACCELERATION_STRUCTURE_BUILD_FLAG_PREFER_FAST_TRACE,
-        CPU_HANDLE, GPU_HANDLE);
+            D3D12_RAYTRACING_ACCELERATION_STRUCTURE_BUILD_FLAG_PREFER_FAST_TRACE);
 
     ID3D12GraphicsCommandList* commandList = mDeviceResource->getCommandList();
     UINT frameIndex = mDeviceResource->getCurrentFrameIndex();
     commandList->SetComputeRootSignature(mGlobalRootSignature->getRootSignature());
     mSceneCB.updateStaging();
 
-    ID3D12DescriptorHeap* heaps[] = { mGlobalHeap.Get() };
+    ID3D12DescriptorHeap* heaps[]
+        = { mDeviceResource->getRaytracingDescriptorManager()->mGlobal.getHeap() };
     commandList->SetDescriptorHeaps(_countof(heaps), heaps);
 
-    UINT index = mGlobalHeapCount;
-    {
-        D3D12_CPU_DESCRIPTOR_HANDLE cbvHandle[] = { mSceneCB.getView().mCPUHandle };
-        UINT count = _countof(cbvHandle);
-        D3D12_CPU_DESCRIPTOR_HANDLE dstHandle = CD3DX12_CPU_DESCRIPTOR_HANDLE(
-            mGlobalHeap->GetCPUDescriptorHandleForHeapStart(), index, mHeapSize);
-        mDeviceResource->getDevice()->CopyDescriptors(1, &dstHandle, &count, count, cbvHandle,
-            nullptr, D3D12_DESCRIPTOR_HEAP_TYPE::D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
-        commandList->SetComputeRootDescriptorTable(0,
-            CD3DX12_GPU_DESCRIPTOR_HANDLE(
-                mGlobalHeap->GetGPUDescriptorHandleForHeapStart(), index, mHeapSize));
-        index += count;
-    }
-    {
-        D3D12_CPU_DESCRIPTOR_HANDLE srvHandle[] = { mTLASBuffer->getView().getCPUHandle(),
-            mResourceIndexBufferSRV.getCPUHandle(), mResourceVertexBufferSRV.getCPUHandle() };
-        UINT count = _countof(srvHandle);
-        D3D12_CPU_DESCRIPTOR_HANDLE dstHandle = CD3DX12_CPU_DESCRIPTOR_HANDLE(
-            mGlobalHeap->GetCPUDescriptorHandleForHeapStart(), index, mHeapSize);
-        mDeviceResource->getDevice()->CopyDescriptors(1, &dstHandle, &count, count, srvHandle,
-            nullptr, D3D12_DESCRIPTOR_HEAP_TYPE::D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
-        commandList->SetComputeRootDescriptorTable(1,
-            CD3DX12_GPU_DESCRIPTOR_HANDLE(
-                mGlobalHeap->GetGPUDescriptorHandleForHeapStart(), index, mHeapSize));
-        index += count;
-    }
-    {
-        D3D12_CPU_DESCRIPTOR_HANDLE uavHandle[] = { mRaytracingOutputUAV.getCPUHandle() };
-        UINT count = _countof(uavHandle);
-        D3D12_CPU_DESCRIPTOR_HANDLE dstHandle = CD3DX12_CPU_DESCRIPTOR_HANDLE(
-            mGlobalHeap->GetCPUDescriptorHandleForHeapStart(), index, mHeapSize);
-        mDeviceResource->getDevice()->CopyDescriptors(1, &dstHandle, &count, count, uavHandle,
-            nullptr, D3D12_DESCRIPTOR_HEAP_TYPE::D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
-        commandList->SetComputeRootDescriptorTable(2,
-            CD3DX12_GPU_DESCRIPTOR_HANDLE(
-                mGlobalHeap->GetGPUDescriptorHandleForHeapStart(), index, mHeapSize));
-        index += count;
-    }
+    mDeviceResource->getRaytracingDescriptorManager()->mGlobal.reset();
+    DescriptorSet globalSet;
+    globalSet.setCbvHandle(0, mSceneCB.getView().getInfo().cpuHandle);
+    globalSet.setSrvHandle(0, mTLASBuffer->getView().getInfo().cpuHandle);
+    globalSet.setSrvHandle(1, mResourceIndexBufferSRV.getInfo().cpuHandle);
+    globalSet.setSrvHandle(2, mResourceVertexBufferSRV.getInfo().cpuHandle);
+    globalSet.setUavHandle(0, mRaytracingOutputUAV.getInfo().cpuHandle);
 
+    mDeviceResource->getRaytracingDescriptorManager()->copyAndSetComputeDescriptorTable(
+        mDeviceResource, commandList, globalSet);
     mDXRStateObject->doRaytracing(mWidth, mHeight);
 
     D3D12_RESOURCE_BARRIER preCopyBarriers[2];
@@ -557,8 +481,7 @@ void Scene::createDeviceDependentResources() {
                     std::shared_ptr<Texture2D> texture = std::make_shared<Texture2D>();
                     texture->init(mDeviceResource, commandList, createUnitTexture(col, name));
 
-                    texture->createSRV(mDeviceResource, CPU_HANDLE, GPU_HANDLE);
-                    mLocalHeapAllocatedCount++;
+                    texture->createSRV(mDeviceResource, false);
                     return texture;
                 };
 
@@ -643,14 +566,11 @@ void Scene::createDeviceDependentResources() {
 
             mResourcesIndexBuffer.init(mDeviceResource, resourceIndices,
                 D3D12_PRIMITIVE_TOPOLOGY::D3D_PRIMITIVE_TOPOLOGY_UNDEFINED, L"ResourceIndex");
-            mResourceIndexBufferSRV
-                = mResourcesIndexBuffer.createSRV(mDeviceResource, CPU_HANDLE, GPU_HANDLE);
-            mLocalHeapAllocatedCount++;
+            mResourceIndexBufferSRV = mResourcesIndexBuffer.createSRV(mDeviceResource, true);
 
             mResourcesVertexBuffer.init(mDeviceResource, resourceVertices, L"ResourceVertex");
             mResourceVertexBufferSRV.initAsBuffer(
-                mDeviceResource, mResourcesVertexBuffer.getBuffer(), CPU_HANDLE, GPU_HANDLE);
-            mLocalHeapAllocatedCount++;
+                mDeviceResource, mResourcesVertexBuffer.getBuffer(), true);
         }
     }
 
@@ -726,11 +646,12 @@ void Scene::createDeviceDependentResources() {
                 RootArgument arg;
                 arg.cb.indexOffset = model.mIndexOffset;
                 arg.cb.vertexOffset = model.mVertexOffset;
-                arg.albedo = model.mAlbedoTexture->getView().getGPUHandle();
-                arg.normal = model.mNormalMapTexture->getView().getGPUHandle();
-                arg.metallicRoughness = model.mMetallicRoughnessTexture->getView().getGPUHandle();
-                arg.emissive = model.mEmissiveMapTexture->getView().getGPUHandle();
-                arg.occlusion = model.mOcclusionMapTexture->getView().getGPUHandle();
+                arg.albedo = model.mAlbedoTexture->getView().getInfo().gpuHandle;
+                arg.normal = model.mNormalMapTexture->getView().getInfo().gpuHandle;
+                arg.metallicRoughness
+                    = model.mMetallicRoughnessTexture->getView().getInfo().gpuHandle;
+                arg.emissive = model.mEmissiveMapTexture->getView().getInfo().gpuHandle;
+                arg.occlusion = model.mOcclusionMapTexture->getView().getInfo().gpuHandle;
                 return arg;
             };
 
@@ -758,9 +679,7 @@ void Scene::createWindowDependentResources() {
     desc.format = backBufferFormat;
 
     mRaytracingOutput.init(mDeviceResource, desc);
-    mRaytracingOutputUAV.initAsTexture2D(
-        mDeviceResource, mRaytracingOutput, CPU_HANDLE, GPU_HANDLE);
-    mLocalHeapAllocatedCount++;
+    mRaytracingOutputUAV.initAsTexture2D(mDeviceResource, mRaytracingOutput, true);
 }
 
 void Scene::releaseWindowDependentResources() {}

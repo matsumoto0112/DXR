@@ -17,5 +17,7 @@ namespace Framework::DX {
         heapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAGS::D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
         MY_THROW_IF_FAILED(device->CreateDescriptorHeap(&heapDesc, IID_PPV_ARGS(&mDescriptorHeap)));
         mDescriptorHeapSize = device->GetDescriptorHandleIncrementSize(mType);
+
+        mLocalAreaIndex = descriptorHeapNum / 2;
     }
 } // namespace Framework::DX
