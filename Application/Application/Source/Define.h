@@ -78,29 +78,3 @@ namespace BottomLevelASType {
         Count
     };
 } // namespace BottomLevelASType
-
-namespace TopLevelASType {
-    enum MyEnum {
-        One,
-    };
-} // namespace TopLevelASType
-
-namespace DescriptorHeapIndex {
-    enum MyEnum {
-        DefaultTexture_Albedo,
-        DefaultTexture_NormalMap,
-        DefaultTexture_MetallicRoughnessMap,
-        DefaultTexture_EmissiveMap,
-        DefaultTexture_OcclusionMap,
-
-        Texture_Checker,
-
-        ResourceIndexBuffer,
-        ResourceVertexBuffer,
-        RaytracingOutput,
-        SceneConstants,
-        AccelerationStructure,
-
-        ModelTextureStart,
-    };
-}

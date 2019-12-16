@@ -38,9 +38,15 @@ namespace {
 #define CPU_HANDLE                 \
     CD3DX12_CPU_DESCRIPTOR_HANDLE( \
         mLocalHeap->GetCPUDescriptorHandleForHeapStart(), mLocalHeapAllocatedCount, mHeapSize)
+#define GLOBAL_CPU_HANDLE          \
+    CD3DX12_CPU_DESCRIPTOR_HANDLE( \
+        mGlobalHeap->GetCPUDescriptorHandleForHeapStart(), mGlobalHeapCount, mHeapSize)
 #define GPU_HANDLE                 \
     CD3DX12_GPU_DESCRIPTOR_HANDLE( \
         mLocalHeap->GetGPUDescriptorHandleForHeapStart(), mLocalHeapAllocatedCount, mHeapSize)
+#define GLOBAL_GPU_HANDLE          \
+    CD3DX12_GPU_DESCRIPTOR_HANDLE( \
+        mGlobalHeap->GetGPUDescriptorHandleForHeapStart(), mGlobalHeapCount, mHeapSize)
 
     namespace ShaderKey {
         enum MyEnum {
@@ -144,7 +150,7 @@ namespace {
          */
         ~GLBModel() {}
         void init(DeviceResource* device, ID3D12GraphicsCommandList* commandList,
-            const std::filesystem::path& filepath, UINT& heapIndex) {
+            const std::filesystem::path& filepath) {
             Framework::Utility::GLBLoader loader(filepath);
             //インデックス配列を二次元配列から線形に変換する
             std::vector<IndexList> indices = loader.getIndicesPerSubMeshes();
@@ -169,18 +175,17 @@ namespace {
             GlbMaterial material = materials.empty() ? GlbMaterial{} : materials[0];
             std::vector<TextureDesc> descs = loader.getImageDatas();
             //テクスチャの読み込み処理
-            mAlbedoTexture = createTextureIfExist(device, commandList, TextureType::Albedo,
-                !descs.empty(), descs, material, heapIndex);
+            mAlbedoTexture = createTextureIfExist(
+                device, commandList, TextureType::Albedo, !descs.empty(), descs, material);
             mNormalMapTexture = createTextureIfExist(device, commandList, TextureType::NormalMap,
-                material.normalMapID != -1, descs, material, heapIndex);
+                material.normalMapID != -1, descs, material);
             mMetallicRoughnessTexture
                 = createTextureIfExist(device, commandList, TextureType::MetallicRoughnessMap,
-                    material.metallicRoughnessMapID != -1, descs, material, heapIndex);
+                    material.metallicRoughnessMapID != -1, descs, material);
             mEmissiveMapTexture = createTextureIfExist(device, commandList,
-                TextureType::EmissiveMap, material.emissiveMapID != -1, descs, material, heapIndex);
-            mOcclusionMapTexture
-                = createTextureIfExist(device, commandList, TextureType::OcclusionMap,
-                    material.occlusionMapID != -1, descs, material, heapIndex);
+                TextureType::EmissiveMap, material.emissiveMapID != -1, descs, material);
+            mOcclusionMapTexture = createTextureIfExist(device, commandList,
+                TextureType::OcclusionMap, material.occlusionMapID != -1, descs, material);
         }
         UINT getDescIndex(TextureType type, const GlbMaterial& mat) {
             switch (type) {
@@ -194,12 +199,12 @@ namespace {
         }
         TexturePtr createTextureIfExist(DeviceResource* device,
             ID3D12GraphicsCommandList* commandList, TextureType type, bool expr,
-            const std::vector<TextureDesc>& descs, const GlbMaterial& material, UINT& heapIndex) {
+            const std::vector<TextureDesc>& descs, const GlbMaterial& material) {
             if (expr) {
                 UINT descIndex = getDescIndex(type, material);
-                auto tex = createTexture(device, commandList, descs[0], CPU_HANDLE, GPU_HANDLE);
-                mLocalHeapAllocatedCount++;
-                heapIndex++;
+                auto tex = createTexture(
+                    device, commandList, descs[0], GLOBAL_CPU_HANDLE, GLOBAL_GPU_HANDLE);
+                mGlobalHeapCount++;
                 return tex;
             } else {
                 return mDefaultTextures[type];
@@ -240,10 +245,6 @@ Scene::Scene(Framework::DX::DeviceResource* device, Framework::Input::InputManag
       mDXRDevice(),
       mWidth(width),
       mHeight(height) {
-    //Framework::Desc::DescriptorTableDesc desc = { L"ResourceTable", 10000,
-    //    Framework::Desc::HeapType::CBV_SRV_UAV, Framework::Desc::HeapFlag::ShaderVisible };
-    //mDescriptorTable = std::make_unique<DescriptorTable>(device->getDevice(), desc);
-
     //Global
     {
         D3D12_DESCRIPTOR_HEAP_DESC desc = {};
@@ -390,7 +391,7 @@ void Scene::render() {
     ID3D12DescriptorHeap* heaps[] = { mGlobalHeap.Get() };
     commandList->SetDescriptorHeaps(_countof(heaps), heaps);
 
-    UINT index = 0;
+    UINT index = mGlobalHeapCount;
     {
         D3D12_CPU_DESCRIPTOR_HANDLE cbvHandle[] = { mSceneCB.getView().mCPUHandle };
         UINT count = _countof(cbvHandle);
@@ -552,38 +553,33 @@ void Scene::createDeviceDependentResources() {
                     desc.name = name;
                     return desc;
                 };
-                auto createDefaultTexture
-                    = [&](const std::wstring& name, const Color4& col, UINT heapIndex) {
-                          std::shared_ptr<Texture2D> texture = std::make_shared<Texture2D>();
-                          texture->init(mDeviceResource, commandList, createUnitTexture(col, name));
+                auto createDefaultTexture = [&](const std::wstring& name, const Color4& col) {
+                    std::shared_ptr<Texture2D> texture = std::make_shared<Texture2D>();
+                    texture->init(mDeviceResource, commandList, createUnitTexture(col, name));
 
-                          texture->createSRV(mDeviceResource, CPU_HANDLE, GPU_HANDLE);
-                          mLocalHeapAllocatedCount++;
-                          return texture;
-                      };
+                    texture->createSRV(mDeviceResource, CPU_HANDLE, GPU_HANDLE);
+                    mLocalHeapAllocatedCount++;
+                    return texture;
+                };
 
-                mDefaultTextures[TextureType::Albedo] = createDefaultTexture(L"DefaultAlbedo",
-                    Color4(1, 1, 1, 1), DescriptorHeapIndex::DefaultTexture_Albedo);
-                mDefaultTextures[TextureType::NormalMap] = createDefaultTexture(L"DefaultNormal",
-                    Color4(0.5f, 0.5f, 1.0f, 1.0f), DescriptorHeapIndex::DefaultTexture_NormalMap);
+                mDefaultTextures[TextureType::Albedo]
+                    = createDefaultTexture(L"DefaultAlbedo", Color4(1, 1, 1, 1));
+                mDefaultTextures[TextureType::NormalMap]
+                    = createDefaultTexture(L"DefaultNormal", Color4(0.5f, 0.5f, 1.0f, 1.0f));
                 mDefaultTextures[TextureType::MetallicRoughnessMap]
-                    = createDefaultTexture(L"DefaultMetallicRoughness", Color4(0, 0, 0, 1),
-                        DescriptorHeapIndex::DefaultTexture_MetallicRoughnessMap);
+                    = createDefaultTexture(L"DefaultMetallicRoughness", Color4(0, 0, 0, 1));
                 mDefaultTextures[TextureType::EmissiveMap]
-                    = createDefaultTexture(L"DefaultEmissive", Color4(0, 0, 0, 1),
-                        DescriptorHeapIndex::DefaultTexture_EmissiveMap);
+                    = createDefaultTexture(L"DefaultEmissive", Color4(0, 0, 0, 1));
                 mDefaultTextures[TextureType::OcclusionMap]
-                    = createDefaultTexture(L"DefaultOcculusion", Color4(1, 1, 1, 1),
-                        DescriptorHeapIndex::DefaultTexture_OcclusionMap);
+                    = createDefaultTexture(L"DefaultOcculusion", Color4(1, 1, 1, 1));
             }
-            UINT heapStartIndex = DescriptorHeapIndex::ModelTextureStart;
             UINT vertexOffset = 0;
             UINT indexOffset = 0;
 
             {
                 GLBModel model;
                 model.init(mDeviceResource, commandList,
-                    modelPath / MODEL_NAMES.at(BottomLevelASType::UFO), heapStartIndex);
+                    modelPath / MODEL_NAMES.at(BottomLevelASType::UFO));
                 resourceIndices.insert(
                     resourceIndices.end(), model.mIndices.begin(), model.mIndices.end());
                 resourceVertices.insert(
@@ -598,7 +594,7 @@ void Scene::createDeviceDependentResources() {
             {
                 GLBModel model;
                 model.init(mDeviceResource, commandList,
-                    modelPath / MODEL_NAMES.at(BottomLevelASType::Floor), heapStartIndex);
+                    modelPath / MODEL_NAMES.at(BottomLevelASType::Floor));
                 resourceIndices.insert(
                     resourceIndices.end(), model.mIndices.begin(), model.mIndices.end());
                 resourceVertices.insert(
@@ -613,7 +609,7 @@ void Scene::createDeviceDependentResources() {
             {
                 GLBModel model;
                 model.init(mDeviceResource, commandList,
-                    modelPath / MODEL_NAMES.at(BottomLevelASType::Sphere), heapStartIndex);
+                    modelPath / MODEL_NAMES.at(BottomLevelASType::Sphere));
                 resourceIndices.insert(
                     resourceIndices.end(), model.mIndices.begin(), model.mIndices.end());
                 resourceVertices.insert(
