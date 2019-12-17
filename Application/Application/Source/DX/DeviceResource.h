@@ -1,5 +1,6 @@
 #pragma once
 #include "DX/DescriptorTable.h"
+#include "DX/Device/Adapter.h"
 #include "DX/Raytracing/RaytracingDescriptorManager.h"
 #include "Window/Window.h"
 
@@ -119,12 +120,6 @@ namespace Framework::DX {
             return mOptions & ALLOW_TEARING;
         }
         /**
-         * @brief アダプタを取得する
-         */
-        IDXGIAdapter1* getAdapter() const {
-            return mAdapter.Get();
-        }
-        /**
          * @brief デバイスを取得する
          */
         ID3D12Device* getDevice() const {
@@ -227,18 +222,6 @@ namespace Framework::DX {
             return mOptions;
         }
         /**
-         * @brief アダプタの説明を取得する
-         */
-        const std::wstring& getAdapterDescription() const {
-            return mAdapterDescription;
-        }
-        /**
-         * @brief アダプタIDを取得する
-         */
-        UINT getAdapterID() const {
-            return mAdapterID;
-        }
-        /**
          * @brief レンダーターゲットのハンドルを取得する
          */
         D3D12_CPU_DESCRIPTOR_HANDLE getRenderTargetView() const {
@@ -259,16 +242,10 @@ namespace Framework::DX {
          * @brief 次のフレームに遷移する
          */
         void moveToNextFrame();
-        /**
-         * @brief アダプタを初期化する
-         */
-        void initializeAdapter(IDXGIAdapter1** adapter);
 
     private:
         UINT mBackBufferIndex; //!< バックバッファのインデックス
-        Comptr<IDXGIAdapter1> mAdapter; //!< アダプタ
-        UINT mAdapterID; //!< アダプタID
-        std::wstring mAdapterDescription; //!< アダプタの説明
+        Adapter mAdapter; //!< アダプタ
         Comptr<ID3D12Device> mDevice; //!< デバイス
         Comptr<ID3D12CommandQueue> mCommandQueue; //!< コマンドキュー
         Comptr<ID3D12GraphicsCommandList> mCommandList; //!< コマンドリスト

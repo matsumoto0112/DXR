@@ -1,3 +1,8 @@
+/**
+ * @file DescriptorAllocator.h
+ * @brief ディスクリプタのアロケート管理
+ */
+
 #pragma once
 #include "DX/Descriptor/DescriptorInfo.h"
 #include "DX/Descriptor/LocalDescriptorHeap.h"

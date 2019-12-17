@@ -86,6 +86,7 @@
     <ClCompile Include="Source\DX\Descriptor\DescriptorSet.cpp" />
     <ClCompile Include="Source\DX\Descriptor\GlobalDescriptorHeap.cpp" />
     <ClCompile Include="Source\DX\Descriptor\LocalDescriptorHeap.cpp" />
+    <ClCompile Include="Source\DX\Device\Adapter.cpp" />
     <ClCompile Include="Source\DX\Raytracing\RaytracingDescriptorHeap.cpp" />
     <ClCompile Include="Source\DX\Raytracing\RaytracingDescriptorManager.cpp" />
     <ClCompile Include="Source\DX\DeviceResource.cpp" />
@@ -160,6 +161,9 @@
     <ClInclude Include="Source\DX\Descriptor\DescriptorSet.h" />
     <ClInclude Include="Source\DX\Descriptor\GlobalDescriptorHeap.h" />
     <ClInclude Include="Source\DX\Descriptor\LocalDescriptorHeap.h" />
+    <ClInclude Include="Source\DX\Device\Adapter.h" />
+    <ClInclude Include="Source\DX\Device\CommandList.h" />
+    <ClInclude Include="Source\DX\Device\IDXInterfaceAccessor.h" />
     <ClInclude Include="Source\DX\Raytracing\RaytracingDescriptorHeap.h" />
     <ClInclude Include="Source\DX\Raytracing\RaytracingDescriptorManager.h" />
     <ClInclude Include="Source\DX\DeviceResource.h" />

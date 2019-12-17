@@ -31,8 +31,6 @@ namespace Framework::DX {
     DeviceResource::DeviceResource(
         DXGI_FORMAT backBufferFormat, DXGI_FORMAT depthBufferFormat, UINT flags)
         : mBackBufferIndex(0),
-          mAdapterID(0),
-          mAdapterDescription(),
           mFenceEvent{},
           mScreenViewport{},
           mScissorRect{},
@@ -97,12 +95,12 @@ namespace Framework::DX {
             }
         }
 
-        initializeAdapter(&mAdapter);
+        mAdapter.init(mFactory.Get());
     }
     //デバイスリソースを作成する
     void DeviceResource::createDeviceResources() {
         MY_THROW_IF_FAILED(
-            D3D12CreateDevice(mAdapter.Get(), mFeatureLevel, IID_PPV_ARGS(&mDevice)));
+            D3D12CreateDevice(mAdapter.getAdapter(), mFeatureLevel, IID_PPV_ARGS(&mDevice)));
 
 #ifndef NDEBUG
         Comptr<ID3D12InfoQueue> infoQueue;
@@ -342,7 +340,6 @@ namespace Framework::DX {
         mSwapChain.Reset();
         mDevice.Reset();
         mFactory.Reset();
-        mAdapter.Reset();
 
 #ifdef _DEBUG
         {
@@ -454,23 +451,5 @@ namespace Framework::DX {
         }
 
         mFenceValues[mBackBufferIndex] = currentFenceValue + 1;
-    }
-    //アダプターの初期化
-    void DeviceResource::initializeAdapter(IDXGIAdapter1** adapter) {
-        *adapter = nullptr;
-
-        Comptr<IDXGIAdapter1> adap;
-        MY_THROW_IF_FAILED(mFactory->EnumAdapters1(0, &adap));
-        DXGI_ADAPTER_DESC1 desc;
-        MY_THROW_IF_FAILED(adap->GetDesc1(&desc));
-
-#ifdef _DEBUG
-        MY_DEBUG_LOG("Direct3D Adapter (%u): VID:%04X, PID:%04X - %ls\n", mAdapter, desc.VendorId,
-            desc.DeviceId, desc.Description);
-#endif
-        if (!adap) { throw std::exception("Unavailable adapter."); }
-
-        mAdapterDescription = desc.Description;
-        *adapter = adap.Detach();
     }
 } // namespace Framework::DX
