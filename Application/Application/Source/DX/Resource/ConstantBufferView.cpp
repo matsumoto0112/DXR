@@ -4,11 +4,9 @@
 namespace Framework::DX {
     void ConstantBufferView::init(DeviceResource* device, const Buffer& buffer, bool isGlobal) {
         if (isGlobal) {
-            mInfo = device->getRaytracingDescriptorManager()->getGlobalView()->allocate(
-                device->getDevice());
+            mInfo = device->getRaytracingDescriptorManager()->allocateGlobal();
         } else {
-            mInfo = device->getRaytracingDescriptorManager()->getLocalView()->allocate(
-                device->getDevice());
+            mInfo = device->getRaytracingDescriptorManager()->allocateLocal();
         }
 
         D3D12_CONSTANT_BUFFER_VIEW_DESC cbvDesc = {};

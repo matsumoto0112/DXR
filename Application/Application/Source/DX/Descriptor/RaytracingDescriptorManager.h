@@ -1,36 +1,37 @@
 #pragma once
 #include "DX/Descriptor/DescriptorAllocator.h"
 #include "DX/Descriptor/GlobalDescriptorHeap.h"
+#include "DX/Descriptor/RaytracingDescriptorHeap.h"
 
 namespace Framework::DX {
     class DeviceResource;
     /**
      * @class RaytracingDescriptorManager
-     * @brief discription
+     * @brief レイトレーシング用ディスクリプタ管理
      */
     class RaytracingDescriptorManager {
     public:
         /**
-         * @brief
+         * @brief コンストラクタ
          */
         RaytracingDescriptorManager() {}
         /**
-         * @brief
+         * @brief デストラクタ
          */
         ~RaytracingDescriptorManager() {}
+        /**
+         * @brief 初期化
+         */
         void init(DeviceResource* device);
-        DescriptorAllocator* getGlobalView() {
-            return &mGlobalView;
-        }
-        GlobalDescriptorHeap* getLocalView() {
-            return &mGlobal;
-        }
+
+        DescriptorInfo allocateGlobal();
+        DescriptorInfo allocateLocal();
         void copyAndSetComputeDescriptorTable(DeviceResource* device,
             ID3D12GraphicsCommandList* commandList, const DescriptorSet& globalSet);
-
         //private:
-        GlobalDescriptorHeap mGlobal;
-        DescriptorAllocator mGlobalView;
+        DeviceResource* mDeviceResource = nullptr;
+        DescriptorAllocator mGlobalView; //!<グローバル用アロケータ
+        RaytracingDescriptorHeap mHeap; //!<レイトレーシング専用ディスクリプタ
 
         DescriptorInfo mDefaultGlobalView;
     };

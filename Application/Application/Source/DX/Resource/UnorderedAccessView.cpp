@@ -5,11 +5,9 @@ namespace Framework::DX {
     void UnorderedAccessView::initAsTexture2D(
         DeviceResource* device, const Buffer& buffer, bool isGlobal) {
         if (isGlobal) {
-            mInfo = device->getRaytracingDescriptorManager()->getGlobalView()->allocate(
-                device->getDevice());
+            mInfo = device->getRaytracingDescriptorManager()->allocateGlobal();
         } else {
-            mInfo = device->getRaytracingDescriptorManager()->getLocalView()->allocate(
-                device->getDevice());
+            mInfo = device->getRaytracingDescriptorManager()->allocateLocal();
         }
 
         D3D12_UNORDERED_ACCESS_VIEW_DESC uavDesc = {};

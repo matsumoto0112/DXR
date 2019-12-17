@@ -54,11 +54,9 @@ namespace Framework::DX {
     void ShaderResourceView::createShaderResourceView(DeviceResource* device,
         ID3D12Resource* resource, const D3D12_SHADER_RESOURCE_VIEW_DESC& desc, bool isGlobal) {
         if (isGlobal) {
-            mInfo = device->getRaytracingDescriptorManager()->getGlobalView()->allocate(
-                device->getDevice());
+            mInfo = device->getRaytracingDescriptorManager()->allocateGlobal();
         } else {
-            mInfo = device->getRaytracingDescriptorManager()->getLocalView()->allocate(
-                device->getDevice());
+            mInfo = device->getRaytracingDescriptorManager()->allocateLocal();
         }
         device->getDevice()->CreateShaderResourceView(resource, &desc, mInfo.cpuHandle);
     }

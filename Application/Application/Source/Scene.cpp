@@ -249,6 +249,7 @@ void Scene::reset() {
 }
 
 void Scene::update() {
+    mDeviceResource->getRaytracingDescriptorManager()->mHeap.resetGlobal();
     mTime.update();
     ImGui::Begin("Status");
     ImGui::Text("FPS:%0.3f", mTime.getFPS());
@@ -341,10 +342,9 @@ void Scene::render() {
     mSceneCB.updateStaging();
 
     ID3D12DescriptorHeap* heaps[]
-        = { mDeviceResource->getRaytracingDescriptorManager()->mGlobal.getHeap() };
+        = { mDeviceResource->getRaytracingDescriptorManager()->mHeap.mDescriptorHeap.Get() };
     commandList->SetDescriptorHeaps(_countof(heaps), heaps);
 
-    mDeviceResource->getRaytracingDescriptorManager()->mGlobal.reset();
     DescriptorSet globalSet;
     globalSet.setCbvHandle(0, mSceneCB.getView().getInfo().cpuHandle);
     globalSet.setSrvHandle(0, mTLASBuffer->getView().getInfo().cpuHandle);
