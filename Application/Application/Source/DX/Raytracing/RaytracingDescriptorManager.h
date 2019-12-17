@@ -1,7 +1,7 @@
 #pragma once
 #include "DX/Descriptor/DescriptorAllocator.h"
 #include "DX/Descriptor/GlobalDescriptorHeap.h"
-#include "DX/Descriptor/RaytracingDescriptorHeap.h"
+#include "DX/Raytracing/RaytracingDescriptorHeap.h"
 
 namespace Framework::DX {
     class DeviceResource;

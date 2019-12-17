@@ -1,6 +1,6 @@
 #pragma once
-#include "DX/Descriptor/RaytracingDescriptorManager.h"
 #include "DX/DescriptorTable.h"
+#include "DX/Raytracing/RaytracingDescriptorManager.h"
 #include "Window/Window.h"
 
 namespace Framework::DX {
