@@ -5,6 +5,7 @@
 #include "DX/Raytracing/Shader/ShaderTable.h"
 #include "DX/Util/Helper.h"
 #include "ImGui/ImGuiManager.h"
+#include "Model.h"
 #include "Utility/Debug.h"
 #include "Utility/IO/GLBLoader.h"
 #include "Utility/IO/TextureLoader.h"
@@ -57,161 +58,17 @@ namespace {
             L"HitGroup_Sphere" },
     };
 
-    static const std::unordered_map<BottomLevelASType::MyEnum, std::wstring> MODEL_NAMES = {
-        { BottomLevelASType::UFO, L"UFO.glb" },
-        { BottomLevelASType::Sphere, L"sphere.glb" },
-        { BottomLevelASType::Floor, L"field.glb" },
+    static const std::unordered_map<ModelType::Enum, std::wstring> MODEL_NAMES = {
+        { ModelType::UFO, L"UFO.glb" },
+        { ModelType::Sphere, L"sphere.glb" },
+        { ModelType::Floor, L"field.glb" },
     };
 
     static constexpr UINT UFO_COUNT = 1;
     static constexpr UINT FLOOR_COUNT = 1;
     static int SPHERE_COUNT = 100;
 
-    template <class T>
-    inline std::vector<T> toLinearList(const std::vector<std::vector<T>>& list) {
-        std::vector<T> res;
-        for (size_t i = 0; i < list.size(); i++) {
-            res.insert(res.end(), list[i].begin(), list[i].end());
-        }
-        return res;
-    }
-
-    using PositionList = std::vector<Framework::Math::Vector3>;
-    using NormalList = std::vector<Framework::Math::Vector3>;
-    using UVList = std::vector<Framework::Math::Vector2>;
-    using TangentList = std::vector<Framework::Math::Vector4>;
-
-    inline std::vector<Framework::DX::Vertex> toLinearVertices(
-        const std::vector<PositionList>& positions, const std::vector<NormalList>& normals = {},
-        const std::vector<UVList>& uvs = {}, const std::vector<TangentList>& tangents = {}) {
-        std::vector<Framework::DX::Vertex> res;
-        for (size_t i = 0; i < positions.size(); i++) {
-            for (size_t j = 0; j < positions[i].size(); j++) {
-                Framework::DX::Vertex v;
-                v.position = positions[i][j];
-                v.normal = normals.empty() || normals[i].empty() ? Vec3(0, 0, 0) : normals[i][j];
-                v.uv = uvs.empty() || uvs[i].empty() ? Vec2(0, 0) : uvs[i][j];
-                v.tangent
-                    = tangents.empty() || tangents[i].empty() ? Vec4(0, 0, 0, 0) : tangents[i][j];
-                res.emplace_back(v);
-            }
-        }
-        return res;
-    }
-
-    /**
-     * @enum enum
-     * @brief description
-     */
-    enum class TextureType {
-        Albedo,
-        NormalMap,
-        MetallicRoughnessMap,
-        EmissiveMap,
-        OcclusionMap,
-    };
-    std::unordered_map<TextureType, std::shared_ptr<Texture2D>> mDefaultTextures;
-
-    /**
-     * @class GLBModel
-     * @brief .glbから作成される3Dモデル
-     */
-    class GLBModel {
-        using TexturePtr = std::shared_ptr<Texture2D>;
-
-    public:
-        /**
-         * @brief
-         */
-        GLBModel() {}
-        /**
-         * @brief
-         */
-        ~GLBModel() {}
-        void init(DeviceResource* device, ID3D12GraphicsCommandList* commandList,
-            const std::filesystem::path& filepath) {
-            Framework::Utility::GLBLoader loader(filepath);
-            //インデックス配列を二次元配列から線形に変換する
-            std::vector<IndexList> indices = loader.getIndicesPerSubMeshes();
-
-            mIndices = toLinearList(indices);
-            //頂点配列を線形に変換する
-            std::vector<PositionList> positions = loader.getPositionsPerSubMeshes();
-            std::vector<NormalList> normals = loader.getNormalsPerSubMeshes();
-            std::vector<UVList> uvs = loader.getUVsPerSubMeshes();
-            std::vector<TangentList> tangents = loader.getTangentsPerSubMeshes();
-
-            mVertices = toLinearVertices(positions, normals, uvs, tangents);
-
-            mIndexBuffer.init(device, mIndices,
-                D3D_PRIMITIVE_TOPOLOGY::D3D_PRIMITIVE_TOPOLOGY_UNDEFINED,
-                filepath.filename().wstring() + L"Index");
-            mVertexBuffer.init(device, mVertices, filepath.filename().wstring() + L"Vertex");
-
-            //マテリアルを読み込む
-            std::vector<GlbMaterial> materials = loader.getMaterialDatas();
-            //マテリアルがすれば最初のマテリアルを、存在しなければデフォルトのマテリアルを使用する
-            GlbMaterial material = materials.empty() ? GlbMaterial{} : materials[0];
-            std::vector<TextureDesc> descs = loader.getImageDatas();
-            //テクスチャの読み込み処理
-            mAlbedoTexture = createTextureIfExist(
-                device, commandList, TextureType::Albedo, !descs.empty(), descs, material);
-            mNormalMapTexture = createTextureIfExist(device, commandList, TextureType::NormalMap,
-                material.normalMapID != -1, descs, material);
-            mMetallicRoughnessTexture
-                = createTextureIfExist(device, commandList, TextureType::MetallicRoughnessMap,
-                    material.metallicRoughnessMapID != -1, descs, material);
-            mEmissiveMapTexture = createTextureIfExist(device, commandList,
-                TextureType::EmissiveMap, material.emissiveMapID != -1, descs, material);
-            mOcclusionMapTexture = createTextureIfExist(device, commandList,
-                TextureType::OcclusionMap, material.occlusionMapID != -1, descs, material);
-        }
-        UINT getDescIndex(TextureType type, const GlbMaterial& mat) {
-            switch (type) {
-            case TextureType::Albedo: return 0;
-            case TextureType::NormalMap: return mat.normalMapID;
-            case TextureType::MetallicRoughnessMap: return mat.metallicRoughnessMapID;
-            case TextureType::EmissiveMap: return mat.emissiveMapID;
-            case TextureType::OcclusionMap: return mat.occlusionMapID;
-            default: return 0;
-            }
-        }
-        TexturePtr createTextureIfExist(DeviceResource* device,
-            ID3D12GraphicsCommandList* commandList, TextureType type, bool expr,
-            const std::vector<TextureDesc>& descs, const GlbMaterial& material) {
-            if (expr) {
-                UINT descIndex = getDescIndex(type, material);
-                auto tex = createTexture(device, commandList, descs[0]);
-                return tex;
-            } else {
-                return mDefaultTextures[type];
-            }
-        }
-
-        TexturePtr createTexture(DeviceResource* device, ID3D12GraphicsCommandList* commandList,
-            const TextureDesc& desc) {
-            TexturePtr texture = std::make_shared<Texture2D>();
-            texture->init(device, commandList, desc);
-            texture->createSRV(device, false);
-            return texture;
-        }
-
-        //private:
-        std::vector<Index> mIndices;
-        std::vector<Vertex> mVertices;
-        VertexBuffer mVertexBuffer;
-        IndexBuffer mIndexBuffer;
-        TexturePtr mAlbedoTexture;
-        TexturePtr mNormalMapTexture;
-        TexturePtr mMetallicRoughnessTexture;
-        TexturePtr mEmissiveMapTexture;
-        TexturePtr mOcclusionMapTexture;
-        ShaderKey::MyEnum mShaderKey;
-        UINT mVertexOffset;
-        UINT mIndexOffset;
-    };
-
-    std::unordered_map<ModelType::Enum, GLBModel> mModels;
+    std::unordered_map<ModelType::Enum, Model> mModels;
 } // namespace
 
 Scene::Scene(Framework::DX::DeviceResource* device, Framework::Input::InputManager* inputManager,
@@ -461,125 +318,63 @@ void Scene::createDeviceDependentResources() {
     {
         ID3D12Device* device = mDeviceResource->getDevice();
         ID3D12GraphicsCommandList* commandList = mDeviceResource->getCommandList();
+        ID3D12CommandAllocator* allocator = mDeviceResource->getCommandAllocator();
+        ID3D12Device5* dxrDevice = mDXRDevice.getDXRDevice();
+        ID3D12GraphicsCommandList5* dxrCommandList = mDXRDevice.getDXRCommandList();
 
         std::vector<Framework::DX::Vertex> resourceVertices;
         std::vector<Index> resourceIndices;
-        {
 
-            auto path = Framework::Utility::ExePath::getInstance()->exe();
-            path = path.remove_filename();
-            auto modelPath = path / "Resources" / "Model";
-            auto texPath = path / "Resources" / "Texture";
+        auto path = Framework::Utility::ExePath::getInstance()->exe();
+        path = path.remove_filename();
+        auto modelPath = path / "Resources" / "Model";
+        auto texPath = path / "Resources" / "Texture";
 
-            {
-                auto createUnitTexture = [](const Color4& color, const std::wstring& name) {
-                    Framework::Desc::TextureDesc desc;
-                    desc.format = DXGI_FORMAT::DXGI_FORMAT_R8G8B8A8_UNORM;
-                    desc.width = 1;
-                    desc.height = 1;
-                    desc.pixels.resize(desc.width * desc.height * 4);
-                    desc.pixels[0] = static_cast<BYTE>(color.r * 255.0f);
-                    desc.pixels[1] = static_cast<BYTE>(color.g * 255.0f);
-                    desc.pixels[2] = static_cast<BYTE>(color.b * 255.0f);
-                    desc.pixels[3] = static_cast<BYTE>(color.a * 255.0f);
-                    desc.name = name;
-                    return desc;
-                };
-                auto createDefaultTexture = [&](const std::wstring& name, const Color4& col) {
-                    std::shared_ptr<Texture2D> texture = std::make_shared<Texture2D>();
-                    texture->init(mDeviceResource, commandList, createUnitTexture(col, name));
+        UINT vertexOffset = 0;
+        UINT indexOffset = 0;
 
-                    texture->createSRV(mDeviceResource, false);
-                    return texture;
-                };
+        auto loadModel = [&](const std::filesystem::path& filepath, UINT modelID) {
+            Model model;
+            model.init(mDeviceResource, commandList, filepath, modelID);
+            model.mVertexOffset = vertexOffset;
+            model.mIndexOffset = indexOffset;
+            vertexOffset += model.mVertices.size();
+            indexOffset += model.mIndices.size();
+            return model;
+        };
 
-                mDefaultTextures[TextureType::Albedo]
-                    = createDefaultTexture(L"DefaultAlbedo", Color4(1, 1, 1, 1));
-                mDefaultTextures[TextureType::NormalMap]
-                    = createDefaultTexture(L"DefaultNormal", Color4(0.5f, 0.5f, 1.0f, 1.0f));
-                mDefaultTextures[TextureType::MetallicRoughnessMap]
-                    = createDefaultTexture(L"DefaultMetallicRoughness", Color4(0, 0, 0, 1));
-                mDefaultTextures[TextureType::EmissiveMap]
-                    = createDefaultTexture(L"DefaultEmissive", Color4(0, 0, 0, 1));
-                mDefaultTextures[TextureType::OcclusionMap]
-                    = createDefaultTexture(L"DefaultOcculusion", Color4(1, 1, 1, 1));
-            }
-            UINT vertexOffset = 0;
-            UINT indexOffset = 0;
-
-            {
-                GLBModel model;
-                model.init(mDeviceResource, commandList,
-                    modelPath / MODEL_NAMES.at(BottomLevelASType::UFO));
-                resourceIndices.insert(
-                    resourceIndices.end(), model.mIndices.begin(), model.mIndices.end());
-                resourceVertices.insert(
-                    resourceVertices.end(), model.mVertices.begin(), model.mVertices.end());
-                model.mVertexOffset = vertexOffset;
-                model.mIndexOffset = indexOffset;
-                vertexOffset += model.mVertices.size();
-                indexOffset += model.mIndices.size();
-                model.mShaderKey = ShaderKey::HitGroup_UFO;
-                mModels[ModelType::UFO] = model;
-            }
-            {
-                GLBModel model;
-                model.init(mDeviceResource, commandList,
-                    modelPath / MODEL_NAMES.at(BottomLevelASType::Floor));
-                resourceIndices.insert(
-                    resourceIndices.end(), model.mIndices.begin(), model.mIndices.end());
-                resourceVertices.insert(
-                    resourceVertices.end(), model.mVertices.begin(), model.mVertices.end());
-                model.mVertexOffset = vertexOffset;
-                model.mIndexOffset = indexOffset;
-                vertexOffset += model.mVertices.size();
-                indexOffset += model.mIndices.size();
-                model.mShaderKey = ShaderKey::HitGroup_Floor;
-                mModels[ModelType::Floor] = model;
-            }
-            {
-                GLBModel model;
-                model.init(mDeviceResource, commandList,
-                    modelPath / MODEL_NAMES.at(BottomLevelASType::Sphere));
-                resourceIndices.insert(
-                    resourceIndices.end(), model.mIndices.begin(), model.mIndices.end());
-                resourceVertices.insert(
-                    resourceVertices.end(), model.mVertices.begin(), model.mVertices.end());
-                model.mVertexOffset = vertexOffset;
-                model.mIndexOffset = indexOffset;
-                vertexOffset += model.mVertices.size();
-                indexOffset += model.mIndices.size();
-                model.mShaderKey = ShaderKey::HitGroup_Sphere;
-                mModels[ModelType::Sphere] = model;
-            }
+        mModels[ModelType::UFO]
+            = loadModel(modelPath / MODEL_NAMES.at(ModelType::UFO), ShaderKey::HitGroup_UFO);
+        mModels[ModelType::Floor]
+            = loadModel(modelPath / MODEL_NAMES.at(ModelType::Floor), ShaderKey::HitGroup_Floor);
+        mModels[ModelType::Sphere]
+            = loadModel(modelPath / MODEL_NAMES.at(ModelType::Sphere), ShaderKey::HitGroup_Sphere);
+        for (auto&& model : mModels) {
+            resourceIndices.insert(
+                resourceIndices.end(), model.second.mIndices.begin(), model.second.mIndices.end());
+            resourceVertices.insert(resourceVertices.end(), model.second.mVertices.begin(),
+                model.second.mVertices.end());
         }
-        {
-            ID3D12Device* device = mDeviceResource->getDevice();
-            ID3D12GraphicsCommandList* commandList = mDeviceResource->getCommandList();
-            ID3D12CommandAllocator* allocator = mDeviceResource->getCommandAllocator();
-            ID3D12Device5* dxrDevice = mDXRDevice.getDXRDevice();
-            ID3D12GraphicsCommandList5* dxrCommandList = mDXRDevice.getDXRCommandList();
 
-            for (auto&& model : mModels) {
-                mBLASBuffers[model.first] = std::make_unique<BottomLevelAccelerationStructure>();
-                mBLASBuffers[model.first]->init(mDXRDevice, model.second.mVertexBuffer,
-                    static_cast<UINT>(sizeof(Vertex)), model.second.mIndexBuffer,
-                    static_cast<UINT>(sizeof(Index)));
-            }
+        mResourcesIndexBuffer.init(mDeviceResource, resourceIndices,
+            D3D12_PRIMITIVE_TOPOLOGY::D3D_PRIMITIVE_TOPOLOGY_UNDEFINED, L"ResourceIndex");
+        mResourceIndexBufferSRV = mResourcesIndexBuffer.createSRV(mDeviceResource, true);
 
-            mTLASBuffer = std::make_unique<TopLevelAccelerationStructure>();
+        mResourcesVertexBuffer.init(mDeviceResource, resourceVertices, L"ResourceVertex");
+        mResourceVertexBufferSRV.initAsBuffer(
+            mDeviceResource, mResourcesVertexBuffer.getBuffer(), true);
 
-            mDeviceResource->executeCommandList();
-            mDeviceResource->waitForGPU();
-
-            mResourcesIndexBuffer.init(mDeviceResource, resourceIndices,
-                D3D12_PRIMITIVE_TOPOLOGY::D3D_PRIMITIVE_TOPOLOGY_UNDEFINED, L"ResourceIndex");
-            mResourceIndexBufferSRV = mResourcesIndexBuffer.createSRV(mDeviceResource, true);
-
-            mResourcesVertexBuffer.init(mDeviceResource, resourceVertices, L"ResourceVertex");
-            mResourceVertexBufferSRV.initAsBuffer(
-                mDeviceResource, mResourcesVertexBuffer.getBuffer(), true);
+        for (auto&& model : mModels) {
+            mBLASBuffers[model.first] = std::make_unique<BottomLevelAccelerationStructure>();
+            mBLASBuffers[model.first]->init(mDXRDevice, model.second.mVertexBuffer,
+                static_cast<UINT>(sizeof(Vertex)), model.second.mIndexBuffer,
+                static_cast<UINT>(sizeof(Index)));
         }
+
+        mTLASBuffer = std::make_unique<TopLevelAccelerationStructure>();
+
+        mDeviceResource->executeCommandList();
+        mDeviceResource->waitForGPU();
     }
 
     {
@@ -650,22 +445,21 @@ void Scene::createDeviceDependentResources() {
             mDXRStateObject->setShaderTableConfig(
                 ShaderType::HitGroup, 4, sizeof(RootArgument), L"HitGroupShaderTable");
 
-            auto setRootArgument = [&](const GLBModel& model) {
+            auto setRootArgument = [&](const Model& model) {
                 RootArgument arg;
                 arg.cb.indexOffset = model.mIndexOffset;
                 arg.cb.vertexOffset = model.mVertexOffset;
-                arg.albedo = model.mAlbedoTexture->getView().getInfo().gpuHandle;
-                arg.normal = model.mNormalMapTexture->getView().getInfo().gpuHandle;
-                arg.metallicRoughness
-                    = model.mMetallicRoughnessTexture->getView().getInfo().gpuHandle;
-                arg.emissive = model.mEmissiveMapTexture->getView().getInfo().gpuHandle;
-                arg.occlusion = model.mOcclusionMapTexture->getView().getInfo().gpuHandle;
+                arg.albedo = model.mAlbedo.getView().getInfo().gpuHandle;
+                arg.normal = model.mNormalMap.getView().getInfo().gpuHandle;
+                arg.metallicRoughness = model.mMetallicRoughness.getView().getInfo().gpuHandle;
+                arg.emissive = model.mEmissiveMap.getView().getInfo().gpuHandle;
+                arg.occlusion = model.mOcclusionMap.getView().getInfo().gpuHandle;
                 return arg;
             };
 
             for (auto&& model : mModels) {
                 mDXRStateObject->appendShaderTable(
-                    model.second.mShaderKey, &setRootArgument(model.second));
+                    model.second.mModelID, &setRootArgument(model.second));
             }
 
             mDXRStateObject->buildShaderTable();

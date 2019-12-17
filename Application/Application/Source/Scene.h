@@ -73,7 +73,6 @@ private:
     std::unique_ptr<Framework::DX::RootSignature> mGlobalRootSignature;
     std::unique_ptr<Framework::DX::RootSignature> mMissLocalRootSignature;
     std::unique_ptr<Framework::DX::RootSignature> mHitGroupLocalRootSignature;
-    //std::unique_ptr<Framework::DX::DescriptorTable> mDescriptorTable;
     Framework::DX::IndexBuffer mResourcesIndexBuffer;
     Framework::DX::ShaderResourceView mResourceIndexBufferSRV;
     Framework::DX::VertexBuffer mResourcesVertexBuffer;

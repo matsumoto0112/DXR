@@ -61,6 +61,7 @@
     <ClCompile Include="Source\DX\Raytracing\RaytracingDescriptorHeap.cpp" />
     <ClCompile Include="Source\DX\Raytracing\RaytracingDescriptorManager.cpp" />
     <ClCompile Include="Source\DX\Device\Adapter.cpp" />
+    <ClCompile Include="Source\Model.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Source\stdafx.h" />
@@ -156,6 +157,7 @@
     <ClInclude Include="Source\DX\Device\IDXInterfaceAccessor.h" />
     <ClInclude Include="Source\DX\Device\CommandList.h" />
     <ClInclude Include="Source\DX\Device\Adapter.h" />
+    <ClInclude Include="Source\Model.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />

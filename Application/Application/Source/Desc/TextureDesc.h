@@ -28,4 +28,5 @@ namespace Framework::Desc {
         DXGI_FORMAT format; //!< フォーマット
         TextureFlags flags = TextureFlags::None; //!< テクスチャの使用フラグ
     };
+
 } // namespace Framework::Desc
