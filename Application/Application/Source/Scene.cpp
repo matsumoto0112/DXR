@@ -5,6 +5,7 @@
 #include "DX/Raytracing/Shader/ShaderTable.h"
 #include "DX/Util/Helper.h"
 #include "ImGui/ImGuiManager.h"
+#include "Math/Quaternion.h"
 #include "Model.h"
 #include "Utility/Debug.h"
 #include "Utility/IO/GLBLoader.h"
@@ -25,6 +26,7 @@
 using namespace Framework::DX;
 using namespace Framework::Desc;
 using namespace Framework::Utility;
+using namespace Framework::Math;
 using namespace DirectX;
 
 namespace {
@@ -69,6 +71,16 @@ namespace {
     static int SPHERE_COUNT = 100;
 
     std::unordered_map<ModelType::Enum, Model> mModels;
+
+    struct Object {
+        Model* model;
+        UINT hitGroupIndex;
+        BottomLevelAccelerationStructure* blas;
+        Vec3 position;
+        Quaternion rotation;
+        Vec3 scale;
+    };
+    Object mFloor;
 } // namespace
 
 Scene::Scene(Framework::DX::DeviceResource* device, Framework::Input::InputManager* inputManager,
@@ -108,6 +120,8 @@ void Scene::reset() {
 void Scene::update() {
     mDeviceResource->getRaytracingDescriptorManager()->mHeap.resetGlobal();
     mTime.update();
+
+#pragma region IMGUI_REGION
     ImGui::Begin("Status");
     ImGui::Text("FPS:%0.3f", mTime.getFPS());
     ImGui::End();
@@ -142,7 +156,8 @@ void Scene::update() {
         ImGui::DragInt("Count", &SPHERE_COUNT);
     }
     ImGui::End();
-
+#pragma endregion
+#pragma region CONSTANT_BUFFER_UPDATE
     mSceneCB->cameraPosition = Vec4(mCameraPosition, 1.0f);
     const float aspect = static_cast<float>(mWidth) / static_cast<float>(mHeight);
 
@@ -155,6 +170,11 @@ void Scene::update() {
     mSceneCB->lightDiffuse = mLightDiffuse;
     mSceneCB->lightAmbient = mLightAmbient;
     mSceneCB->globalTime = static_cast<float>(mTime.getTime());
+#pragma endregion
+
+    mFloor.position = Vec3(0, -10, 0);
+    mFloor.rotation = Quaternion::IDENTITY;
+    mFloor.scale = Vec3(1, 1, 1);
 }
 
 void Scene::render() {
@@ -168,26 +188,40 @@ void Scene::render() {
     instanceDesc.mask = 0xff;
     instanceDesc.flags = D3D12_RAYTRACING_INSTANCE_FLAGS::D3D12_RAYTRACING_INSTANCE_FLAG_NONE;
 
-    for (UINT n = 0; n < FLOOR_COUNT; n++) {
-        XMMATRIX transform = XMMatrixScaling(50, 1, 50) * XMMatrixTranslation(-100, -20, -100);
-        instanceDesc.hitGroupIndex = LocalRootSignature::HitGroupIndex::Floor;
-        instanceDesc.blas = mBLASBuffers[ModelType::Floor].get();
-        instanceDesc.transform = transform;
-        mTLASBuffer->add(instanceDesc);
-    }
+    auto createTransform = [](Object& obj) {
+        return XMMatrixScaling(obj.scale.x, obj.scale.y, obj.scale.z)
+            * XMMatrixRotationQuaternion(
+                { obj.rotation.x, obj.rotation.y, obj.rotation.z, obj.rotation.w })
+            * XMMatrixTranslation(obj.position.x, obj.position.y, obj.position.z);
+    };
 
-    static float X = 0.0f;
-    X += 0.001f;
-    UINT root = static_cast<UINT>(Framework::Math::MathUtil::sqrt(SPHERE_COUNT));
-    for (UINT n = 0; n < SPHERE_COUNT; n++) {
-        float x = (n % root) * 20.0f;
-        float z = (n / root) * 20.0f;
-        XMMATRIX transform = XMMatrixRotationY(X) * XMMatrixTranslation(x, 5.0f, z);
-        instanceDesc.hitGroupIndex = LocalRootSignature::HitGroupIndex::Sphere;
-        instanceDesc.blas = mBLASBuffers[ModelType::Sphere].get();
-        instanceDesc.transform = transform;
-        mTLASBuffer->add(instanceDesc);
-    }
+    XMMATRIX transform = createTransform(mFloor);
+    instanceDesc.hitGroupIndex = mFloor.hitGroupIndex;
+    instanceDesc.blas = mFloor.blas;
+    instanceDesc.transform = transform;
+    mTLASBuffer->add(instanceDesc);
+
+    //XMMATRIX transform = XMMatrixScaling(;
+    //for (UINT n = 0; n < FLOOR_COUNT; n++) {
+    //    XMMATRIX transform = XMMatrixScaling(50, 1, 50) * XMMatrixTranslation(-100, -20, -100);
+    //    instanceDesc.hitGroupIndex = LocalRootSignature::HitGroupIndex::Floor;
+    //    instanceDesc.blas = mBLASBuffers[ModelType::Floor].get();
+    //    instanceDesc.transform = transform;
+    //    mTLASBuffer->add(instanceDesc);
+    //}
+
+    //static float X = 0.0f;
+    //X += 0.001f;
+    //UINT root = static_cast<UINT>(Framework::Math::MathUtil::sqrt(SPHERE_COUNT));
+    //for (UINT n = 0; n < SPHERE_COUNT; n++) {
+    //    float x = (n % root) * 20.0f;
+    //    float z = (n / root) * 20.0f;
+    //    XMMATRIX transform = XMMatrixRotationY(X) * XMMatrixTranslation(x, 5.0f, z);
+    //    instanceDesc.hitGroupIndex = LocalRootSignature::HitGroupIndex::Sphere;
+    //    instanceDesc.blas = mBLASBuffers[ModelType::Sphere].get();
+    //    instanceDesc.transform = transform;
+    //    mTLASBuffer->add(instanceDesc);
+    //}
 
     mTLASBuffer->build(mDXRDevice, mDeviceResource,
         D3D12_RAYTRACING_ACCELERATION_STRUCTURE_BUILD_FLAGS::
@@ -375,6 +409,10 @@ void Scene::createDeviceDependentResources() {
 
         mDeviceResource->executeCommandList();
         mDeviceResource->waitForGPU();
+
+        mFloor.model = &mModels[ModelType::Floor];
+        mFloor.hitGroupIndex = LocalRootSignature::HitGroupIndex::Floor;
+        mFloor.blas = mBLASBuffers[ModelType::Floor].get();
     }
 
     {
