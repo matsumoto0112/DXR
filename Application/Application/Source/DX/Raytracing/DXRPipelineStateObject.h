@@ -78,7 +78,7 @@ namespace Framework::DX {
          * @param names 取り出すシェーダーのエントリーポイント名
          */
         template <class... T>
-        void exportShader(void* shaderCode, size_t byteLength, const T&... names);
+        void exportShader(const void* shaderCode, size_t byteLength, const T&... names);
         /**
          * @brief ヒットグループを結びつける
          */
@@ -154,7 +154,7 @@ namespace Framework::DX {
     //シェーダーの読み込み
     template <class... T>
     inline void DXRPipelineStateObject::exportShader(
-        void* shaderCode, size_t byteLength, const T&... names) {
+        const void* shaderCode, size_t byteLength, const T&... names) {
         CD3DX12_DXIL_LIBRARY_SUBOBJECT* lib
             = mPipelineStateObjectDesc.CreateSubobject<CD3DX12_DXIL_LIBRARY_SUBOBJECT>();
         lib->SetDXILLibrary(&CD3DX12_SHADER_BYTECODE(shaderCode, byteLength));

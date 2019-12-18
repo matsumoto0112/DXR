@@ -30,6 +30,7 @@ using namespace Framework::Math;
 using namespace DirectX;
 
 namespace {
+    //シェーダーのローカル情報を設定するためのキー
     namespace ShaderKey {
         enum MyEnum {
             RayGenShader,
@@ -40,30 +41,56 @@ namespace {
             HitGroup_Sphere,
         };
     }
-    static const std::wstring MISS_SHADER_NAME = L"Miss";
-    static const std::wstring MISS_SHADOW_SHADER_NAME = L"Shadow";
-    static const std::wstring RAY_GEN_NAME = L"RayGenShader";
 
-    struct HitGroup {
-        const unsigned char* shader;
+    struct ExportShaderInfo {
+        std::wstring name;
+        ShaderType type;
+        const void* shader;
         UINT shaderSize;
-        std::wstring closestHitNames;
-        std::wstring hitGroupName;
     };
 
-    static const std::vector<HitGroup> HIT_GROUP_NAMES = {
-        { g_pClosestHit_Normal, _countof(g_pClosestHit_Normal), L"ClosestHit_Normal",
-            L"HitGroup_UFO" },
-        { g_pClosestHit_Plane, _countof(g_pClosestHit_Plane), L"ClosestHit_Plane",
-            L"HitGroup_Floor" },
-        { g_pClosestHit_Sphere, _countof(g_pClosestHit_Sphere), L"ClosestHit_Sphere",
-            L"HitGroup_Sphere" },
+    static const std::vector<ExportShaderInfo> EXPORT_SHADER_LIST{
+        { L"RayGenShader", ShaderType::RayGeneration, g_pRayGenShader, _countof(g_pRayGenShader) },
+        { L"Miss", ShaderType::Miss, g_pMiss, _countof(g_pMiss) },
+        { L"Shadow", ShaderType::Miss, g_pShadow, _countof(g_pShadow) },
+        { L"ClosestHit_Normal", ShaderType::HitGroup, g_pClosestHit_Normal,
+            _countof(g_pClosestHit_Normal) },
+        { L"ClosestHit_Plane", ShaderType::HitGroup, g_pClosestHit_Plane,
+            _countof(g_pClosestHit_Plane) },
+        { L"ClosestHit_Sphere", ShaderType::HitGroup, g_pClosestHit_Sphere,
+            _countof(g_pClosestHit_Sphere) },
+    };
+
+    struct HitGroup {
+        UINT shaderKey;
+        std::wstring hitGroupName;
+        std::wstring closestHitNames;
+    };
+
+    static const std::vector<HitGroup> HIT_GROUP_LIST = {
+        { ShaderKey::HitGroup_UFO, L"HitGroup_UFO", L"ClosestHit_Normal" },
+        { ShaderKey::HitGroup_Floor, L"HitGroup_Floor", L"ClosestHit_Plane" },
+        { ShaderKey::HitGroup_Sphere, L"HitGroup_Sphere", L"ClosestHit_Sphere" },
+    };
+
+    struct ShaderTableInfo {
+        std::wstring name;
+        ShaderKey::MyEnum key;
+        ShaderType type;
+    };
+    static const std::vector<ShaderTableInfo> SHADER_TABLE_INFO = {
+        { L"RayGenShader", ShaderKey::RayGenShader, ShaderType::RayGeneration },
+        { L"Miss", ShaderKey::MissShader, ShaderType::Miss },
+        { L"Shadow", ShaderKey::MissShadowShader, ShaderType::Miss },
+        { L"HitGroup_UFO", ShaderKey::HitGroup_UFO, ShaderType::HitGroup },
+        { L"HitGroup_Floor", ShaderKey::HitGroup_Floor, ShaderType::HitGroup },
+        { L"HitGroup_Sphere", ShaderKey::HitGroup_Sphere, ShaderType::HitGroup },
     };
 
     static const std::unordered_map<ModelType::Enum, std::wstring> MODEL_NAMES = {
         { ModelType::UFO, L"UFO.glb" },
         { ModelType::Sphere, L"sphere.glb" },
-        { ModelType::Floor, L"field.glb" },
+        { ModelType::Floor, L"floor.glb" },
     };
 
     static constexpr UINT UFO_COUNT = 1;
@@ -81,6 +108,7 @@ namespace {
         Vec3 scale;
     };
     Object mFloor;
+    std::vector<Object> mSpheres;
 } // namespace
 
 Scene::Scene(Framework::DX::DeviceResource* device, Framework::Input::InputManager* inputManager,
@@ -171,10 +199,6 @@ void Scene::update() {
     mSceneCB->lightAmbient = mLightAmbient;
     mSceneCB->globalTime = static_cast<float>(mTime.getTime());
 #pragma endregion
-
-    mFloor.position = Vec3(0, -10, 0);
-    mFloor.rotation = Quaternion::IDENTITY;
-    mFloor.scale = Vec3(1, 1, 1);
 }
 
 void Scene::render() {
@@ -195,33 +219,16 @@ void Scene::render() {
             * XMMatrixTranslation(obj.position.x, obj.position.y, obj.position.z);
     };
 
-    XMMATRIX transform = createTransform(mFloor);
-    instanceDesc.hitGroupIndex = mFloor.hitGroupIndex;
-    instanceDesc.blas = mFloor.blas;
-    instanceDesc.transform = transform;
-    mTLASBuffer->add(instanceDesc);
+    auto addTLAS = [&](Object& obj) {
+        XMMATRIX transform = createTransform(obj);
+        instanceDesc.hitGroupIndex = obj.hitGroupIndex;
+        instanceDesc.blas = obj.blas;
+        instanceDesc.transform = transform;
+        mTLASBuffer->add(instanceDesc);
+    };
 
-    //XMMATRIX transform = XMMatrixScaling(;
-    //for (UINT n = 0; n < FLOOR_COUNT; n++) {
-    //    XMMATRIX transform = XMMatrixScaling(50, 1, 50) * XMMatrixTranslation(-100, -20, -100);
-    //    instanceDesc.hitGroupIndex = LocalRootSignature::HitGroupIndex::Floor;
-    //    instanceDesc.blas = mBLASBuffers[ModelType::Floor].get();
-    //    instanceDesc.transform = transform;
-    //    mTLASBuffer->add(instanceDesc);
-    //}
-
-    //static float X = 0.0f;
-    //X += 0.001f;
-    //UINT root = static_cast<UINT>(Framework::Math::MathUtil::sqrt(SPHERE_COUNT));
-    //for (UINT n = 0; n < SPHERE_COUNT; n++) {
-    //    float x = (n % root) * 20.0f;
-    //    float z = (n / root) * 20.0f;
-    //    XMMATRIX transform = XMMatrixRotationY(X) * XMMatrixTranslation(x, 5.0f, z);
-    //    instanceDesc.hitGroupIndex = LocalRootSignature::HitGroupIndex::Sphere;
-    //    instanceDesc.blas = mBLASBuffers[ModelType::Sphere].get();
-    //    instanceDesc.transform = transform;
-    //    mTLASBuffer->add(instanceDesc);
-    //}
+    addTLAS(mFloor);
+    for (auto&& obj : mSpheres) { addTLAS(obj); }
 
     mTLASBuffer->build(mDXRDevice, mDeviceResource,
         D3D12_RAYTRACING_ACCELERATION_STRUCTURE_BUILD_FLAGS::
@@ -413,46 +420,62 @@ void Scene::createDeviceDependentResources() {
         mFloor.model = &mModels[ModelType::Floor];
         mFloor.hitGroupIndex = LocalRootSignature::HitGroupIndex::Floor;
         mFloor.blas = mBLASBuffers[ModelType::Floor].get();
+        mFloor.position = Vec3(0, -10, 0);
+        mFloor.rotation = Quaternion::IDENTITY;
+        mFloor.scale = Vec3(500, 1, 500);
+
+        UINT root = static_cast<UINT>(Framework::Math::MathUtil::sqrt(SPHERE_COUNT));
+        for (UINT i = 0; i < SPHERE_COUNT; i++) {
+            Object sphere;
+            sphere.model = &mModels[ModelType::Sphere];
+            sphere.hitGroupIndex = LocalRootSignature::HitGroupIndex::Sphere;
+            sphere.blas = mBLASBuffers[ModelType::Sphere].get();
+            sphere.position = Vec3((i % root) * 20.0f, 0, (i / root) * 20.0f);
+            sphere.rotation = Quaternion::IDENTITY;
+            sphere.scale = Vec3(1, 1, 1);
+            mSpheres.emplace_back(sphere);
+        }
     }
 
     {
 
         mDXRStateObject = std::make_unique<DXRPipelineStateObject>(&mDXRDevice);
 
-        mDXRStateObject->exportShader((void*)g_pMiss, _countof(g_pMiss), MISS_SHADER_NAME);
-
-        UINT key = ShaderKey::HitGroup_UFO;
-        for (auto&& shader : HIT_GROUP_NAMES) {
+        for (auto&& exportShader : EXPORT_SHADER_LIST) {
             mDXRStateObject->exportShader(
-                (void*)shader.shader, shader.shaderSize, shader.closestHitNames);
-            mDXRStateObject->bindHitGroup({ shader.hitGroupName,
-                D3D12_HIT_GROUP_TYPE::D3D12_HIT_GROUP_TYPE_TRIANGLES, shader.closestHitNames });
-            mDXRStateObject->bindLocalRootSignature(
-                *mHitGroupLocalRootSignature, shader.hitGroupName);
-            mDXRStateObject->associateShaderInfoWithKey(
-                key++, ShaderType::HitGroup, shader.hitGroupName);
+                exportShader.shader, exportShader.shaderSize, exportShader.name);
         }
-        mDXRStateObject->exportShader(
-            (void*)g_pRayGenShader, _countof(g_pRayGenShader), RAY_GEN_NAME);
-        mDXRStateObject->exportShader(
-            (void*)g_pShadow, _countof(g_pShadow), MISS_SHADOW_SHADER_NAME);
 
+        for (auto&& hitGroup : HIT_GROUP_LIST) {
+            mDXRStateObject->bindHitGroup({ hitGroup.hitGroupName,
+                D3D12_HIT_GROUP_TYPE::D3D12_HIT_GROUP_TYPE_TRIANGLES, hitGroup.closestHitNames });
+        }
+
+        for (auto&& table : SHADER_TABLE_INFO) {
+            mDXRStateObject->associateShaderInfoWithKey(table.key, table.type, table.name);
+            switch (table.type) {
+            case ShaderType::RayGeneration: break;
+            case ShaderType::Miss:
+                mDXRStateObject->bindLocalRootSignature(*mMissLocalRootSignature, table.name);
+                break;
+            case ShaderType::HitGroup:
+                mDXRStateObject->bindLocalRootSignature(*mHitGroupLocalRootSignature, table.name);
+                break;
+            default: break;
+            }
+        }
+
+        //その他シェーダーの設定
         UINT payloadSize
             = Framework::Math::MathUtil::mymax<UINT>({ sizeof(RayPayload), sizeof(ShadowPayload) });
         UINT attrSize = sizeof(float) * 2;
         UINT maxRecursionDepth = MAX_RAY_RECURSION_DEPTH;
         mDXRStateObject->setConfig(payloadSize, attrSize, maxRecursionDepth);
 
-        mDXRStateObject->bindLocalRootSignature(*mMissLocalRootSignature, MISS_SHADER_NAME);
+        mDXRStateObject->bindLocalRootSignature(*mMissLocalRootSignature, L"Miss");
 
         mDXRStateObject->bindGlobalRootSignature(*mGlobalRootSignature);
 
-        mDXRStateObject->associateShaderInfoWithKey(
-            ShaderKey::RayGenShader, ShaderType::RayGeneration, RAY_GEN_NAME);
-        mDXRStateObject->associateShaderInfoWithKey(
-            ShaderKey::MissShader, ShaderType::Miss, MISS_SHADER_NAME);
-        mDXRStateObject->associateShaderInfoWithKey(
-            ShaderKey::MissShadowShader, ShaderType::Miss, MISS_SHADOW_SHADER_NAME);
         mDXRStateObject->createPipeline();
         mDXRStateObject->prebuild();
 
