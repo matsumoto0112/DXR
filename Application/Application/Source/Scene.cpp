@@ -87,17 +87,22 @@ namespace {
         { L"HitGroup_Sphere", ShaderKey::HitGroup_Sphere, ShaderType::HitGroup },
     };
 
-    static const std::unordered_map<ModelType::Enum, std::wstring> MODEL_NAMES = {
-        { ModelType::UFO, L"UFO.glb" },
-        { ModelType::Sphere, L"sphere.glb" },
-        { ModelType::Floor, L"floor.glb" },
+    struct LoadModelInfo {
+        std::wstring name;
+        UINT shaderKey;
+    };
+
+    static const std::unordered_map<ModelType::Enum, LoadModelInfo> MODEL_NAMES = {
+        { ModelType::UFO, { L"UFO.glb", ShaderKey::HitGroup_UFO } },
+        { ModelType::Sphere, { L"sphere.glb", ShaderKey::HitGroup_Sphere } },
+        { ModelType::Floor, { L"floor.glb", ShaderKey::HitGroup_Floor } },
     };
 
     static constexpr UINT UFO_COUNT = 1;
     static constexpr UINT FLOOR_COUNT = 1;
     static int SPHERE_COUNT = 100;
 
-    std::unordered_map<ModelType::Enum, Model> mModels;
+    std::unordered_map<ModelType::Enum, Model> mLoadedModels;
 
     struct Object {
         Model* model;
@@ -384,13 +389,15 @@ void Scene::createDeviceDependentResources() {
             return model;
         };
 
-        mModels[ModelType::UFO]
-            = loadModel(modelPath / MODEL_NAMES.at(ModelType::UFO), ShaderKey::HitGroup_UFO);
-        mModels[ModelType::Floor]
-            = loadModel(modelPath / MODEL_NAMES.at(ModelType::Floor), ShaderKey::HitGroup_Floor);
-        mModels[ModelType::Sphere]
-            = loadModel(modelPath / MODEL_NAMES.at(ModelType::Sphere), ShaderKey::HitGroup_Sphere);
-        for (auto&& model : mModels) {
+        mLoadedModels[ModelType::UFO] = loadModel(modelPath / MODEL_NAMES.at(ModelType::UFO).name,
+            MODEL_NAMES.at(ModelType::UFO).shaderKey);
+        mLoadedModels[ModelType::Floor]
+            = loadModel(modelPath / MODEL_NAMES.at(ModelType::Floor).name,
+                MODEL_NAMES.at(ModelType::Floor).shaderKey);
+        mLoadedModels[ModelType::Sphere]
+            = loadModel(modelPath / MODEL_NAMES.at(ModelType::Sphere).name,
+                MODEL_NAMES.at(ModelType::Sphere).shaderKey);
+        for (auto&& model : mLoadedModels) {
             resourceIndices.insert(
                 resourceIndices.end(), model.second.mIndices.begin(), model.second.mIndices.end());
             resourceVertices.insert(resourceVertices.end(), model.second.mVertices.begin(),
@@ -405,7 +412,7 @@ void Scene::createDeviceDependentResources() {
         mResourceVertexBufferSRV.initAsBuffer(
             mDeviceResource, mResourcesVertexBuffer.getBuffer(), true);
 
-        for (auto&& model : mModels) {
+        for (auto&& model : mLoadedModels) {
             mBLASBuffers[model.first] = std::make_unique<BottomLevelAccelerationStructure>();
             mBLASBuffers[model.first]->init(mDXRDevice, model.second.mVertexBuffer,
                 static_cast<UINT>(sizeof(Vertex)), model.second.mIndexBuffer,
@@ -417,7 +424,7 @@ void Scene::createDeviceDependentResources() {
         mDeviceResource->executeCommandList();
         mDeviceResource->waitForGPU();
 
-        mFloor.model = &mModels[ModelType::Floor];
+        mFloor.model = &mLoadedModels[ModelType::Floor];
         mFloor.hitGroupIndex = LocalRootSignature::HitGroupIndex::Floor;
         mFloor.blas = mBLASBuffers[ModelType::Floor].get();
         mFloor.position = Vec3(0, -10, 0);
@@ -427,7 +434,7 @@ void Scene::createDeviceDependentResources() {
         UINT root = static_cast<UINT>(Framework::Math::MathUtil::sqrt(SPHERE_COUNT));
         for (UINT i = 0; i < SPHERE_COUNT; i++) {
             Object sphere;
-            sphere.model = &mModels[ModelType::Sphere];
+            sphere.model = &mLoadedModels[ModelType::Sphere];
             sphere.hitGroupIndex = LocalRootSignature::HitGroupIndex::Sphere;
             sphere.blas = mBLASBuffers[ModelType::Sphere].get();
             sphere.position = Vec3((i % root) * 20.0f, 0, (i / root) * 20.0f);
@@ -518,7 +525,7 @@ void Scene::createDeviceDependentResources() {
                 return arg;
             };
 
-            for (auto&& model : mModels) {
+            for (auto&& model : mLoadedModels) {
                 mDXRStateObject->appendShaderTable(
                     model.second.mModelID, &setRootArgument(model.second));
             }
