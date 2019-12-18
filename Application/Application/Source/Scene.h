@@ -37,6 +37,8 @@ namespace ModelType {
         UFO,
         Floor,
         Sphere,
+        House,
+        Tree,
 
         Count,
     };

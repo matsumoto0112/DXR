@@ -59,7 +59,7 @@ namespace {
 
 void Model::init(Framework::DX::DeviceResource* device, ID3D12GraphicsCommandList* commandList,
     const std::filesystem::path& filepath, UINT id) {
-    mModelID = id;
+    mShaderKey = id;
 
     GLBLoader loader(filepath);
     //インデックス配列を二次元配列から線形に変換する

@@ -39,6 +39,8 @@ namespace {
             HitGroup_UFO,
             HitGroup_Floor,
             HitGroup_Sphere,
+            HitGroup_House,
+            HitGroup_Tree,
         };
     }
 
@@ -71,6 +73,8 @@ namespace {
         { ShaderKey::HitGroup_UFO, L"HitGroup_UFO", L"ClosestHit_Normal" },
         { ShaderKey::HitGroup_Floor, L"HitGroup_Floor", L"ClosestHit_Plane" },
         { ShaderKey::HitGroup_Sphere, L"HitGroup_Sphere", L"ClosestHit_Sphere" },
+        { ShaderKey::HitGroup_House, L"HitGroup_House", L"ClosestHit_Normal" },
+        { ShaderKey::HitGroup_Tree, L"HitGroup_Tree", L"ClosestHit_Normal" },
     };
 
     struct ShaderTableInfo {
@@ -85,6 +89,8 @@ namespace {
         { L"HitGroup_UFO", ShaderKey::HitGroup_UFO, ShaderType::HitGroup },
         { L"HitGroup_Floor", ShaderKey::HitGroup_Floor, ShaderType::HitGroup },
         { L"HitGroup_Sphere", ShaderKey::HitGroup_Sphere, ShaderType::HitGroup },
+        { L"HitGroup_House", ShaderKey::HitGroup_House, ShaderType::HitGroup },
+        { L"HitGroup_Tree", ShaderKey::HitGroup_Tree, ShaderType::HitGroup },
     };
 
     struct LoadModelInfo {
@@ -96,17 +102,17 @@ namespace {
         { ModelType::UFO, { L"UFO.glb", ShaderKey::HitGroup_UFO } },
         { ModelType::Sphere, { L"sphere.glb", ShaderKey::HitGroup_Sphere } },
         { ModelType::Floor, { L"floor.glb", ShaderKey::HitGroup_Floor } },
+        { ModelType::House, { L"house.glb", ShaderKey::HitGroup_House } },
+        { ModelType::Tree, { L"tree.glb", ShaderKey::HitGroup_Tree } },
     };
 
-    static constexpr UINT UFO_COUNT = 1;
     static constexpr UINT FLOOR_COUNT = 1;
-    static int SPHERE_COUNT = 100;
+    static constexpr UINT SPHERE_COUNT = 1;
 
     std::unordered_map<ModelType::Enum, Model> mLoadedModels;
 
     struct Object {
         Model* model;
-        UINT hitGroupIndex;
         BottomLevelAccelerationStructure* blas;
         Vec3 position;
         Quaternion rotation;
@@ -114,6 +120,8 @@ namespace {
     };
     Object mFloor;
     std::vector<Object> mSpheres;
+    Object mHouse;
+    std::vector<Object> mTree;
 } // namespace
 
 Scene::Scene(Framework::DX::DeviceResource* device, Framework::Input::InputManager* inputManager,
@@ -186,7 +194,6 @@ void Scene::update() {
             ImGui::DragFloat("Z", &mLightPosition.z, 1.0f);
             ImGui::TreePop();
         }
-        ImGui::DragInt("Count", &SPHERE_COUNT);
     }
     ImGui::End();
 #pragma endregion
@@ -204,6 +211,8 @@ void Scene::update() {
     mSceneCB->lightAmbient = mLightAmbient;
     mSceneCB->globalTime = static_cast<float>(mTime.getTime());
 #pragma endregion
+    static float rotHouse = 180.0f;
+    mHouse.rotation = Quaternion::fromEular(Vec3(0, rotHouse, 0));
 }
 
 void Scene::render() {
@@ -211,7 +220,6 @@ void Scene::render() {
     ID3D12GraphicsCommandList5* dxrCommandList = mDXRDevice.getDXRCommandList();
 
     mTLASBuffer->clear();
-    UINT offset = 0;
     TopLevelAccelerationStructure::InstanceDesc instanceDesc = {};
     instanceDesc.instanceID = 0;
     instanceDesc.mask = 0xff;
@@ -226,7 +234,7 @@ void Scene::render() {
 
     auto addTLAS = [&](Object& obj) {
         XMMATRIX transform = createTransform(obj);
-        instanceDesc.hitGroupIndex = obj.hitGroupIndex;
+        instanceDesc.hitGroupIndex = obj.model->mModelID;
         instanceDesc.blas = obj.blas;
         instanceDesc.transform = transform;
         mTLASBuffer->add(instanceDesc);
@@ -234,6 +242,8 @@ void Scene::render() {
 
     addTLAS(mFloor);
     for (auto&& obj : mSpheres) { addTLAS(obj); }
+    addTLAS(mHouse);
+    for (auto&& obj : mTree) { addTLAS(obj); }
 
     mTLASBuffer->build(mDXRDevice, mDeviceResource,
         D3D12_RAYTRACING_ACCELERATION_STRUCTURE_BUILD_FLAGS::
@@ -389,19 +399,19 @@ void Scene::createDeviceDependentResources() {
             return model;
         };
 
-        mLoadedModels[ModelType::UFO] = loadModel(modelPath / MODEL_NAMES.at(ModelType::UFO).name,
-            MODEL_NAMES.at(ModelType::UFO).shaderKey);
-        mLoadedModels[ModelType::Floor]
-            = loadModel(modelPath / MODEL_NAMES.at(ModelType::Floor).name,
-                MODEL_NAMES.at(ModelType::Floor).shaderKey);
-        mLoadedModels[ModelType::Sphere]
-            = loadModel(modelPath / MODEL_NAMES.at(ModelType::Sphere).name,
-                MODEL_NAMES.at(ModelType::Sphere).shaderKey);
-        for (auto&& model : mLoadedModels) {
+        UINT id = 0;
+        for (auto&& load : MODEL_NAMES) {
+            Model model = loadModel(modelPath / load.second.name, load.second.shaderKey);
             resourceIndices.insert(
-                resourceIndices.end(), model.second.mIndices.begin(), model.second.mIndices.end());
-            resourceVertices.insert(resourceVertices.end(), model.second.mVertices.begin(),
-                model.second.mVertices.end());
+                resourceIndices.end(), model.mIndices.begin(), model.mIndices.end());
+            resourceVertices.insert(
+                resourceVertices.end(), model.mVertices.begin(), model.mVertices.end());
+            model.mModelID = id++;
+            mBLASBuffers[load.first] = std::make_unique<BottomLevelAccelerationStructure>();
+            mBLASBuffers[load.first]->init(mDXRDevice, model.mVertexBuffer,
+                static_cast<UINT>(sizeof(Vertex)), model.mIndexBuffer,
+                static_cast<UINT>(sizeof(Index)));
+            mLoadedModels[load.first] = model;
         }
 
         mResourcesIndexBuffer.init(mDeviceResource, resourceIndices,
@@ -412,35 +422,38 @@ void Scene::createDeviceDependentResources() {
         mResourceVertexBufferSRV.initAsBuffer(
             mDeviceResource, mResourcesVertexBuffer.getBuffer(), true);
 
-        for (auto&& model : mLoadedModels) {
-            mBLASBuffers[model.first] = std::make_unique<BottomLevelAccelerationStructure>();
-            mBLASBuffers[model.first]->init(mDXRDevice, model.second.mVertexBuffer,
-                static_cast<UINT>(sizeof(Vertex)), model.second.mIndexBuffer,
-                static_cast<UINT>(sizeof(Index)));
-        }
-
         mTLASBuffer = std::make_unique<TopLevelAccelerationStructure>();
 
         mDeviceResource->executeCommandList();
         mDeviceResource->waitForGPU();
 
-        mFloor.model = &mLoadedModels[ModelType::Floor];
-        mFloor.hitGroupIndex = LocalRootSignature::HitGroupIndex::Floor;
-        mFloor.blas = mBLASBuffers[ModelType::Floor].get();
-        mFloor.position = Vec3(0, -10, 0);
-        mFloor.rotation = Quaternion::IDENTITY;
-        mFloor.scale = Vec3(500, 1, 500);
+        auto createModel = [&](ModelType::Enum type, const Vec3& position,
+                               const Quaternion& rotation, const Vec3& scale) {
+            Object model = {};
+            model.model = &mLoadedModels[type];
+            model.blas = mBLASBuffers[type].get();
+            model.position = position;
+            model.rotation = rotation;
+            model.scale = scale;
+            return model;
+        };
+
+        mFloor
+            = createModel(ModelType::Floor, Vec3(0, 0, 0), Quaternion::IDENTITY, Vec3(500, 1, 500));
 
         UINT root = static_cast<UINT>(Framework::Math::MathUtil::sqrt(SPHERE_COUNT));
         for (UINT i = 0; i < SPHERE_COUNT; i++) {
-            Object sphere;
-            sphere.model = &mLoadedModels[ModelType::Sphere];
-            sphere.hitGroupIndex = LocalRootSignature::HitGroupIndex::Sphere;
-            sphere.blas = mBLASBuffers[ModelType::Sphere].get();
-            sphere.position = Vec3((i % root) * 20.0f, 0, (i / root) * 20.0f);
-            sphere.rotation = Quaternion::IDENTITY;
-            sphere.scale = Vec3(1, 1, 1);
-            mSpheres.emplace_back(sphere);
+            mSpheres.emplace_back(
+                createModel(ModelType::Sphere, Vec3((i % root) * 20.0f, 0, (i / root) * 20.0f),
+                    Quaternion::IDENTITY, Vec3(1, 1, 1)));
+        }
+        mHouse = createModel(
+            ModelType::House, Vec3(-20, 0, 0), Quaternion::IDENTITY, Vec3(30, 30, 30));
+        for (float z = -200; z <= 200; z += 80.0f) {
+            mTree.emplace_back(createModel(
+                ModelType::Tree, Vec3(-200, 0, z), Quaternion::IDENTITY, Vec3(1, 1, 1)));
+            mTree.emplace_back(
+                createModel(ModelType::Tree, Vec3(200, 0, z), Quaternion::IDENTITY, Vec3(1, 1, 1)));
         }
     }
 
@@ -511,7 +524,7 @@ void Scene::createDeviceDependentResources() {
             };
 
             mDXRStateObject->setShaderTableConfig(
-                ShaderType::HitGroup, 4, sizeof(RootArgument), L"HitGroupShaderTable");
+                ShaderType::HitGroup, 5, sizeof(RootArgument), L"HitGroupShaderTable");
 
             auto setRootArgument = [&](const Model& model) {
                 RootArgument arg;
@@ -527,7 +540,7 @@ void Scene::createDeviceDependentResources() {
 
             for (auto&& model : mLoadedModels) {
                 mDXRStateObject->appendShaderTable(
-                    model.second.mModelID, &setRootArgument(model.second));
+                    model.second.mShaderKey, &setRootArgument(model.second));
             }
 
             mDXRStateObject->buildShaderTable();

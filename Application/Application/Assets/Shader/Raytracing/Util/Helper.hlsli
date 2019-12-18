@@ -11,8 +11,8 @@
 #include "GlobalCompat.h"
 
 static const float PI = 3.141592654f;
-static const float T_MIN = 0.0001;
-static const float T_MAX = 10000.0;
+static const float T_MIN = 0.01;
+static const float T_MAX = 1000.0;
 
 /**
  * @brief ƒŒƒC

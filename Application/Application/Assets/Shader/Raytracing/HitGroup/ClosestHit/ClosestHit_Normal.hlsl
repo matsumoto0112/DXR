@@ -12,7 +12,7 @@ inline float3 Normal(in MyAttr attr) {
     float4 tangent4 = GetTangent(attr);
     float3 tangent = normalize(mul(tangent4.xyz, (float3x3)ObjectToWorld4x3())) * tangent4.w;
 
-    float3 binormal = cross(worldNormal, tangent);
+    float3 binormal = normalize(cross(worldNormal, tangent));
 
     float3 normal = SampleTexture(normalMap, samLinear, uv).rgb;
 
@@ -39,7 +39,12 @@ inline float3 Normal(in MyAttr attr) {
     float3 color = float3(0, 0, 0);
     color += irradiance * diffuseColor / PI;
 
-    payload.color.rgb = color;
+    Ray shadowRay;
+    shadowRay.origin = hitPosition;
+    shadowRay.direction = L;
+    float factor = ShadowRayCast(shadowRay, payload.recursionCount) ? 0.1 : 1.0;
+
+    payload.color.rgb = color * factor;
     payload.color.a = 1.0;
 }
 

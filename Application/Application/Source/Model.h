@@ -25,7 +25,7 @@ public:
         const std::filesystem::path& filepath, UINT id);
 
     //private:
-    UINT mModelID;
+    UINT mShaderKey;
     std::vector<Framework::DX::Vertex> mVertices;
     std::vector<Index> mIndices;
     UINT mVertexOffset;
@@ -37,4 +37,5 @@ public:
     Framework::DX::Texture2D mMetallicRoughness;
     Framework::DX::Texture2D mEmissiveMap;
     Framework::DX::Texture2D mOcclusionMap;
+    UINT mModelID;
 };

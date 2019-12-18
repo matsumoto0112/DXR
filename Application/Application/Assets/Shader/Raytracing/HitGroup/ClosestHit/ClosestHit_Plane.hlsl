@@ -9,11 +9,11 @@
     float3 hitPosition = hitWorldPosition();
     float3 currentRayDirection = WorldRayDirection();
     float3 N = GetNormal(attr);
-    float3 L = normalize(g_sceneCB.lightPosition.xyz - hitPosition);
+    float3 L = normalize(g_sceneCB.lightPosition.xyz);
 
     //‰e‚É‚©‚©‚Á‚Ä‚¢‚é‚©”»’è
-    //Ray shadowRay = { hitPosition,L };
-    //float factor = ShadowRayCast(shadowRay,payload.recursionCount) ? 0.1 : 1.0;
+    Ray shadowRay = { hitPosition, L };
+    float factor = ShadowRayCast(shadowRay, payload.recursionCount) ? 0.5 : 1.0;
 
     float2 uv = GetUV(attr);
 
@@ -34,7 +34,7 @@
     float3 reflectColor = RayCast(secondRay, payload.recursionCount).rgb;
     color.rgb += reflectColor * 0.5;
 
-    //color.rgb *= factor;
+    color.rgb *= factor;
     color = saturate(color);
 
     payload.color = color;
