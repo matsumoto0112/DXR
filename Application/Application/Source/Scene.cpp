@@ -132,11 +132,10 @@ Scene::Scene(Framework::DX::DeviceResource* device, Framework::Input::InputManag
       mWidth(width),
       mHeight(height) {
 
-    mCameraPosition = Vec3(0, 0, -10);
+    mCameraPosition = Vec3(0, 50, -300);
     mLightPosition = Vec3(0, 100, -100);
     mLightDiffuse = Color4(1.0f, 1.0f, 1.0f, 1.0f);
     mLightAmbient = Color4(0.1f, 0.1f, 0.1f, 1.0f);
-
     mTextures.resize(TEXTURE_NUM);
 }
 Scene::~Scene() {}
@@ -149,6 +148,7 @@ void Scene::create() {
         UINT backBufferCount = mDeviceResource->getBackBufferCount();
         mSceneCB.init(mDeviceResource, L"SceneConstantBuffer");
         mSceneCB.createCBV(mDeviceResource, true);
+        mSceneCB->gammaRate = 1.0f;
     }
 }
 
@@ -197,7 +197,7 @@ void Scene::update() {
         }
         ImGui::SetNextTreeNodeOpen(true, ImGuiCond_::ImGuiCond_Once);
         if (ImGui::TreeNode("Option")) {
-            ImGui::DragFloat("Gamma", &mSceneCB->gammaRate, 1.0f, 0.0f, 200.0f);
+            ImGui::DragFloat("Gamma(%)", &mSceneCB->gammaRate, 0.01f, 0.0f, 2.0f, "%.3f");
             ImGui::TreePop();
         }
         ImGui::End();

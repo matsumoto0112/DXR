@@ -10,9 +10,10 @@
 #include "Global.hlsli"
 #include "GlobalCompat.h"
 
-static const float PI = 3.141592654f;
+static const float PI = 3.141592654;
 static const float T_MIN = 0.01;
 static const float T_MAX = 1000.0;
+static const float EPSILON = 0.001;
 
 /**
  * @brief ƒŒƒC
