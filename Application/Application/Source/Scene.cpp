@@ -163,9 +163,10 @@ void Scene::update() {
     mTime.update();
 
 #pragma region IMGUI_REGION
-    ImGui::Begin("Status");
-    ImGui::Text("FPS:%0.3f", mTime.getFPS());
-    ImGui::End();
+    if (ImGui::Begin("Status")) {
+        ImGui::Text("FPS:%0.3f", mTime.getFPS());
+        ImGui::End();
+    }
 
     ImGui::Begin("Parameter");
     {
@@ -194,8 +195,14 @@ void Scene::update() {
             ImGui::DragFloat("Z", &mLightPosition.z, 1.0f);
             ImGui::TreePop();
         }
+        ImGui::SetNextTreeNodeOpen(true, ImGuiCond_::ImGuiCond_Once);
+        if (ImGui::TreeNode("Option")) {
+            ImGui::DragFloat("Gamma", &mSceneCB->gammaRate, 1.0f, 0.0f, 200.0f);
+            ImGui::TreePop();
+        }
+        ImGui::End();
     }
-    ImGui::End();
+
 #pragma endregion
 #pragma region CONSTANT_BUFFER_UPDATE
     mSceneCB->cameraPosition = Vec4(mCameraPosition, 1.0f);

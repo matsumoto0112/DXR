@@ -2,7 +2,7 @@
 #define SHADER_RAYTRACING_HITGROUP_CLOSESTHIT_CLOSESTHIT_CLOSESTHIT_SPHERE_HLSL
 
 #define HLSL
-#include "../../Util/PBR.hlsli"
+#include "../Util/PBR.hlsli"
 #include "../Helper.hlsli"
 #include "../Local.hlsli"
 

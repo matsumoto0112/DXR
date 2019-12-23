@@ -148,7 +148,7 @@
     <ClInclude Include="Assets\Shader\Raytracing\Util\HitGroupCompat.h" />
     <ClInclude Include="Assets\Shader\Raytracing\Util\GlobalCompat.h" />
     <ClInclude Include="Assets\Shader\Raytracing\Util\MissCompat.h" />
-    <ClInclude Include="Assets\Shader\Raytracing\Util\PBR.hlsli" />
+    <ClInclude Include="Assets\Shader\Raytracing\HitGroup\Util\PBR.hlsli" />
     <ClInclude Include="Source\Camera\Perspective.h" />
     <ClInclude Include="Source\Define.h" />
     <ClInclude Include="Source\Desc\DescriptorTableDesc.h" />

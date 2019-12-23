@@ -72,7 +72,6 @@
     <ClInclude Include="Assets\Shader\Raytracing\Util\GlobalCompat.h" />
     <ClInclude Include="Assets\Shader\Raytracing\Util\MissCompat.h" />
     <ClInclude Include="Assets\Shader\Raytracing\Util\HitGroupCompat.h" />
-    <ClInclude Include="Assets\Shader\Raytracing\Util\PBR.hlsli" />
     <ClInclude Include="Source\DX\DescriptorTable.h" />
     <ClInclude Include="Source\DX\DeviceResource.h" />
     <ClInclude Include="Source\DX\ModelCompat.h" />
@@ -158,6 +157,7 @@
     <ClInclude Include="Source\DX\Device\CommandList.h" />
     <ClInclude Include="Source\DX\Device\Adapter.h" />
     <ClInclude Include="Source\Model.h" />
+    <ClInclude Include="Assets\Shader\Raytracing\HitGroup\Util\PBR.hlsli" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />

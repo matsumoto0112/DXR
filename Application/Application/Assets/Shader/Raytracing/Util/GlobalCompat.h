@@ -53,6 +53,7 @@ struct SceneConstantBuffer {
     Color lightDiffuse; //!< ディレクショナルライトの色
     Color lightAmbient; //!< 環境色
     float globalTime; //!< アプリケーション開始時からの経過時間
+    float gammaRate;
 };
 
 /**

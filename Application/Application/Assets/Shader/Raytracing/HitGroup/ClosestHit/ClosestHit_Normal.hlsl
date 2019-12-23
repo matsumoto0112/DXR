@@ -2,9 +2,9 @@
 #define SHADER_RAYTRACING_HITGROUP_CLOSESTHIT_CLOSESTHIT_CLOSESTHIT_NORMAL_HLSL
 
 #define HLSL
-#include "../../Util/PBR.hlsli"
 #include "../Helper.hlsli"
 #include "../Local.hlsli"
+#include "../Util/PBR.hlsli"
 
 inline float3 Normal(in MyAttr attr) {
     float2 uv = GetUV(attr);
@@ -30,14 +30,15 @@ inline float3 Normal(in MyAttr attr) {
     float2 metallicRoughness = SampleTexture(metallicRoughnessMap, samLinear, uv).rg;
     float3 albedoColor = SampleTexture(albedoTex, samLinear, uv).rgb;
 
-    float dotNL = saturate(dot(N, L));
-
-    float3 irradiance = dotNL * g_sceneCB.lightDiffuse.rgb;
-    irradiance *= PI;
-
-    float3 diffuseColor = lerp(albedoColor, float3(0, 0, 0), metallicRoughness.r);
-    float3 color = float3(0, 0, 0);
-    color += irradiance * diffuseColor / PI;
+    LightingInfo info;
+    info.N = N;
+    info.L = L;
+    info.V = g_sceneCB.cameraPosition.xyz;
+    info.lightColor = g_sceneCB.lightDiffuse.rgb;
+    info.albedo = albedoColor;
+    info.metallic = metallicRoughness.r;
+    info.roughness = metallicRoughness.g;
+    float3 color = Lighting(info);
 
     Ray shadowRay;
     shadowRay.origin = hitPosition;
