@@ -30,7 +30,7 @@ namespace LocalRootSignature {
                 NormalMap,
                 MetallicRoughnessMap,
                 EmissiveMap,
-                OcculusionMap,
+                OcclusionMap,
 
                 SceneConstants,
 
@@ -60,21 +60,3 @@ namespace LocalRootSignature {
         return Framework::Math::MathUtil::mymax({ (UINT)sizeof(NormalRootArgument) });
     }
 } // namespace LocalRootSignature
-
-namespace RayType {
-    enum MyEnum {
-        Main,
-
-        Count
-    };
-} // namespace RayType
-
-namespace BottomLevelASType {
-    enum MyEnum {
-        UFO,
-        Floor,
-        Sphere,
-
-        Count
-    };
-} // namespace BottomLevelASType
