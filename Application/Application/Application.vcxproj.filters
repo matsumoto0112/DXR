@@ -62,6 +62,7 @@
     <ClCompile Include="Source\DX\Raytracing\RaytracingDescriptorManager.cpp" />
     <ClCompile Include="Source\DX\Device\Adapter.cpp" />
     <ClCompile Include="Source\Model.cpp" />
+    <ClCompile Include="Source\Impl\Models.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Source\stdafx.h" />
@@ -158,6 +159,7 @@
     <ClInclude Include="Source\DX\Device\Adapter.h" />
     <ClInclude Include="Source\Model.h" />
     <ClInclude Include="Assets\Shader\Raytracing\HitGroup\Util\PBR.hlsli" />
+    <ClInclude Include="Source\Impl\Models.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />

@@ -113,9 +113,6 @@ namespace {
         { ModelType::Crate, { L"Crate.glb", ShaderKey::HitGroup_Crate } },
     };
 
-    static constexpr UINT FLOOR_COUNT = 1;
-    static constexpr UINT SPHERE_COUNT = 1;
-
     std::unordered_map<ModelType::Enum, Model> mLoadedModels;
 
     struct Object {
@@ -138,25 +135,20 @@ Scene::Scene(Framework::DX::DeviceResource* device, Framework::Input::InputManag
       mInputManager(inputManager),
       mDXRDevice(),
       mWidth(width),
-      mHeight(height) {
-
-    mCameraPosition = Vec3(0, 50, -300);
-    mLightPosition = Vec3(0, 100, -100);
-    mLightDiffuse = Color4(1.0f, 1.0f, 1.0f, 1.0f);
-    mLightAmbient = Color4(0.1f, 0.1f, 0.1f, 1.0f);
-    mTextures.resize(TEXTURE_NUM);
-}
+      mHeight(height) {}
 Scene::~Scene() {}
 
 void Scene::create() {
     createDeviceDependentResources();
     createWindowDependentResources();
     {
-        ID3D12Device* device = mDeviceResource->getDevice();
-        UINT backBufferCount = mDeviceResource->getBackBufferCount();
         mSceneCB.init(mDeviceResource, L"SceneConstantBuffer");
         mSceneCB.createCBV(mDeviceResource, true);
+        mSceneCB->cameraPosition = Vec4(0, 50, -300, 1.0f);
+        mSceneCB->lightPosition = Vec4(0, 100, -100, 0);
         mSceneCB->gammaRate = 1.0f;
+        mCameraRotation = Vec3::ZERO;
+        mLightAmbient = Color4(0.1f, 0.1f, 0.1f, 1.0f);
     }
 }
 
@@ -182,25 +174,36 @@ void Scene::update() {
         if (ImGui::TreeNode("Camera")) {
             ImGui::SetNextTreeNodeOpen(true, ImGuiCond_::ImGuiCond_Once);
             if (ImGui::TreeNode("Position")) {
-                ImGui::DragFloat("X", &mCameraPosition.x, 1.0f);
-                ImGui::DragFloat("Y", &mCameraPosition.y, 1.0f);
-                ImGui::DragFloat("Z", &mCameraPosition.z, 1.0f);
+                ImGui::DragFloat("X", &mSceneCB->cameraPosition.x, 1.0f);
+                ImGui::DragFloat("Y", &mSceneCB->cameraPosition.y, 1.0f);
+                ImGui::DragFloat("Z", &mSceneCB->cameraPosition.z, 1.0f);
                 ImGui ::TreePop();
             }
             ImGui::SetNextTreeNodeOpen(true, ImGuiCond_::ImGuiCond_Once);
             if (ImGui::TreeNode("Rotation")) {
-                ImGui::DragFloat("X", &mCameraRotation.x, 0.1f);
-                ImGui::DragFloat("Y", &mCameraRotation.y, 0.1f);
-                ImGui::DragFloat("Z", &mCameraRotation.z, 0.1f);
+                ImGui::DragFloat("X", &mCameraRotation.x, 0.05f);
+                ImGui::DragFloat("Y", &mCameraRotation.y, 0.05f);
+                ImGui::DragFloat("Z", &mCameraRotation.z, 0.05f);
                 ImGui::TreePop();
             }
             ImGui::TreePop();
         }
         ImGui::SetNextTreeNodeOpen(true, ImGuiCond_::ImGuiCond_Once);
-        if (ImGui::TreeNode("LightPosition")) {
-            ImGui::DragFloat("X", &mLightPosition.x, 1.0f);
-            ImGui::DragFloat("Y", &mLightPosition.y, 1.0f);
-            ImGui::DragFloat("Z", &mLightPosition.z, 1.0f);
+        if (ImGui::TreeNode("Light")) {
+            ImGui::SetNextTreeNodeOpen(true, ImGuiCond_::ImGuiCond_Once);
+            if (ImGui::TreeNode("LightPosition")) {
+                ImGui::DragFloat("X", &mSceneCB->lightPosition.x, 1.0f);
+                ImGui::DragFloat("Y", &mSceneCB->lightPosition.y, 1.0f);
+                ImGui::DragFloat("Z", &mSceneCB->lightPosition.z, 1.0f);
+                ImGui::TreePop();
+            }
+            ImGui::SetNextTreeNodeOpen(true, ImGuiCond_::ImGuiCond_Once);
+            if (ImGui::TreeNode("LightColor")) {
+                ImGui::DragFloat("R", &mSceneCB->lightDiffuse.r, 1.0f / 255.0f, 0.0f, 1.0f);
+                ImGui::DragFloat("G", &mSceneCB->lightDiffuse.g, 1.0f / 255.0f, 0.0f, 1.0f);
+                ImGui::DragFloat("B", &mSceneCB->lightDiffuse.b, 1.0f / 255.0f, 0.0f, 1.0f);
+                ImGui::TreePop();
+            }
             ImGui::TreePop();
         }
         ImGui::SetNextTreeNodeOpen(true, ImGuiCond_::ImGuiCond_Once);
@@ -213,16 +216,15 @@ void Scene::update() {
 
 #pragma endregion
 #pragma region CONSTANT_BUFFER_UPDATE
-    mSceneCB->cameraPosition = Vec4(mCameraPosition, 1.0f);
     const float aspect = static_cast<float>(mWidth) / static_cast<float>(mHeight);
 
-    Mat4 view = Mat4::createRotation(mCameraRotation) * Mat4::createTranslate(mCameraPosition);
+    Vec3 cameraPosition(
+        mSceneCB->cameraPosition.x, mSceneCB->cameraPosition.y, mSceneCB->cameraPosition.z);
+    Mat4 view = Mat4::createRotation(mCameraRotation) * Mat4::createTranslate(cameraPosition);
     view = view.inverse();
     Mat4 proj = Mat4::createProjection(Deg(45.0f), aspect, 0.1f, 100.0f);
     Mat4 vp = view * proj;
     mSceneCB->projectionToWorld = vp.inverse();
-    mSceneCB->lightPosition = Vec4(mLightPosition, 1.0f);
-    mSceneCB->lightDiffuse = mLightDiffuse;
     mSceneCB->lightAmbient = mLightAmbient;
     mSceneCB->globalTime = static_cast<float>(mTime.getTime());
 #pragma endregion
@@ -456,13 +458,6 @@ void Scene::createDeviceDependentResources() {
 
         mFloor
             = createModel(ModelType::Floor, Vec3(0, 0, 0), Quaternion::IDENTITY, Vec3(500, 1, 500));
-
-        UINT root = static_cast<UINT>(Framework::Math::MathUtil::sqrt(SPHERE_COUNT));
-        for (UINT i = 0; i < SPHERE_COUNT; i++) {
-            mSpheres.emplace_back(
-                createModel(ModelType::Sphere, Vec3((i % root) * 20.0f, 0, (i / root) * 20.0f),
-                    Quaternion::IDENTITY, Vec3(1, 1, 1)));
-        }
         mHouse = createModel(
             ModelType::House, Vec3(-20, 0, 0), Quaternion::IDENTITY, Vec3(30, 30, 30));
         for (float z = -200; z <= 200; z += 80.0f) {

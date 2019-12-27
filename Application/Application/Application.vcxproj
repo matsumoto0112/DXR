@@ -104,6 +104,7 @@
     <ClCompile Include="Source\DX\Shader\RootSignature.cpp" />
     <ClCompile Include="Source\Game.cpp" />
     <ClCompile Include="Source\ImGui\ImGuiManager.cpp" />
+    <ClCompile Include="Source\Impl\Models.cpp" />
     <ClCompile Include="Source\Input\InputManager.cpp" />
     <ClCompile Include="Source\Input\Keyboard.cpp" />
     <ClCompile Include="Source\Input\Mouse.cpp" />
@@ -190,6 +191,7 @@
     <ClInclude Include="Source\Game.h" />
     <ClInclude Include="Source\ImGui\ImGuiInclude.h" />
     <ClInclude Include="Source\ImGui\ImGuiManager.h" />
+    <ClInclude Include="Source\Impl\Models.h" />
     <ClInclude Include="Source\Input\InputManager.h" />
     <ClInclude Include="Source\Input\Keyboard.h" />
     <ClInclude Include="Source\Input\KeyCode.h" />

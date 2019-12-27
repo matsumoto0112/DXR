@@ -19,16 +19,11 @@
 #include "Utility/GPUTimer.h"
 #include "Utility/Time.h"
 
-static constexpr UINT TEXTURE_NUM = 1000;
 namespace DescriptorIndex {
     enum MyEnum {
         RaytracingOutput,
         IndexBuffer,
         VertexBuffer,
-        TextureStart,
-        TextureEnd = TextureStart + TEXTURE_NUM,
-
-        Count = TextureEnd + 1
     };
 }
 
@@ -82,7 +77,6 @@ private:
     Framework::DX::ShaderResourceView mResourceVertexBufferSRV;
     Framework::DX::Buffer mRaytracingOutput;
     Framework::DX::UnorderedAccessView mRaytracingOutputUAV;
-    std::vector<Framework::DX::Texture2D> mTextures;
 
     std::unique_ptr<Framework::DX::DXRPipelineStateObject> mDXRStateObject;
 
@@ -91,9 +85,6 @@ private:
     UINT mHeight;
     Framework::Utility::Time mTime;
     Framework::Utility::GPUTimer mGpuTimer;
-    Vec3 mCameraPosition;
     Vec3 mCameraRotation;
-    Vec3 mLightPosition;
-    Color mLightDiffuse;
     Color mLightAmbient;
 };
