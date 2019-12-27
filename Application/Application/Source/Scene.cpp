@@ -41,8 +41,12 @@ namespace {
             HitGroup_Sphere,
             HitGroup_House,
             HitGroup_Tree,
+            HitGroup_Crate,
+
+            End
         };
-    }
+        constexpr UINT HITGROUP_NUM = ShaderKey::End - ShaderKey::HitGroup_UFO;
+    } // namespace ShaderKey
 
     struct ExportShaderInfo {
         std::wstring name;
@@ -75,6 +79,7 @@ namespace {
         { ShaderKey::HitGroup_Sphere, L"HitGroup_Sphere", L"ClosestHit_Sphere" },
         { ShaderKey::HitGroup_House, L"HitGroup_House", L"ClosestHit_Normal" },
         { ShaderKey::HitGroup_Tree, L"HitGroup_Tree", L"ClosestHit_Normal" },
+        { ShaderKey::HitGroup_Crate, L"HitGroup_Crate", L"ClosestHit_Normal" },
     };
 
     struct ShaderTableInfo {
@@ -91,6 +96,7 @@ namespace {
         { L"HitGroup_Sphere", ShaderKey::HitGroup_Sphere, ShaderType::HitGroup },
         { L"HitGroup_House", ShaderKey::HitGroup_House, ShaderType::HitGroup },
         { L"HitGroup_Tree", ShaderKey::HitGroup_Tree, ShaderType::HitGroup },
+        { L"HitGroup_Crate", ShaderKey::HitGroup_Crate, ShaderType::HitGroup },
     };
 
     struct LoadModelInfo {
@@ -104,6 +110,7 @@ namespace {
         { ModelType::Floor, { L"floor.glb", ShaderKey::HitGroup_Floor } },
         { ModelType::House, { L"house.glb", ShaderKey::HitGroup_House } },
         { ModelType::Tree, { L"tree.glb", ShaderKey::HitGroup_Tree } },
+        { ModelType::Crate, { L"Crate.glb", ShaderKey::HitGroup_Crate } },
     };
 
     static constexpr UINT FLOOR_COUNT = 1;
@@ -122,6 +129,7 @@ namespace {
     std::vector<Object> mSpheres;
     Object mHouse;
     std::vector<Object> mTree;
+    Object mCrate;
 } // namespace
 
 Scene::Scene(Framework::DX::DeviceResource* device, Framework::Input::InputManager* inputManager,
@@ -251,6 +259,7 @@ void Scene::render() {
     for (auto&& obj : mSpheres) { addTLAS(obj); }
     addTLAS(mHouse);
     for (auto&& obj : mTree) { addTLAS(obj); }
+    addTLAS(mCrate);
 
     mTLASBuffer->build(mDXRDevice, mDeviceResource,
         D3D12_RAYTRACING_ACCELERATION_STRUCTURE_BUILD_FLAGS::
@@ -462,6 +471,8 @@ void Scene::createDeviceDependentResources() {
             mTree.emplace_back(
                 createModel(ModelType::Tree, Vec3(200, 0, z), Quaternion::IDENTITY, Vec3(1, 1, 1)));
         }
+        mCrate
+            = createModel(ModelType::Crate, Vec3(0, 0, -100), Quaternion::IDENTITY, Vec3(1, 1, 1));
     }
 
     {
@@ -530,8 +541,8 @@ void Scene::createDeviceDependentResources() {
                 HitGroupConstant cb;
             };
 
-            mDXRStateObject->setShaderTableConfig(
-                ShaderType::HitGroup, 5, sizeof(RootArgument), L"HitGroupShaderTable");
+            mDXRStateObject->setShaderTableConfig(ShaderType::HitGroup, ShaderKey::HITGROUP_NUM,
+                sizeof(RootArgument), L"HitGroupShaderTable");
 
             auto setRootArgument = [&](const Model& model) {
                 RootArgument arg;

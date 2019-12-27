@@ -48,7 +48,7 @@ static float3 SpecularBRDF(in SpecularBRDFInfo info) {
     const float d = D_GGX(info.a, info.dotNH);
     const float g = G_smith(info.a, info.dotNV, info.dotNL);
     const float3 f = F_schlick(info.color, info.dotVH);
-    return (d * g * f) / (4 * info.dotNL * info.dotNV);
+    return (d * g * f) / (4.0 * info.dotNL * info.dotNV + EPSILON);
 }
 
 static float3 Lighting(in LightingInfo info) {

@@ -26,6 +26,7 @@ inline float3 Normal(in MyAttr attr) {
     float2 uv = GetUV(attr);
     float3 N = normalize(Normal(attr));
     float3 L = normalize(g_sceneCB.lightPosition.xyz);
+    float3 V = normalize(hitPosition - g_sceneCB.cameraPosition.xyz);
 
     float2 metallicRoughness = SampleTexture(metallicRoughnessMap, samLinear, uv).rg;
     float3 albedoColor = SampleTexture(albedoTex, samLinear, uv).rgb;
@@ -33,11 +34,12 @@ inline float3 Normal(in MyAttr attr) {
     LightingInfo info;
     info.N = N;
     info.L = L;
-    info.V = g_sceneCB.cameraPosition.xyz;
+    info.V = V;
     info.lightColor = g_sceneCB.lightDiffuse.rgb;
     info.albedo = albedoColor;
     info.metallic = metallicRoughness.r;
     info.roughness = metallicRoughness.g;
+
     float3 color = Lighting(info);
 
     Ray shadowRay;

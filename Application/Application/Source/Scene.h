@@ -39,6 +39,7 @@ namespace ModelType {
         Sphere,
         House,
         Tree,
+        Crate,
 
         Count,
     };
