@@ -179,6 +179,7 @@
     <ClInclude Include="Source\DX\Resource\Buffer.h" />
     <ClInclude Include="Source\DX\Resource\ConstantBuffer.h" />
     <ClInclude Include="Source\DX\Resource\ConstantBufferView.h" />
+    <ClInclude Include="Source\DX\Descriptor\DescriptorHeapFlag.h" />
     <ClInclude Include="Source\DX\Resource\IndexBuffer.h" />
     <ClInclude Include="Source\DX\Resource\IndexBufferView.h" />
     <ClInclude Include="Source\DX\Resource\ShaderResourceView.h" />

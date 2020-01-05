@@ -1,4 +1,5 @@
 #pragma once
+#include "DX/Descriptor/DescriptorHeapFlag.h"
 #include "DX/DescriptorTable.h"
 #include "DX/Device/Adapter.h"
 #include "DX/Raytracing/RaytracingDescriptorManager.h"
@@ -233,6 +234,7 @@ namespace Framework::DX {
         CD3DX12_CPU_DESCRIPTOR_HANDLE getDepthStencilView() const {
             return mDSVHeap->getCPUHandle(0);
         }
+        DescriptorInfo allocateHeapFromDescriptorFlag(DescriptorHeapFlag flag);
         RaytracingDescriptorManager* getRaytracingDescriptorManager() {
             return &mRaytracingDescriptor;
         }

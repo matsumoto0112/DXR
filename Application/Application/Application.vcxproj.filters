@@ -160,6 +160,7 @@
     <ClInclude Include="Source\Model.h" />
     <ClInclude Include="Assets\Shader\Raytracing\HitGroup\Util\PBR.hlsli" />
     <ClInclude Include="Source\Impl\Models.h" />
+    <ClInclude Include="Source\DX\Descriptor\DescriptorHeapFlag.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />

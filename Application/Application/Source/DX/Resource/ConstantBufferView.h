@@ -1,4 +1,5 @@
 #pragma once
+#include "DX/Descriptor/DescriptorHeapFlag.h"
 #include "DX/Descriptor/DescriptorInfo.h"
 #include "DX/Resource/Buffer.h"
 
@@ -18,7 +19,7 @@ namespace Framework::DX {
          * @brief デストラクタ
          */
         ~ConstantBufferView() {}
-        void init(DeviceResource* device, const Buffer& buffer, bool isGlobal);
+        void init(DeviceResource* device, const Buffer& buffer, DescriptorHeapFlag flag);
         const DescriptorInfo& getInfo() const {
             return mInfo;
         }

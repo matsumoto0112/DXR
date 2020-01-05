@@ -436,6 +436,15 @@ namespace Framework::DX {
             }
         }
     }
+    DescriptorInfo DeviceResource::allocateHeapFromDescriptorFlag(DescriptorHeapFlag flag) {
+        switch (flag) {
+        case Framework::DX::DescriptorHeapFlag::UseRaytracingGlobalHeap:
+            return mRaytracingDescriptor.allocateGlobal();
+        case Framework::DX::DescriptorHeapFlag::UseRaytracingLocalHeap:
+            return mRaytracingDescriptor.allocateLocal();
+        default: MY_ASSERTION(false, ""); return DescriptorInfo();
+        }
+    }
     //éüÇÃÉtÉåÅ[ÉÄÇÃèÄîı
     void DeviceResource::moveToNextFrame() {
         waitForGPU();

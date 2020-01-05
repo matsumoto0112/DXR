@@ -143,7 +143,7 @@ void Scene::create() {
     createWindowDependentResources();
     {
         mSceneCB.init(mDeviceResource, L"SceneConstantBuffer");
-        mSceneCB.createCBV(mDeviceResource, true);
+        mSceneCB.createCBV(mDeviceResource, DescriptorHeapFlag::UseRaytracingGlobalHeap);
         mSceneCB->cameraPosition = Vec4(0, 50, -300, 1.0f);
         mSceneCB->lightPosition = Vec4(0, 100, -100, 0);
         mSceneCB->gammaRate = 1.0f;
