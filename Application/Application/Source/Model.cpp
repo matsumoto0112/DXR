@@ -85,22 +85,22 @@ void Model::init(Framework::DX::DeviceResource* device, ID3D12GraphicsCommandLis
 
     //テクスチャの読み込み処理
     mAlbedo.init(device, commandList, (descs.empty() ? DEFAULT_ALBEDO : descs[0]));
-    mAlbedo.createSRV(device, false);
+    mAlbedo.createSRV(device, DescriptorHeapType::RaytracingLocal);
 
     mNormalMap.init(device, commandList,
         (material.normalMapID == -1 ? DEFAULT_NORMALMAP : descs[material.normalMapID]));
-    mNormalMap.createSRV(device, false);
+    mNormalMap.createSRV(device, DescriptorHeapType::RaytracingLocal);
 
     mMetallicRoughness.init(device, commandList,
         (material.metallicRoughnessMapID == -1 ? DEFAULT_METALLICROUGHNESSMAP
                                                : descs[material.metallicRoughnessMapID]));
-    mMetallicRoughness.createSRV(device, false);
+    mMetallicRoughness.createSRV(device, DescriptorHeapType::RaytracingLocal);
 
     mEmissiveMap.init(device, commandList,
         (material.emissiveMapID == -1 ? DEFAULT_EMISSIVEMAP : descs[material.emissiveMapID]));
-    mEmissiveMap.createSRV(device, false);
+    mEmissiveMap.createSRV(device, DescriptorHeapType::RaytracingLocal);
 
     mOcclusionMap.init(device, commandList,
         (material.occlusionMapID == -1 ? DEFAULT_OCCLUSIONMAP : descs[material.occlusionMapID]));
-    mOcclusionMap.createSRV(device, false);
+    mOcclusionMap.createSRV(device, DescriptorHeapType::RaytracingLocal);
 }

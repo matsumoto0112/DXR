@@ -19,7 +19,7 @@ namespace Framework::DX {
         mDescriptorHeapSize = device->getDevice()->GetDescriptorHandleIncrementSize(
             D3D12_DESCRIPTOR_HEAP_TYPE::D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
         localDescriptorRate = Math::MathUtil::clamp(localDescriptorRate, 0.0f, 1.0f);
-        mLocalHeapStartPosition = descriptorNum * (1.0f - localDescriptorRate);
+        mLocalHeapStartPosition = static_cast<UINT>(descriptorNum * (1.0f - localDescriptorRate));
     }
     DescriptorInfo RaytracingDescriptorHeap::allocateLocal() {
         DescriptorInfo info = {};

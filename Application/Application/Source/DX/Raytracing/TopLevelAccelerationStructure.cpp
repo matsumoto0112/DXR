@@ -44,7 +44,8 @@ namespace Framework::DX {
         }
         writeToResource(mInstance.Get(), mInstanceDescs.data(), size);
         device.getDXRCommandList()->BuildRaytracingAccelerationStructure(&mDesc, 0, nullptr);
-        mSRV.initAsRaytracingAccelerationStructure(deviceResource, mBuffer, true);
+        mSRV.initAsRaytracingAccelerationStructure(
+            deviceResource, mBuffer, DescriptorHeapType::RaytracingGlobal);
     }
 
     void TopLevelAccelerationStructure::clear() {

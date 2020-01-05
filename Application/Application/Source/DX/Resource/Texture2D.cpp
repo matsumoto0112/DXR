@@ -25,8 +25,8 @@ namespace Framework::DX {
         mBuffer.transition(commandList, D3D12_RESOURCE_STATES::D3D12_RESOURCE_STATE_GENERIC_READ);
     }
     //シェーダーリソースビューを作成
-    void Texture2D::createSRV(DeviceResource* device, bool isGlobal) {
-        mView.initAsTexture2D(device, mBuffer, mTextureInfo.format, isGlobal);
+    void Texture2D::createSRV(DeviceResource* device, DescriptorHeapType heapFlag) {
+        mView.initAsTexture2D(device, mBuffer, mTextureInfo.format, heapFlag);
     }
 
 } // namespace Framework::DX

@@ -143,7 +143,7 @@ void Scene::create() {
     createWindowDependentResources();
     {
         mSceneCB.init(mDeviceResource, L"SceneConstantBuffer");
-        mSceneCB.createCBV(mDeviceResource, DescriptorHeapFlag::UseRaytracingGlobalHeap);
+        mSceneCB.createCBV(mDeviceResource, DescriptorHeapType::RaytracingGlobal);
         mSceneCB->cameraPosition = Vec4(0, 50, -300, 1.0f);
         mSceneCB->lightPosition = Vec4(0, 100, -100, 0);
         mSceneCB->gammaRate = 1.0f;
@@ -159,7 +159,6 @@ void Scene::reset() {
 }
 
 void Scene::update() {
-    mDeviceResource->getRaytracingDescriptorManager()->mHeap.resetGlobal();
     mTime.update();
 
 #pragma region IMGUI_REGION
@@ -272,9 +271,8 @@ void Scene::render() {
     commandList->SetComputeRootSignature(mGlobalRootSignature->getRootSignature());
     mSceneCB.updateStaging();
 
-    ID3D12DescriptorHeap* heaps[]
-        = { mDeviceResource->getRaytracingDescriptorManager()->mHeap.mDescriptorHeap.Get() };
-    commandList->SetDescriptorHeaps(_countof(heaps), heaps);
+    mDeviceResource->getHeapManager()->setDescriptorHeap(
+        commandList, DescriptorHeapType::RaytracingGlobal);
 
     DescriptorSet globalSet;
     globalSet.setCbvHandle(0, mSceneCB.getView().getInfo().cpuHandle);
@@ -283,8 +281,8 @@ void Scene::render() {
     globalSet.setSrvHandle(2, mResourceVertexBufferSRV.getInfo().cpuHandle);
     globalSet.setUavHandle(0, mRaytracingOutputUAV.getInfo().cpuHandle);
 
-    mDeviceResource->getRaytracingDescriptorManager()->copyAndSetComputeDescriptorTable(
-        mDeviceResource, commandList, globalSet);
+    mDeviceResource->getHeapManager()->copyAndSetComputeDescriptorHeap(
+        DescriptorHeapType ::RaytracingGlobal, mDeviceResource, commandList, globalSet);
     mDXRStateObject->doRaytracing(mWidth, mHeight);
 
     D3D12_RESOURCE_BARRIER preCopyBarriers[2];
@@ -434,11 +432,12 @@ void Scene::createDeviceDependentResources() {
 
         mResourcesIndexBuffer.init(mDeviceResource, resourceIndices,
             D3D12_PRIMITIVE_TOPOLOGY::D3D_PRIMITIVE_TOPOLOGY_UNDEFINED, L"ResourceIndex");
-        mResourceIndexBufferSRV = mResourcesIndexBuffer.createSRV(mDeviceResource, true);
+        mResourceIndexBufferSRV = mResourcesIndexBuffer.createSRV(
+            mDeviceResource, DescriptorHeapType::RaytracingGlobal);
 
         mResourcesVertexBuffer.init(mDeviceResource, resourceVertices, L"ResourceVertex");
-        mResourceVertexBufferSRV.initAsBuffer(
-            mDeviceResource, mResourcesVertexBuffer.getBuffer(), true);
+        mResourceVertexBufferSRV.initAsBuffer(mDeviceResource, mResourcesVertexBuffer.getBuffer(),
+            DescriptorHeapType::RaytracingGlobal);
 
         mTLASBuffer = std::make_unique<TopLevelAccelerationStructure>();
 
@@ -575,7 +574,8 @@ void Scene::createWindowDependentResources() {
     desc.format = backBufferFormat;
 
     mRaytracingOutput.init(mDeviceResource, desc);
-    mRaytracingOutputUAV.initAsTexture2D(mDeviceResource, mRaytracingOutput, true);
+    mRaytracingOutputUAV.initAsTexture2D(
+        mDeviceResource, mRaytracingOutput, DescriptorHeapType::RaytracingGlobal);
 }
 
 void Scene::releaseWindowDependentResources() {}

@@ -39,7 +39,7 @@ namespace Framework::DX {
 
     private:
         std::vector<LocalDescriptorHeap> mStackHeaps; //!< 確保済みのヒープ
-        D3D12_DESCRIPTOR_HEAP_TYPE mHeapType;
-        UINT mHeapNum;
+        D3D12_DESCRIPTOR_HEAP_TYPE mHeapType; //!< ヒープの種類k
+        UINT mHeapNum; //!< ヒープの確保数
     };
 } // namespace Framework::DX

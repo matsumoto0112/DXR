@@ -34,7 +34,7 @@ namespace Framework::DX {
          * @brief シェーダーリソースビューを作成する
          * @param device デバイス
          */
-        void createCBV(DeviceResource* device, DescriptorHeapFlag flag);
+        void createCBV(DeviceResource* device, DescriptorHeapType flag);
         /**
          * @brief ステージング内容へのアクセス演算子
          */
@@ -95,7 +95,7 @@ namespace Framework::DX {
         mMapped = mBuffer.map();
     }
     template <class T>
-    inline void ConstantBuffer<T>::createCBV(DeviceResource* device, DescriptorHeapFlag flag) {
+    inline void ConstantBuffer<T>::createCBV(DeviceResource* device, DescriptorHeapType flag) {
         mCBV.init(device, mBuffer, flag);
     }
     //ステージングの更新

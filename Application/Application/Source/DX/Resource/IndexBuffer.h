@@ -46,7 +46,7 @@ namespace Framework::DX {
         /**
          * @brief シェーダーリソースビューを作成する
          */
-        ShaderResourceView createSRV(DeviceResource* device, bool isGlobal);
+        ShaderResourceView createSRV(DeviceResource* device, DescriptorHeapType heapFlag);
 
     private:
         Buffer mBuffer; //!< バッファ

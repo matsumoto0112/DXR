@@ -63,6 +63,7 @@
     <ClCompile Include="Source\DX\Device\Adapter.cpp" />
     <ClCompile Include="Source\Model.cpp" />
     <ClCompile Include="Source\Impl\Models.cpp" />
+    <ClCompile Include="Source\DX\Descriptor\DescriptorHeapManager.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Source\stdafx.h" />
@@ -161,6 +162,7 @@
     <ClInclude Include="Assets\Shader\Raytracing\HitGroup\Util\PBR.hlsli" />
     <ClInclude Include="Source\Impl\Models.h" />
     <ClInclude Include="Source\DX\Descriptor\DescriptorHeapFlag.h" />
+    <ClInclude Include="Source\DX\Descriptor\DescriptorHeapManager.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />

@@ -19,7 +19,7 @@ namespace Framework::DX {
          * @brief デストラクタ
          */
         ~ConstantBufferView() {}
-        void init(DeviceResource* device, const Buffer& buffer, DescriptorHeapFlag flag);
+        void init(DeviceResource* device, const Buffer& buffer, DescriptorHeapType flag);
         const DescriptorInfo& getInfo() const {
             return mInfo;
         }

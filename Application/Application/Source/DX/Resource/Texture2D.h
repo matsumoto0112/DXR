@@ -33,7 +33,7 @@ namespace Framework::DX {
          * @brief シェーダーリソースビューを作成する
          * @param device デバイス
          */
-        void createSRV(DeviceResource* device, bool isGlobal);
+        void createSRV(DeviceResource* device, DescriptorHeapType heapFlag);
         /**
          * @brief テクスチャバッファの取得
          */

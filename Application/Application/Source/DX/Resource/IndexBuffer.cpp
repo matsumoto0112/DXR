@@ -10,10 +10,10 @@ namespace Framework::DX {
     void IndexBuffer::draw(ID3D12GraphicsCommandList* commandList) {
         commandList->DrawIndexedInstanced(mIndexNum, 1, 0, 0, 0);
     }
-    ShaderResourceView IndexBuffer::createSRV(DeviceResource* device, bool isGlobal) {
+    ShaderResourceView IndexBuffer::createSRV(DeviceResource* device, DescriptorHeapType heapFlag) {
         ShaderResourceView view;
         view.initAsRawBuffer(
-            device, mBuffer, mIndexNum * mBuffer.getStride() / sizeof(float), isGlobal);
+            device, mBuffer, mIndexNum * mBuffer.getStride() / sizeof(float), heapFlag);
         return view;
     }
 } // namespace Framework::DX

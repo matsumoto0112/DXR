@@ -164,7 +164,7 @@ namespace Framework::DX {
             mDevice->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE::D3D12_COMMAND_LIST_TYPE_DIRECT,
                 mCommandAllocators[0].Get(), nullptr, IID_PPV_ARGS(&mCommandList)));
 
-        mRaytracingDescriptor.init(this);
+        mHeapManager.init(this);
 
         //フェンス作成
         MY_THROW_IF_FAILED(mDevice->CreateFence(mFenceValues[mBackBufferIndex],
@@ -374,6 +374,7 @@ namespace Framework::DX {
 
     //描画準備
     void DeviceResource::prepare(D3D12_RESOURCE_STATES beforeState) {
+        mHeapManager.beginFrame();
         MY_THROW_IF_FAILED(mCommandAllocators[mBackBufferIndex]->Reset());
         MY_THROW_IF_FAILED(
             mCommandList->Reset(mCommandAllocators[mBackBufferIndex].Get(), nullptr));
@@ -434,15 +435,6 @@ namespace Framework::DX {
                     mFenceValues[mBackBufferIndex]++;
                 }
             }
-        }
-    }
-    DescriptorInfo DeviceResource::allocateHeapFromDescriptorFlag(DescriptorHeapFlag flag) {
-        switch (flag) {
-        case Framework::DX::DescriptorHeapFlag::UseRaytracingGlobalHeap:
-            return mRaytracingDescriptor.allocateGlobal();
-        case Framework::DX::DescriptorHeapFlag::UseRaytracingLocalHeap:
-            return mRaytracingDescriptor.allocateLocal();
-        default: MY_ASSERTION(false, ""); return DescriptorInfo();
         }
     }
     //次のフレームの準備

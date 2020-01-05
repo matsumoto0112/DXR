@@ -1,8 +1,8 @@
 #pragma once
 #include "DX/Descriptor/DescriptorHeapFlag.h"
+#include "DX/Descriptor/DescriptorHeapManager.h"
 #include "DX/DescriptorTable.h"
 #include "DX/Device/Adapter.h"
-#include "DX/Raytracing/RaytracingDescriptorManager.h"
 #include "Window/Window.h"
 
 namespace Framework::DX {
@@ -234,9 +234,8 @@ namespace Framework::DX {
         CD3DX12_CPU_DESCRIPTOR_HANDLE getDepthStencilView() const {
             return mDSVHeap->getCPUHandle(0);
         }
-        DescriptorInfo allocateHeapFromDescriptorFlag(DescriptorHeapFlag flag);
-        RaytracingDescriptorManager* getRaytracingDescriptorManager() {
-            return &mRaytracingDescriptor;
+        DescriptorHeapManager* getHeapManager() {
+            return &mHeapManager;
         }
 
     private:
@@ -272,7 +271,6 @@ namespace Framework::DX {
         UINT mOptions; //!< デバイスのオプション
         Window::Window* mWindow; //!< ウィンドウ
         IDeviceNotify* mDeviceNotify; //!< デバイスイベントの通知先
-
-        RaytracingDescriptorManager mRaytracingDescriptor;
+        DescriptorHeapManager mHeapManager; //!< ヒープ管理
     };
 } // namespace Framework::DX

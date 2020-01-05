@@ -83,6 +83,7 @@
     <ClCompile Include="Source\Device\GameDevice.cpp" />
     <ClCompile Include="Source\DX\DescriptorTable.cpp" />
     <ClCompile Include="Source\DX\Descriptor\DescriptorAllocator.cpp" />
+    <ClCompile Include="Source\DX\Descriptor\DescriptorHeapManager.cpp" />
     <ClCompile Include="Source\DX\Descriptor\DescriptorSet.cpp" />
     <ClCompile Include="Source\DX\Descriptor\GlobalDescriptorHeap.cpp" />
     <ClCompile Include="Source\DX\Descriptor\LocalDescriptorHeap.cpp" />
@@ -158,6 +159,7 @@
     <ClInclude Include="Source\Device\ISystemEventNotify.h" />
     <ClInclude Include="Source\DX\DescriptorTable.h" />
     <ClInclude Include="Source\DX\Descriptor\DescriptorAllocator.h" />
+    <ClInclude Include="Source\DX\Descriptor\DescriptorHeapManager.h" />
     <ClInclude Include="Source\DX\Descriptor\DescriptorInfo.h" />
     <ClInclude Include="Source\DX\Descriptor\DescriptorParameter.h" />
     <ClInclude Include="Source\DX\Descriptor\DescriptorSet.h" />
