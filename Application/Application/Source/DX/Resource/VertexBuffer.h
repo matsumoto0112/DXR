@@ -34,6 +34,12 @@ namespace Framework::DX {
         const Buffer& getBuffer() const {
             return mBuffer;
         }
+        /**
+         * @brief バッファビューの取得
+         */
+        const VertexBufferView& getView() const {
+            return mView;
+        }
 
     private:
         Buffer mBuffer = {};

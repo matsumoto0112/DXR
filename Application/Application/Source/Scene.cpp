@@ -134,6 +134,8 @@ namespace {
 
     RootSignature mDefaultRootSignature;
     PipelineState mGrayScalePipelineState;
+    VertexBuffer mQuadVertex;
+    IndexBuffer mQuadIndex;
 } // namespace
 
 Scene::Scene(Framework::DX::DeviceResource* device, Framework::Input::InputManager* inputManager,
@@ -185,8 +187,24 @@ void Scene::create() {
         desc.renderTargetNum = 1;
         desc.rtvFormat[0] = DXGI_FORMAT::DXGI_FORMAT_R8G8B8A8_UNORM;
         desc.topologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE::D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE;
+        desc.sampleMask = UINT_MAX;
 
         mGrayScalePipelineState.init(mDeviceResource, desc, L"GrayScale");
+
+        struct QuadVertex {
+            Vec3 pos;
+            Vec2 uv;
+        };
+        std::vector<QuadVertex> vertices{
+            { Vec3(-1, 1, 0), Vec2(0, 0) },
+            { Vec3(1, 1, 0), Vec2(1, 0) },
+            { Vec3(1, -1, 0), Vec2(1, 1) },
+            { Vec3(-1, -1, 0), Vec2(0, 1) },
+        };
+        std::vector<Index> indices{ 0, 1, 2, 0, 2, 3 };
+        mQuadVertex.init(mDeviceResource, vertices, L"QuadVertex");
+        mQuadIndex.init(mDeviceResource, indices,
+            D3D_PRIMITIVE_TOPOLOGY::D3D10_PRIMITIVE_TOPOLOGY_TRIANGLELIST, L"QuadIndex");
     }
 }
 
@@ -345,6 +363,14 @@ void Scene::render() {
         D3D12_RESOURCE_STATES::D3D12_RESOURCE_STATE_COPY_SOURCE,
         D3D12_RESOURCE_STATES::D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
     commandList->ResourceBarrier(_countof(postCopyBarriers), postCopyBarriers);
+
+    commandList->RSSetViewports(1, &mDeviceResource->getScreenViewport());
+    commandList->RSSetScissorRects(1, &mDeviceResource->getScissorRect());
+    commandList->SetGraphicsRootSignature(mDefaultRootSignature.getRootSignature());
+    commandList->SetPipelineState(mGrayScalePipelineState.getPipelineState());
+    mQuadVertex.setCommandList(commandList);
+    mQuadIndex.setCommandList(commandList);
+    mQuadIndex.draw(commandList);
 }
 
 void Scene::onWindowSizeChanged(UINT width, UINT height) {

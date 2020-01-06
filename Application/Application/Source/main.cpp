@@ -43,6 +43,7 @@ public:
         list->OMSetRenderTargets(
             1, rtv, FALSE, &deviceResource->getDepthStencil()->getView().getInfo().cpuHandle);
         deviceResource->getRenderTarget()->clear(list, Framework::Utility::Color4(0, 0, 0, 0));
+        deviceResource->getDepthStencil()->clear(list);
 
         mScene->render();
     }

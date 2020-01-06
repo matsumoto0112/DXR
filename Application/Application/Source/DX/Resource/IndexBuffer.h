@@ -44,6 +44,12 @@ namespace Framework::DX {
             return mBuffer;
         }
         /**
+         * @brief バッファビューの取得
+         */
+        const IndexBufferView& getView() const {
+            return mView;
+        }
+        /**
          * @brief シェーダーリソースビューを作成する
          */
         ShaderResourceView createSRV(DeviceResource* device, DescriptorHeapType heapFlag);
