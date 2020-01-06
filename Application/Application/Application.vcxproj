@@ -110,6 +110,7 @@
     <ClCompile Include="Source\DX\Shader\RenderTargetTexture.cpp" />
     <ClCompile Include="Source\DX\Shader\RenderTargetView.cpp" />
     <ClCompile Include="Source\DX\Shader\RootSignature.cpp" />
+    <ClCompile Include="Source\DX\Shader\Shader.cpp" />
     <ClCompile Include="Source\Game.cpp" />
     <ClCompile Include="Source\ImGui\ImGuiManager.cpp" />
     <ClCompile Include="Source\Impl\Models.cpp" />
@@ -206,6 +207,7 @@
     <ClInclude Include="Source\DX\Shader\RenderTargetTexture.h" />
     <ClInclude Include="Source\DX\Shader\RenderTargetView.h" />
     <ClInclude Include="Source\DX\Shader\RootSignature.h" />
+    <ClInclude Include="Source\DX\Shader\Shader.h" />
     <ClInclude Include="Source\DX\Util\BlendDesc.h" />
     <ClInclude Include="Source\DX\Util\DescriptorHeapDesc.h" />
     <ClInclude Include="Source\DX\Util\Helper.h" />
@@ -272,12 +274,32 @@
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Pixel</ShaderType>
       <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(OutDir)\cso\%(Filename).cso</ObjectFileOutput>
       <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(OutDir)\cso\%(Filename).cso</ObjectFileOutput>
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">5.1</ShaderModel>
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Release|x64'">5.1</ShaderModel>
+      <VariableName Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+      </VariableName>
+      <HeaderFileOutput Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+      </HeaderFileOutput>
+      <VariableName Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+      </VariableName>
+      <HeaderFileOutput Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+      </HeaderFileOutput>
     </FxCompile>
     <FxCompile Include="Assets\Shader\PostEffect\GrayScale_VS.hlsl">
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Vertex</ShaderType>
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Vertex</ShaderType>
       <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(OutDir)\cso\%(Filename).cso</ObjectFileOutput>
       <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(OutDir)\cso\%(Filename).cso</ObjectFileOutput>
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">5.1</ShaderModel>
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Release|x64'">5.1</ShaderModel>
+      <VariableName Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+      </VariableName>
+      <HeaderFileOutput Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+      </HeaderFileOutput>
+      <VariableName Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+      </VariableName>
+      <HeaderFileOutput Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+      </HeaderFileOutput>
     </FxCompile>
     <FxCompile Include="Assets\Shader\Raytracing\HitGroup\ClosestHit\ClosestHit_Plane.hlsl">
       <FileType>Document</FileType>

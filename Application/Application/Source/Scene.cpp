@@ -4,6 +4,7 @@
 #include "DX/Descriptor/DescriptorSet.h"
 #include "DX/Raytracing/Shader/ShaderTable.h"
 #include "DX/Shader/PipelineState.h"
+#include "DX/Shader/Shader.h"
 #include "DX/Util/BlendDesc.h"
 #include "DX/Util/Helper.h"
 #include "DX/Util/RasterizerDesc.h"
@@ -167,22 +168,15 @@ void Scene::create() {
 
         PipelineStateDesc desc(mDefaultRootSignature);
         std::filesystem::path shaderPath = ExePath::getInstance()->exe() / "cso";
-        std::vector<BYTE> vs = ByteReader::read(shaderPath / "GrayScale_VS.cso");
-        std::vector<BYTE> ps = ByteReader::read(shaderPath / "GrayScale_PS.cso");
-        desc.vs = CD3DX12_SHADER_BYTECODE(vs.data(), vs.size());
-        desc.ps = CD3DX12_SHADER_BYTECODE(ps.data(), ps.size());
+        VertexShader vs(shaderPath / "GrayScale_VS.cso");
+        PixelShader ps(shaderPath / "GrayScale_PS.cso");
+        desc.vs = vs.get();
+        desc.ps = ps.get();
         desc.blend = BlendDesc(BlendMode::Default);
         desc.depthStencil = CD3DX12_DEPTH_STENCIL_DESC(D3D12_DEFAULT);
         desc.dsvFormat = DXGI_FORMAT::DXGI_FORMAT_D32_FLOAT;
         desc.flags = D3D12_PIPELINE_STATE_FLAGS::D3D12_PIPELINE_STATE_FLAG_NONE;
-        D3D12_INPUT_ELEMENT_DESC inputElements[] = {
-            { "POSITION", 0, DXGI_FORMAT::DXGI_FORMAT_R32G32B32_FLOAT, 0,
-                D3D12_APPEND_ALIGNED_ELEMENT,
-                D3D12_INPUT_CLASSIFICATION::D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
-            { "TEXCOORD", 0, DXGI_FORMAT::DXGI_FORMAT_R32G32_FLOAT, 0, D3D12_APPEND_ALIGNED_ELEMENT,
-                D3D12_INPUT_CLASSIFICATION::D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
-        };
-        desc.inputLayout = { inputElements, _countof(inputElements) };
+        desc.inputLayout = vs.getLayout();
         desc.rasterizer = RasterizerDesc(CullMode::Back, FillMode::Solid);
         desc.sample.Count = 1;
         desc.renderTargetNum = 1;

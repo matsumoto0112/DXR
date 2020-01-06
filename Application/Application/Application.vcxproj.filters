@@ -72,6 +72,7 @@
     <ClCompile Include="Source\DX\Shader\DepthStencil.cpp" />
     <ClCompile Include="Source\DX\Shader\DepthStencilTexture.cpp" />
     <ClCompile Include="Source\DX\Shader\DepthStencilView.cpp" />
+    <ClCompile Include="Source\DX\Shader\Shader.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Source\stdafx.h" />
@@ -184,6 +185,7 @@
     <ClInclude Include="Source\DX\Shader\DepthStencilFormat.h" />
     <ClInclude Include="Source\DX\Shader\DepthStencilTexture.h" />
     <ClInclude Include="Source\DX\Shader\DepthStencilView.h" />
+    <ClInclude Include="Source\DX\Shader\Shader.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
