@@ -15,6 +15,7 @@
 #include <algorithm>
 #include <array>
 #include <filesystem>
+#include <fstream>
 #include <initializer_list>
 #include <iomanip>
 #include <sstream>

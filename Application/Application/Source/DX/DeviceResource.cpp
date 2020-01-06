@@ -140,17 +140,17 @@ namespace Framework::DX {
         queueDesc.Type = D3D12_COMMAND_LIST_TYPE::D3D12_COMMAND_LIST_TYPE_DIRECT;
         MY_THROW_IF_FAILED(mDevice->CreateCommandQueue(&queueDesc, IID_PPV_ARGS(&mCommandQueue)));
 
-        //レンダーターゲットのディスクリプタヒープを作成する
-        Desc::DescriptorTableDesc rtvHeapDesc
-            = { L"RenderTargetHeap", BACK_BUFFER_COUNT, Desc::HeapType::RTV, Desc::HeapFlag::None };
-        mRTVHeap = std::make_unique<DescriptorTable>(mDevice.Get(), rtvHeapDesc);
+        ////レンダーターゲットのディスクリプタヒープを作成する
+        //Desc::DescriptorTableDesc rtvHeapDesc
+        //    = { L"RenderTargetHeap", BACK_BUFFER_COUNT, Desc::HeapType::RTV, Desc::HeapFlag::None };
+        //mRTVHeap = std::make_unique<DescriptorTable>(mDevice.Get(), rtvHeapDesc);
 
-        //デプス・ステンシルを使用するならディスクリプタヒープを作成する
-        if (mDepthBufferFormat != DXGI_FORMAT::DXGI_FORMAT_UNKNOWN) {
-            Desc::DescriptorTableDesc dsvHeapDesc
-                = { L"DepthStencilHeap", 1, Desc::HeapType::DSV, Desc::HeapFlag::None };
-            mDSVHeap = std::make_unique<DescriptorTable>(mDevice.Get(), dsvHeapDesc);
-        }
+        ////デプス・ステンシルを使用するならディスクリプタヒープを作成する
+        //if (mDepthBufferFormat != DXGI_FORMAT::DXGI_FORMAT_UNKNOWN) {
+        //    Desc::DescriptorTableDesc dsvHeapDesc
+        //        = { L"DepthStencilHeap", 1, Desc::HeapType::DSV, Desc::HeapFlag::None };
+        //    mDSVHeap = std::make_unique<DescriptorTable>(mDevice.Get(), dsvHeapDesc);
+        //}
 
         //バックバッファの枚数分アロケータを作成する
         for (UINT n = 0; n < BACK_BUFFER_COUNT; n++) {
@@ -180,7 +180,7 @@ namespace Framework::DX {
 
         //レンダーターゲットを初期化する
         for (UINT n = 0; n < BACK_BUFFER_COUNT; n++) {
-            mRenderTargets[n].Reset();
+            //mRenderTargets[n].Reset();
             mFenceValues[n] = mFenceValues[mBackBufferIndex];
         }
 
@@ -247,43 +247,17 @@ namespace Framework::DX {
 
         //バックバッファのレンダーターゲットの作成
         for (UINT n = 0; n < BACK_BUFFER_COUNT; n++) {
-            MY_THROW_IF_FAILED(mSwapChain->GetBuffer(n, IID_PPV_ARGS(&mRenderTargets[n])));
-            mRenderTargets[n]->SetName(Utility::format(L"RenderTarget[%u]", n).c_str());
-            D3D12_RENDER_TARGET_VIEW_DESC rtvDesc = {};
-            rtvDesc.Format = mBackBufferFormat;
-            rtvDesc.ViewDimension = D3D12_RTV_DIMENSION::D3D12_RTV_DIMENSION_TEXTURE2D;
-
-            D3D12_CPU_DESCRIPTOR_HANDLE rtvDescriptor = mRTVHeap->getCPUHandle(n);
-            mDevice->CreateRenderTargetView(mRenderTargets[n].Get(), &rtvDesc, rtvDescriptor);
+            Comptr<ID3D12Resource> back;
+            MY_THROW_IF_FAILED(mSwapChain->GetBuffer(n, IID_PPV_ARGS(&back)));
+            mRenderTargets[n].initAsResource(this, back);
         }
 
         mBackBufferIndex = mSwapChain->GetCurrentBackBufferIndex();
 
         //デプス・ステンシル作成
         if (mDepthBufferFormat != DXGI_FORMAT::DXGI_FORMAT_UNKNOWN) {
-            CD3DX12_HEAP_PROPERTIES depthHeapProps(D3D12_HEAP_TYPE::D3D12_HEAP_TYPE_DEFAULT);
-            D3D12_RESOURCE_DESC dsvResourceDesc = CD3DX12_RESOURCE_DESC::Tex2D(
-                mDepthBufferFormat, backBufferWidth, backBufferHeight, 1, 1);
-            dsvResourceDesc.Flags |= D3D12_RESOURCE_FLAGS::D3D12_RESOURCE_FLAG_ALLOW_DEPTH_STENCIL;
-
-            D3D12_CLEAR_VALUE dsvClearValue = {};
-            dsvClearValue.Format = mDepthBufferFormat;
-            dsvClearValue.DepthStencil.Depth = 1.0f;
-            dsvClearValue.DepthStencil.Stencil = 0;
-
-            MY_THROW_IF_FAILED(mDevice->CreateCommittedResource(&depthHeapProps,
-                D3D12_HEAP_FLAGS::D3D12_HEAP_FLAG_NONE, &dsvResourceDesc,
-                D3D12_RESOURCE_STATES::D3D12_RESOURCE_STATE_DEPTH_WRITE, &dsvClearValue,
-                IID_PPV_ARGS(&mDepthStencil)));
-
-            mDepthStencil->SetName(L"DepthStencil");
-
-            D3D12_DEPTH_STENCIL_VIEW_DESC dsvDesc = {};
-            dsvDesc.Format = mDepthBufferFormat;
-            dsvDesc.ViewDimension = D3D12_DSV_DIMENSION::D3D12_DSV_DIMENSION_TEXTURE2D;
-
-            mDevice->CreateDepthStencilView(
-                mDepthStencil.Get(), &dsvDesc, mDSVHeap->getCPUHandle(0));
+            mDepthStencil.init(
+                this, backBufferWidth, backBufferHeight, mDepthBufferFormat, L"DepthStencil");
         }
 
         mScreenViewport.TopLeftX = mScreenViewport.TopLeftY = 0.0f;
@@ -328,15 +302,15 @@ namespace Framework::DX {
 
         for (UINT n = 0; n < BACK_BUFFER_COUNT; n++) {
             mCommandAllocators[n].Reset();
-            mRenderTargets[n].Reset();
+            //mRenderTargets[n].Reset();
         }
 
-        mDepthStencil.Reset();
+        //mDepthStencil.Reset();
         mCommandQueue.Reset();
         mCommandList.Reset();
         mFence.Reset();
-        mRTVHeap->reset();
-        mDSVHeap->reset();
+        //mRTVHeap->reset();
+        //mDSVHeap->reset();
         mSwapChain.Reset();
         mDevice.Reset();
         mFactory.Reset();
@@ -381,20 +355,16 @@ namespace Framework::DX {
 
         //レンダーターゲットのバリア
         if (beforeState != D3D12_RESOURCE_STATES::D3D12_RESOURCE_STATE_RENDER_TARGET) {
-            D3D12_RESOURCE_BARRIER barrier
-                = CD3DX12_RESOURCE_BARRIER::Transition(mRenderTargets[mBackBufferIndex].Get(),
-                    beforeState, D3D12_RESOURCE_STATES::D3D12_RESOURCE_STATE_RENDER_TARGET);
-            mCommandList->ResourceBarrier(1, &barrier);
+            mRenderTargets[mBackBufferIndex].transition(
+                mCommandList.Get(), D3D12_RESOURCE_STATES::D3D12_RESOURCE_STATE_RENDER_TARGET);
         }
     }
 
     //描画プレゼント
     void DeviceResource::present(D3D12_RESOURCE_STATES beforeState) {
         if (beforeState != D3D12_RESOURCE_STATES::D3D12_RESOURCE_STATE_PRESENT) {
-            D3D12_RESOURCE_BARRIER barrier
-                = CD3DX12_RESOURCE_BARRIER::Transition(mRenderTargets[mBackBufferIndex].Get(),
-                    beforeState, D3D12_RESOURCE_STATES::D3D12_RESOURCE_STATE_PRESENT);
-            mCommandList->ResourceBarrier(1, &barrier);
+            mRenderTargets[mBackBufferIndex].transition(
+                mCommandList.Get(), D3D12_RESOURCE_STATES::D3D12_RESOURCE_STATE_PRESENT);
         }
 
         executeCommandList();

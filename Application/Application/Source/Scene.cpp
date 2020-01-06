@@ -3,11 +3,15 @@
 #include <numeric>
 #include "DX/Descriptor/DescriptorSet.h"
 #include "DX/Raytracing/Shader/ShaderTable.h"
+#include "DX/Shader/PipelineState.h"
+#include "DX/Util/BlendDesc.h"
 #include "DX/Util/Helper.h"
+#include "DX/Util/RasterizerDesc.h"
 #include "ImGui/ImGuiManager.h"
 #include "Math/Quaternion.h"
 #include "Model.h"
 #include "Utility/Debug.h"
+#include "Utility/IO/ByteReader.h"
 #include "Utility/IO/GLBLoader.h"
 #include "Utility/IO/TextureLoader.h"
 #include "Utility/Path.h"
@@ -127,6 +131,9 @@ namespace {
     Object mHouse;
     std::vector<Object> mTree;
     Object mCrate;
+
+    RootSignature mDefaultRootSignature;
+    PipelineState mGrayScalePipelineState;
 } // namespace
 
 Scene::Scene(Framework::DX::DeviceResource* device, Framework::Input::InputManager* inputManager,
@@ -149,6 +156,37 @@ void Scene::create() {
         mSceneCB->gammaRate = 1.0f;
         mCameraRotation = Vec3::ZERO;
         mLightAmbient = Color4(0.1f, 0.1f, 0.1f, 1.0f);
+    }
+    //ポストエフェクトの初期化
+    {
+        using namespace Framework::Desc;
+        mDefaultRootSignature.init(mDeviceResource, std::vector<CD3DX12_STATIC_SAMPLER_DESC>());
+
+        PipelineStateDesc desc(mDefaultRootSignature);
+        std::filesystem::path shaderPath = ExePath::getInstance()->exe() / "cso";
+        std::vector<BYTE> vs = ByteReader::read(shaderPath / "GrayScale_VS.cso");
+        std::vector<BYTE> ps = ByteReader::read(shaderPath / "GrayScale_PS.cso");
+        desc.vs = CD3DX12_SHADER_BYTECODE(vs.data(), vs.size());
+        desc.ps = CD3DX12_SHADER_BYTECODE(ps.data(), ps.size());
+        desc.blend = BlendDesc(BlendMode::Default);
+        desc.depthStencil = CD3DX12_DEPTH_STENCIL_DESC(D3D12_DEFAULT);
+        desc.dsvFormat = DXGI_FORMAT::DXGI_FORMAT_D32_FLOAT;
+        desc.flags = D3D12_PIPELINE_STATE_FLAGS::D3D12_PIPELINE_STATE_FLAG_NONE;
+        D3D12_INPUT_ELEMENT_DESC inputElements[] = {
+            { "POSITION", 0, DXGI_FORMAT::DXGI_FORMAT_R32G32B32_FLOAT, 0,
+                D3D12_APPEND_ALIGNED_ELEMENT,
+                D3D12_INPUT_CLASSIFICATION::D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
+            { "TEXCOORD", 0, DXGI_FORMAT::DXGI_FORMAT_R32G32_FLOAT, 0, D3D12_APPEND_ALIGNED_ELEMENT,
+                D3D12_INPUT_CLASSIFICATION::D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
+        };
+        desc.inputLayout = { inputElements, _countof(inputElements) };
+        desc.rasterizer = RasterizerDesc(CullMode::Back, FillMode::Solid);
+        desc.sample.Count = 1;
+        desc.renderTargetNum = 1;
+        desc.rtvFormat[0] = DXGI_FORMAT::DXGI_FORMAT_R8G8B8A8_UNORM;
+        desc.topologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE::D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE;
+
+        mGrayScalePipelineState.init(mDeviceResource, desc, L"GrayScale");
     }
 }
 
@@ -286,7 +324,8 @@ void Scene::render() {
     mDXRStateObject->doRaytracing(mWidth, mHeight);
 
     D3D12_RESOURCE_BARRIER preCopyBarriers[2];
-    preCopyBarriers[0] = CD3DX12_RESOURCE_BARRIER::Transition(mDeviceResource->getRenderTarget(),
+    preCopyBarriers[0] = CD3DX12_RESOURCE_BARRIER::Transition(
+        mDeviceResource->getRenderTarget()->getBuffer().getResource(),
         D3D12_RESOURCE_STATES::D3D12_RESOURCE_STATE_RENDER_TARGET,
         D3D12_RESOURCE_STATES::D3D12_RESOURCE_STATE_COPY_DEST);
     preCopyBarriers[1] = CD3DX12_RESOURCE_BARRIER::Transition(mRaytracingOutput.getResource(),
@@ -294,10 +333,12 @@ void Scene::render() {
         D3D12_RESOURCE_STATES::D3D12_RESOURCE_STATE_COPY_SOURCE);
     commandList->ResourceBarrier(_countof(preCopyBarriers), preCopyBarriers);
 
-    commandList->CopyResource(mDeviceResource->getRenderTarget(), mRaytracingOutput.getResource());
+    commandList->CopyResource(mDeviceResource->getRenderTarget()->getBuffer().getResource(),
+        mRaytracingOutput.getResource());
 
     D3D12_RESOURCE_BARRIER postCopyBarriers[2];
-    postCopyBarriers[0] = CD3DX12_RESOURCE_BARRIER::Transition(mDeviceResource->getRenderTarget(),
+    postCopyBarriers[0] = CD3DX12_RESOURCE_BARRIER::Transition(
+        mDeviceResource->getRenderTarget()->getBuffer().getResource(),
         D3D12_RESOURCE_STATES::D3D12_RESOURCE_STATE_COPY_DEST,
         D3D12_RESOURCE_STATES::D3D12_RESOURCE_STATE_RENDER_TARGET);
     postCopyBarriers[1] = CD3DX12_RESOURCE_BARRIER::Transition(mRaytracingOutput.getResource(),
@@ -346,7 +387,8 @@ void Scene::createDeviceDependentResources() {
             0, D3D12_FILTER::D3D12_FILTER_COMPARISON_MIN_MAG_MIP_LINEAR);
 
         RootSignatureDesc desc{ rootParams, sampler, RootSignature::Flags::None };
-        mGlobalRootSignature = std::make_unique<RootSignature>(mDeviceResource->getDevice(), desc);
+        mGlobalRootSignature = std::make_unique<RootSignature>();
+        mGlobalRootSignature->init(mDeviceResource, desc);
     }
     //ミスシェーダー
     {
@@ -355,8 +397,8 @@ void Scene::createDeviceDependentResources() {
             Framework::Math::MathUtil::alignPow2(sizeof(MissConstant), sizeof(UINT32)), 1);
 
         RootSignatureDesc desc{ params, {}, RootSignature::Flags::Local };
-        mMissLocalRootSignature
-            = std::make_unique<RootSignature>(mDeviceResource->getDevice(), desc);
+        mMissLocalRootSignature = std::make_unique<RootSignature>();
+        mMissLocalRootSignature->init(mDeviceResource, desc);
     }
     //ヒットグループシェーダー
     {
@@ -384,8 +426,8 @@ void Scene::createDeviceDependentResources() {
 
         params[5].InitAsConstants(contSize, 1);
         RootSignatureDesc desc{ params, {}, RootSignature::Flags::Local };
-        mHitGroupLocalRootSignature
-            = std::make_unique<RootSignature>(mDeviceResource->getDevice(), desc);
+        mHitGroupLocalRootSignature = std::make_unique<RootSignature>();
+        mHitGroupLocalRootSignature->init(mDeviceResource, desc);
     }
     {
         ID3D12Device* device = mDeviceResource->getDevice();

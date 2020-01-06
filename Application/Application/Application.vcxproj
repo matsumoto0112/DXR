@@ -89,7 +89,7 @@
     <ClCompile Include="Source\DX\Descriptor\LocalDescriptorHeap.cpp" />
     <ClCompile Include="Source\DX\Device\Adapter.cpp" />
     <ClCompile Include="Source\DX\Raytracing\RaytracingDescriptorHeap.cpp" />
-    <ClCompile Include="Source\DX\Raytracing\RaytracingDescriptorManager.cpp" />
+    <ClCompile Include="Source\DX\Raytracing\RaytracingDescriptorHeapManager.cpp" />
     <ClCompile Include="Source\DX\DeviceResource.cpp" />
     <ClCompile Include="Source\DX\Raytracing\BottomLevelAccelerationStructure.cpp" />
     <ClCompile Include="Source\DX\Raytracing\DXRPipelineStateObject.cpp" />
@@ -102,6 +102,13 @@
     <ClCompile Include="Source\DX\Resource\UnorderedAccessView.cpp" />
     <ClCompile Include="Source\DX\Resource\VertexBuffer.cpp" />
     <ClCompile Include="Source\DX\Resource\VertexBufferView.cpp" />
+    <ClCompile Include="Source\DX\Shader\DepthStencil.cpp" />
+    <ClCompile Include="Source\DX\Shader\DepthStencilTexture.cpp" />
+    <ClCompile Include="Source\DX\Shader\DepthStencilView.cpp" />
+    <ClCompile Include="Source\DX\Shader\PipelineState.cpp" />
+    <ClCompile Include="Source\DX\Shader\RenderTarget.cpp" />
+    <ClCompile Include="Source\DX\Shader\RenderTargetTexture.cpp" />
+    <ClCompile Include="Source\DX\Shader\RenderTargetView.cpp" />
     <ClCompile Include="Source\DX\Shader\RootSignature.cpp" />
     <ClCompile Include="Source\Game.cpp" />
     <ClCompile Include="Source\ImGui\ImGuiManager.cpp" />
@@ -132,6 +139,7 @@
     <ClCompile Include="Source\DX\Util\GPUUploadBuffer.cpp" />
     <ClCompile Include="Source\Utility\Color4.cpp" />
     <ClCompile Include="Source\Utility\GPUTimer.cpp" />
+    <ClCompile Include="Source\Utility\IO\ByteReader.cpp" />
     <ClCompile Include="Source\Utility\IO\GLBLoader.cpp" />
     <ClCompile Include="Source\Utility\IO\TextureLoader.cpp" />
     <ClCompile Include="Source\Utility\Path.cpp" />
@@ -169,7 +177,7 @@
     <ClInclude Include="Source\DX\Device\CommandList.h" />
     <ClInclude Include="Source\DX\Device\IDXInterfaceAccessor.h" />
     <ClInclude Include="Source\DX\Raytracing\RaytracingDescriptorHeap.h" />
-    <ClInclude Include="Source\DX\Raytracing\RaytracingDescriptorManager.h" />
+    <ClInclude Include="Source\DX\Raytracing\RaytracingDescriptorHeapManager.h" />
     <ClInclude Include="Source\DX\DeviceResource.h" />
     <ClInclude Include="Source\DX\ModelCompat.h" />
     <ClInclude Include="Source\DX\Raytracing\BottomLevelAccelerationStructure.h" />
@@ -189,8 +197,20 @@
     <ClInclude Include="Source\DX\Resource\UnorderedAccessView.h" />
     <ClInclude Include="Source\DX\Resource\VertexBuffer.h" />
     <ClInclude Include="Source\DX\Resource\VertexBufferView.h" />
+    <ClInclude Include="Source\DX\Shader\DepthStencil.h" />
+    <ClInclude Include="Source\DX\Shader\DepthStencilFormat.h" />
+    <ClInclude Include="Source\DX\Shader\DepthStencilTexture.h" />
+    <ClInclude Include="Source\DX\Shader\DepthStencilView.h" />
+    <ClInclude Include="Source\DX\Shader\PipelineState.h" />
+    <ClInclude Include="Source\DX\Shader\RenderTarget.h" />
+    <ClInclude Include="Source\DX\Shader\RenderTargetTexture.h" />
+    <ClInclude Include="Source\DX\Shader\RenderTargetView.h" />
     <ClInclude Include="Source\DX\Shader\RootSignature.h" />
+    <ClInclude Include="Source\DX\Util\BlendDesc.h" />
+    <ClInclude Include="Source\DX\Util\DescriptorHeapDesc.h" />
     <ClInclude Include="Source\DX\Util\Helper.h" />
+    <ClInclude Include="Source\DX\Util\RasterizerDesc.h" />
+    <ClInclude Include="Source\DX\Util\TextureDesc.h" />
     <ClInclude Include="Source\Game.h" />
     <ClInclude Include="Source\ImGui\ImGuiInclude.h" />
     <ClInclude Include="Source\ImGui\ImGuiManager.h" />
@@ -227,6 +247,7 @@
     <ClInclude Include="Source\Utility\Debug.h" />
     <ClInclude Include="Source\Utility\GPUTimer.h" />
     <ClInclude Include="Source\Utility\HrException.h" />
+    <ClInclude Include="Source\Utility\IO\ByteReader.h" />
     <ClInclude Include="Source\Utility\IO\GLBLoader.h" />
     <ClInclude Include="Source\Utility\IO\TextureLoader.h" />
     <ClInclude Include="Source\Utility\Path.h" />
@@ -246,6 +267,18 @@
     <ClInclude Include="Source\Window\Window.h" />
   </ItemGroup>
   <ItemGroup>
+    <FxCompile Include="Assets\Shader\PostEffect\GrayScale_PS.hlsl">
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Pixel</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Pixel</ShaderType>
+      <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(OutDir)\cso\%(Filename).cso</ObjectFileOutput>
+      <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(OutDir)\cso\%(Filename).cso</ObjectFileOutput>
+    </FxCompile>
+    <FxCompile Include="Assets\Shader\PostEffect\GrayScale_VS.hlsl">
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Vertex</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Vertex</ShaderType>
+      <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(OutDir)\cso\%(Filename).cso</ObjectFileOutput>
+      <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(OutDir)\cso\%(Filename).cso</ObjectFileOutput>
+    </FxCompile>
     <FxCompile Include="Assets\Shader\Raytracing\HitGroup\ClosestHit\ClosestHit_Plane.hlsl">
       <FileType>Document</FileType>
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Library</ShaderType>
@@ -260,6 +293,7 @@
       </ObjectFileOutput>
     </FxCompile>
     <None Include=".clang-format" />
+    <None Include="Assets\Shader\PostEffect\GrayScale.hlsli" />
     <None Include="Assets\Shader\Raytracing\HitGroup\Helper.hlsli" />
     <None Include="Assets\Shader\Raytracing\HitGroup\Local.hlsli" />
     <None Include="Assets\Shader\Raytracing\MissShader\Local.hlsli" />

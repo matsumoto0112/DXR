@@ -1,25 +1,25 @@
-#include "RaytracingDescriptorManager.h"
+#include "RaytracingDescriptorHeapManager.h"
 #include "DX/Descriptor/DescriptorSet.h"
 #include "DX/DeviceResource.h"
 
 namespace Framework::DX {
 
-    void RaytracingDescriptorManager::init(DeviceResource* device) {
+    void RaytracingDescriptorHeapManager::init(DeviceResource* device) {
         mDeviceResource = device;
         mHeap.init(
             device, D3D12_DESCRIPTOR_HEAP_TYPE::D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, 10000);
-        mGlobalView.init(device->getDevice(),
-            D3D12_DESCRIPTOR_HEAP_TYPE::D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, 10000);
+        mGlobalView.init(
+            device, D3D12_DESCRIPTOR_HEAP_TYPE::D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, 10000);
 
-        mDefaultGlobalView = mGlobalView.allocate(device->getDevice());
+        mDefaultGlobalView = mGlobalView.allocate();
     }
-    DescriptorInfo RaytracingDescriptorManager::allocateGlobal() {
-        return mGlobalView.allocate(mDeviceResource->getDevice());
+    DescriptorInfo RaytracingDescriptorHeapManager::allocateGlobal() {
+        return mGlobalView.allocate();
     }
-    DescriptorInfo RaytracingDescriptorManager::allocateLocal() {
+    DescriptorInfo RaytracingDescriptorHeapManager::allocateLocal() {
         return mHeap.allocateLocal();
     }
-    void RaytracingDescriptorManager::copyAndSetComputeDescriptorTable(DeviceResource* device,
+    void RaytracingDescriptorHeapManager::copyAndSetComputeDescriptorTable(DeviceResource* device,
         ID3D12GraphicsCommandList* commandList, const DescriptorSet& globalSet) {
         auto setDescriptorSetSingle
             = [&](const D3D12_CPU_DESCRIPTOR_HANDLE* start, UINT num, UINT index) {

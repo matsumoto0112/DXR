@@ -37,26 +37,33 @@ public:
     void onRender() override {
         auto deviceResource = Framework::Device::GameDevice::getInstance()->getDeviceResource();
         ID3D12GraphicsCommandList* list = deviceResource->getCommandList();
-        D3D12_CPU_DESCRIPTOR_HANDLE rtv[] = { deviceResource->getRenderTargetView() };
+        D3D12_CPU_DESCRIPTOR_HANDLE rtv[]
+            = { deviceResource->getRenderTarget()->getView().getInfo().cpuHandle };
 
-        list->OMSetRenderTargets(1, rtv, FALSE, &deviceResource->getDepthStencilView());
-        static float color[4] = { 0, 0, 0, 0 };
-        list->ClearRenderTargetView(deviceResource->getRenderTargetView(), color, 0, nullptr);
+        list->OMSetRenderTargets(
+            1, rtv, FALSE, &deviceResource->getDepthStencil()->getView().getInfo().cpuHandle);
+        deviceResource->getRenderTarget()->clear(list, Framework::Utility::Color4(0, 0, 0, 0));
 
         mScene->render();
     }
     /**
      * @brief
      */
-    void onDestroy() override { Game::onDestroy(); }
+    void onDestroy() override {
+        Game::onDestroy();
+    }
     /**
      * @brief
      */
-    virtual void toggleFullScreenWindow() override { Game::toggleFullScreenWindow(); }
+    virtual void toggleFullScreenWindow() override {
+        Game::toggleFullScreenWindow();
+    }
     /**
      * @brief
      */
-    virtual void setWindowBounds(const RECT& rect) override { Game::setWindowBounds(rect); }
+    virtual void setWindowBounds(const RECT& rect) override {
+        Game::setWindowBounds(rect);
+    }
     /**
      * @brief
      */
@@ -67,7 +74,9 @@ public:
     /**
      * @brief
      */
-    virtual void onWindowMoved(int x, int y) override { Game::onWindowMoved(x, y); }
+    virtual void onWindowMoved(int x, int y) override {
+        Game::onWindowMoved(x, y);
+    }
 
 private:
     std::unique_ptr<Scene> mScene;

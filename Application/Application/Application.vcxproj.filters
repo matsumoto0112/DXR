@@ -59,11 +59,19 @@
     <ClCompile Include="Source\DX\Descriptor\GlobalDescriptorHeap.cpp" />
     <ClCompile Include="Source\DX\Descriptor\LocalDescriptorHeap.cpp" />
     <ClCompile Include="Source\DX\Raytracing\RaytracingDescriptorHeap.cpp" />
-    <ClCompile Include="Source\DX\Raytracing\RaytracingDescriptorManager.cpp" />
     <ClCompile Include="Source\DX\Device\Adapter.cpp" />
     <ClCompile Include="Source\Model.cpp" />
     <ClCompile Include="Source\Impl\Models.cpp" />
     <ClCompile Include="Source\DX\Descriptor\DescriptorHeapManager.cpp" />
+    <ClCompile Include="Source\DX\Raytracing\RaytracingDescriptorHeapManager.cpp" />
+    <ClCompile Include="Source\DX\Shader\PipelineState.cpp" />
+    <ClCompile Include="Source\Utility\IO\ByteReader.cpp" />
+    <ClCompile Include="Source\DX\Shader\RenderTarget.cpp" />
+    <ClCompile Include="Source\DX\Shader\RenderTargetTexture.cpp" />
+    <ClCompile Include="Source\DX\Shader\RenderTargetView.cpp" />
+    <ClCompile Include="Source\DX\Shader\DepthStencil.cpp" />
+    <ClCompile Include="Source\DX\Shader\DepthStencilTexture.cpp" />
+    <ClCompile Include="Source\DX\Shader\DepthStencilView.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Source\stdafx.h" />
@@ -153,8 +161,6 @@
     <ClInclude Include="Source\DX\Descriptor\DescriptorSet.h" />
     <ClInclude Include="Source\DX\Descriptor\GlobalDescriptorHeap.h" />
     <ClInclude Include="Source\DX\Descriptor\LocalDescriptorHeap.h" />
-    <ClInclude Include="Source\DX\Raytracing\RaytracingDescriptorHeap.h" />
-    <ClInclude Include="Source\DX\Raytracing\RaytracingDescriptorManager.h" />
     <ClInclude Include="Source\DX\Device\IDXInterfaceAccessor.h" />
     <ClInclude Include="Source\DX\Device\CommandList.h" />
     <ClInclude Include="Source\DX\Device\Adapter.h" />
@@ -163,6 +169,21 @@
     <ClInclude Include="Source\Impl\Models.h" />
     <ClInclude Include="Source\DX\Descriptor\DescriptorHeapFlag.h" />
     <ClInclude Include="Source\DX\Descriptor\DescriptorHeapManager.h" />
+    <ClInclude Include="Source\DX\Raytracing\RaytracingDescriptorHeap.h" />
+    <ClInclude Include="Source\DX\Raytracing\RaytracingDescriptorHeapManager.h" />
+    <ClInclude Include="Source\DX\Shader\PipelineState.h" />
+    <ClInclude Include="Source\Utility\IO\ByteReader.h" />
+    <ClInclude Include="Source\DX\Util\BlendDesc.h" />
+    <ClInclude Include="Source\DX\Util\DescriptorHeapDesc.h" />
+    <ClInclude Include="Source\DX\Util\RasterizerDesc.h" />
+    <ClInclude Include="Source\DX\Util\TextureDesc.h" />
+    <ClInclude Include="Source\DX\Shader\RenderTarget.h" />
+    <ClInclude Include="Source\DX\Shader\RenderTargetTexture.h" />
+    <ClInclude Include="Source\DX\Shader\RenderTargetView.h" />
+    <ClInclude Include="Source\DX\Shader\DepthStencil.h" />
+    <ClInclude Include="Source\DX\Shader\DepthStencilFormat.h" />
+    <ClInclude Include="Source\DX\Shader\DepthStencilTexture.h" />
+    <ClInclude Include="Source\DX\Shader\DepthStencilView.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
@@ -173,6 +194,7 @@
     <None Include="Assets\Shader\Raytracing\HitGroup\Local.hlsli" />
     <None Include="Assets\Shader\Raytracing\HitGroup\Helper.hlsli" />
     <None Include=".clang-format" />
+    <None Include="Assets\Shader\PostEffect\GrayScale.hlsli" />
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="Assets\Shader\Raytracing\RayGenShader.hlsl" />
@@ -181,5 +203,7 @@
     <FxCompile Include="Assets\Shader\Raytracing\HitGroup\ClosestHit\ClosestHit_Plane.hlsl" />
     <FxCompile Include="Assets\Shader\Raytracing\HitGroup\ClosestHit\ClosestHit_Normal.hlsl" />
     <FxCompile Include="Assets\Shader\Raytracing\HitGroup\ClosestHit\ClosestHit_Sphere.hlsl" />
+    <FxCompile Include="Assets\Shader\PostEffect\GrayScale_VS.hlsl" />
+    <FxCompile Include="Assets\Shader\PostEffect\GrayScale_PS.hlsl" />
   </ItemGroup>
 </Project>

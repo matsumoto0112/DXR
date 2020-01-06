@@ -8,6 +8,7 @@
 #include "DX/Descriptor/LocalDescriptorHeap.h"
 
 namespace Framework::DX {
+    class DeviceResource;
     /**
      * @class DescriptorAllocator
      * @brief ディスクリプタの確保管理
@@ -17,27 +18,28 @@ namespace Framework::DX {
         /**
          * @brief コンストラクタ
          */
-        DescriptorAllocator() {}
+        DescriptorAllocator();
         /**
          * @brief デストラクタ
          */
-        ~DescriptorAllocator() {}
+        ~DescriptorAllocator();
         /**
          * @brief 初期化
          */
-        void init(ID3D12Device* device, D3D12_DESCRIPTOR_HEAP_TYPE type, UINT descriptorNum);
+        void init(DeviceResource* device, D3D12_DESCRIPTOR_HEAP_TYPE type, UINT descriptorNum);
         /**
          * @brief ディスクリプタの確保
          */
-        DescriptorInfo allocate(ID3D12Device* device);
+        DescriptorInfo allocate();
 
     private:
         /**
          * @brief ヒープの追加
          */
-        void addHeap(ID3D12Device* device);
+        void addHeap();
 
     private:
+        DeviceResource* mDevice; //!< デバイス
         std::vector<LocalDescriptorHeap> mStackHeaps; //!< 確保済みのヒープ
         D3D12_DESCRIPTOR_HEAP_TYPE mHeapType; //!< ヒープの種類k
         UINT mHeapNum; //!< ヒープの確保数

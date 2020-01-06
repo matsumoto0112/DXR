@@ -6,19 +6,19 @@
 namespace Framework::DX {
     class DeviceResource;
     /**
-     * @class RaytracingDescriptorManager
+     * @class RaytracingDescriptorHeapManager
      * @brief レイトレーシング用ディスクリプタ管理
      */
-    class RaytracingDescriptorManager {
+    class RaytracingDescriptorHeapManager {
     public:
         /**
          * @brief コンストラクタ
          */
-        RaytracingDescriptorManager() {}
+        RaytracingDescriptorHeapManager() {}
         /**
          * @brief デストラクタ
          */
-        ~RaytracingDescriptorManager() {}
+        ~RaytracingDescriptorHeapManager() {}
         /**
          * @brief 初期化
          */

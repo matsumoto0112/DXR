@@ -1,7 +1,8 @@
 #pragma once
 #include "DX/Descriptor/DescriptorHeapFlag.h"
 #include "DX/Descriptor/DescriptorSet.h"
-#include "DX/Raytracing/RaytracingDescriptorManager.h"
+#include "DX/Descriptor/GlobalDescriptorHeap.h"
+#include "DX/Raytracing/RaytracingDescriptorHeapManager.h"
 
 namespace Framework::DX {
     /**
@@ -9,6 +10,14 @@ namespace Framework::DX {
      * @brief ディスクリプタヒープ管理
      */
     class DescriptorHeapManager {
+    private:
+        static constexpr UINT GLOBAL_RESOURCE_HEAP_SIZE = 100000;
+        static constexpr UINT GLOBAL_SAMPLER_HEAP_SIZE = 1000;
+        static constexpr UINT RESOURCE_VIEW_ALLOCATE_SIZE = 2000;
+        static constexpr UINT SAMPLER_VIEW_ALLOCATOR_SIZE = 1000;
+        static constexpr UINT RTV_ALLOCATOR_SIZE = 10;
+        static constexpr UINT DSV_ALLOCATOR_SIZE = 5;
+
     public:
         /**
          * @brief コンストラクタ
@@ -53,7 +62,14 @@ namespace Framework::DX {
         ID3D12DescriptorHeap* getHeapFromType(DescriptorHeapType type);
 
     private:
-        RaytracingDescriptorManager mRaytracingDescriptor;
+        GlobalDescriptorHeap mGlobalHeap;
+        DescriptorAllocator mCbvSrvUavAllocator;
+        DescriptorAllocator mSamplerAllocator;
+        DescriptorAllocator mRtvAllocator;
+        DescriptorAllocator mDsvAllocator;
+        DescriptorInfo mDefaultResourceInfo;
+        DescriptorInfo mDefaultSamplerInfo;
+        RaytracingDescriptorHeapManager mRaytracingDescriptor;
     };
     template <class... Types>
     inline void DescriptorHeapManager::setDescriptorHeap(

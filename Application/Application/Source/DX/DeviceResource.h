@@ -3,6 +3,8 @@
 #include "DX/Descriptor/DescriptorHeapManager.h"
 #include "DX/DescriptorTable.h"
 #include "DX/Device/Adapter.h"
+#include "DX/Shader/DepthStencil.h"
+#include "DX/Shader/RenderTarget.h"
 #include "Window/Window.h"
 
 namespace Framework::DX {
@@ -144,18 +146,18 @@ namespace Framework::DX {
         D3D_FEATURE_LEVEL getFeatureLevel() const {
             return mFeatureLevel;
         }
-        /**
-         * @brief レンダーターゲットを取得する
-         */
-        ID3D12Resource* getRenderTarget() const {
-            return mRenderTargets[mBackBufferIndex].Get();
-        }
-        /**
-         * @brief デプス・ステンシルを取得する
-         */
-        ID3D12Resource* getDepthStencil() const {
-            return mDepthStencil.Get();
-        }
+        ///**
+        // * @brief レンダーターゲットを取得する
+        // */
+        //ID3D12Resource* getRenderTarget() const {
+        //    return mRenderTargets[mBackBufferIndex].Get();
+        //}
+        ///**
+        // * @brief デプス・ステンシルを取得する
+        // */
+        //ID3D12Resource* getDepthStencil() const {
+        //    return mDepthStencil.Get();
+        //}
         /**
          * @brief コマンドキューを取得する
          */
@@ -222,18 +224,24 @@ namespace Framework::DX {
         UINT getDeviceOptions() const {
             return mOptions;
         }
-        /**
-         * @brief レンダーターゲットのハンドルを取得する
-         */
-        D3D12_CPU_DESCRIPTOR_HANDLE getRenderTargetView() const {
-            return mRTVHeap->getCPUHandle(mBackBufferIndex);
+        RenderTarget* getRenderTarget() {
+            return &mRenderTargets[mBackBufferIndex];
         }
-        /**
-         * @brief デプス・ステンシルのハンドルを取得する
-         */
-        CD3DX12_CPU_DESCRIPTOR_HANDLE getDepthStencilView() const {
-            return mDSVHeap->getCPUHandle(0);
+        DepthStencil* getDepthStencil() {
+            return &mDepthStencil;
         }
+        ///**
+        // * @brief レンダーターゲットのハンドルを取得する
+        // */
+        //D3D12_CPU_DESCRIPTOR_HANDLE getRenderTargetView() const {
+        //    return mRTVHeap->getCPUHandle(mBackBufferIndex);
+        //}
+        ///**
+        // * @brief デプス・ステンシルのハンドルを取得する
+        // */
+        //CD3DX12_CPU_DESCRIPTOR_HANDLE getDepthStencilView() const {
+        //    return mDSVHeap->getCPUHandle(0);
+        //}
         DescriptorHeapManager* getHeapManager() {
             return &mHeapManager;
         }
@@ -254,13 +262,15 @@ namespace Framework::DX {
             mCommandAllocators; //!< コマンドアロケータ
         Comptr<IDXGIFactory4> mFactory; //!< ファクトリ
         Comptr<IDXGISwapChain3> mSwapChain; //!< スワップチェイン
-        Comptr<ID3D12Resource> mRenderTargets[BACK_BUFFER_COUNT]; //!< レンダーターゲット
-        Comptr<ID3D12Resource> mDepthStencil; //!< デプス・ステンシル
+        RenderTarget mRenderTargets[BACK_BUFFER_COUNT];
+        DepthStencil mDepthStencil;
+        //Comptr<ID3D12Resource> mRenderTargets[BACK_BUFFER_COUNT]; //!< レンダーターゲット
+        //Comptr<ID3D12Resource> mDepthStencil; //!< デプス・ステンシル
         Comptr<ID3D12Fence> mFence; //!< フェンス
         std::array<UINT64, BACK_BUFFER_COUNT> mFenceValues; //!< フェンスの値
         Microsoft::WRL::Wrappers::Event mFenceEvent; //!< フェンスイベント
-        UniquePtr<DescriptorTable> mRTVHeap; //!< レンダーターゲットのディスクリプタヒープ
-        UniquePtr<DescriptorTable> mDSVHeap; //!< デプス・ステンシルのディスクリプタヒープ
+        //UniquePtr<DescriptorTable> mRTVHeap; //!< レンダーターゲットのディスクリプタヒープ
+        //UniquePtr<DescriptorTable> mDSVHeap; //!< デプス・ステンシルのディスクリプタヒープ
         D3D12_VIEWPORT mScreenViewport; //!< ビューポート
         D3D12_RECT mScissorRect; //!< シザー矩形
         DXGI_FORMAT mBackBufferFormat; //!< バックバッファのフォーマット
