@@ -15,6 +15,9 @@ namespace Framework::DX {
             RESOURCE_VIEW_ALLOCATE_SIZE);
         mDefaultResourceInfo = mCbvSrvUavAllocator.allocate();
 
+        mSamplerHeap.init(device->getDevice(),
+            D3D12_DESCRIPTOR_HEAP_TYPE::D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER,
+            GLOBAL_SAMPLER_HEAP_SIZE);
         mSamplerAllocator.init(device,
             D3D12_DESCRIPTOR_HEAP_TYPE::D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER,
             SAMPLER_VIEW_ALLOCATOR_SIZE);
@@ -39,38 +42,52 @@ namespace Framework::DX {
     void DescriptorHeapManager::beginFrame() {
         mRaytracingDescriptor.mHeap.resetGlobal();
         mGlobalHeap.reset();
+        mSamplerHeap.reset();
     }
-    void DescriptorHeapManager::copyAndSetComputeDescriptorHeap(DescriptorHeapType type,
+    void DescriptorHeapManager::copyAndSetGraphicsDescriptorHeap(DescriptorHeapType type,
         DeviceResource* device, ID3D12GraphicsCommandList* commandList, const DescriptorSet& set) {
-        auto setDescriptorSetSingle
-            = [&](const D3D12_CPU_DESCRIPTOR_HANDLE* start, UINT num, UINT index) {
-                  if (num == 0) return;
-                  MY_THROW_IF_FALSE_LOG(
-                      mGlobalHeap.canCopy(num), "確保したディスクリプタの大きさを超えました");
-                  std::vector<D3D12_CPU_DESCRIPTOR_HANDLE> tmpHandle(num);
-                  for (UINT n = 0; n < num; n++) {
-                      tmpHandle[n] = start[n].ptr == 0 ? mDefaultResourceInfo.cpuHandle : start[n];
-                  }
-                  CD3DX12_CPU_DESCRIPTOR_HANDLE dstHandle(
-                      mGlobalHeap.mDescriptorHeap->GetCPUDescriptorHandleForHeapStart(),
-                      mGlobalHeap.mAllocatedNum, mGlobalHeap.mDescriptorHeapSize);
+        auto setDescriptorSetSingle = [&](const D3D12_CPU_DESCRIPTOR_HANDLE* start,
+                                          GlobalDescriptorHeap& heap, UINT num, UINT index) {
+            if (num == 0) return;
+            MY_THROW_IF_FALSE_LOG(
+                mGlobalHeap.canCopy(num), "確保したディスクリプタの大きさを超えました");
+            std::vector<D3D12_CPU_DESCRIPTOR_HANDLE> tmpHandle(num);
+            for (UINT n = 0; n < num; n++) {
+                tmpHandle[n] = start[n].ptr == 0 ? mDefaultResourceInfo.cpuHandle : start[n];
+            }
+            CD3DX12_CPU_DESCRIPTOR_HANDLE dstHandle(
+                heap.mDescriptorHeap->GetCPUDescriptorHandleForHeapStart(), heap.mAllocatedNum,
+                heap.mDescriptorHeapSize);
 
-                  device->getDevice()->CopyDescriptors(
-                      1, &dstHandle, &num, num, tmpHandle.data(), nullptr, mGlobalHeap.mType);
+            device->getDevice()->CopyDescriptors(
+                1, &dstHandle, &num, num, tmpHandle.data(), nullptr, heap.mType);
 
-                  commandList->SetGraphicsRootDescriptorTable(index,
-                      CD3DX12_GPU_DESCRIPTOR_HANDLE(
-                          mGlobalHeap.mDescriptorHeap->GetGPUDescriptorHandleForHeapStart(),
-                          mGlobalHeap.mAllocatedNum, mGlobalHeap.mDescriptorHeapSize));
-                  mGlobalHeap.mAllocatedNum += num;
-              };
+            commandList->SetGraphicsRootDescriptorTable(index,
+                CD3DX12_GPU_DESCRIPTOR_HANDLE(
+                    heap.mDescriptorHeap->GetGPUDescriptorHandleForHeapStart(), heap.mAllocatedNum,
+                    heap.mDescriptorHeapSize));
+            heap.mAllocatedNum += num;
+        };
 
         switch (type) {
         case DescriptorHeapType::CbvSrvUav:
-            setDescriptorSetSingle(set.getCbvHandle().handle.data(), set.getCbvHandle().max, 0);
-            setDescriptorSetSingle(set.getSrvHandle().handle.data(), set.getSrvHandle().max, 1);
-            setDescriptorSetSingle(set.getUavHandle().handle.data(), set.getUavHandle().max, 2);
+            setDescriptorSetSingle(
+                set.getCbvHandle().handle.data(), mGlobalHeap, set.getCbvHandle().max, 0);
+            setDescriptorSetSingle(
+                set.getSrvHandle().handle.data(), mGlobalHeap, set.getSrvHandle().max, 1);
+            setDescriptorSetSingle(
+                set.getUavHandle().handle.data(), mGlobalHeap, set.getUavHandle().max, 2);
             break;
+        case DescriptorHeapType::Sampler:
+            setDescriptorSetSingle(
+                set.getSamplerHandle().handle.data(), mSamplerHeap, set.getSamplerHandle().max, 3);
+            break;
+        default: MY_ASSERTION(false, "未対応のフラグが指定されました。");
+        }
+    }
+    void DescriptorHeapManager::copyAndSetComputeDescriptorHeap(DescriptorHeapType type,
+        DeviceResource* device, ID3D12GraphicsCommandList* commandList, const DescriptorSet& set) {
+        switch (type) {
         case Framework::DX::DescriptorHeapType::RaytracingGlobal:
             mRaytracingDescriptor.copyAndSetComputeDescriptorTable(device, commandList, set);
             break;
@@ -81,6 +98,7 @@ namespace Framework::DX {
     ID3D12DescriptorHeap* DescriptorHeapManager::getHeapFromType(DescriptorHeapType type) {
         switch (type) {
         case DescriptorHeapType::CbvSrvUav: return mGlobalHeap.getHeap();
+        case DescriptorHeapType::Sampler: return mSamplerHeap.getHeap();
         case DescriptorHeapType::RaytracingGlobal:
             return mRaytracingDescriptor.mHeap.mDescriptorHeap.Get();
         default: MY_ASSERTION(false, "未対応のフラグが指定されました。"); return nullptr;

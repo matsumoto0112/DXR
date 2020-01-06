@@ -44,6 +44,11 @@ namespace Framework::DX {
         /**
          * @brief ディスクリプタのコピーをし、コンピュートシェーダーにセットする
          */
+        void copyAndSetGraphicsDescriptorHeap(DescriptorHeapType type, DeviceResource* device,
+            ID3D12GraphicsCommandList* commandList, const DescriptorSet& set);
+        /**
+         * @brief ディスクリプタのコピーをし、コンピュートシェーダーにセットする
+         */
         void copyAndSetComputeDescriptorHeap(DescriptorHeapType type, DeviceResource* device,
             ID3D12GraphicsCommandList* commandList, const DescriptorSet& set);
         /**
@@ -63,6 +68,7 @@ namespace Framework::DX {
 
     private:
         GlobalDescriptorHeap mGlobalHeap;
+        GlobalDescriptorHeap mSamplerHeap;
         DescriptorAllocator mCbvSrvUavAllocator;
         DescriptorAllocator mSamplerAllocator;
         DescriptorAllocator mRtvAllocator;

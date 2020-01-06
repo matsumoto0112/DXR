@@ -136,6 +136,7 @@ namespace {
     PipelineState mGrayScalePipelineState;
     VertexBuffer mQuadVertex;
     IndexBuffer mQuadIndex;
+    DescriptorInfo mSamplerInfo;
 } // namespace
 
 Scene::Scene(Framework::DX::DeviceResource* device, Framework::Input::InputManager* inputManager,
@@ -205,9 +206,19 @@ void Scene::create() {
         mQuadVertex.init(mDeviceResource, vertices, L"QuadVertex");
         mQuadIndex.init(mDeviceResource, indices,
             D3D_PRIMITIVE_TOPOLOGY::D3D10_PRIMITIVE_TOPOLOGY_TRIANGLELIST, L"QuadIndex");
+
+        D3D12_SAMPLER_DESC sampler = {};
+        sampler.Filter = D3D12_FILTER::D3D12_FILTER_MAXIMUM_MIN_MAG_MIP_LINEAR;
+        sampler.AddressU = D3D12_TEXTURE_ADDRESS_MODE::D3D12_TEXTURE_ADDRESS_MODE_WRAP;
+        sampler.AddressV = D3D12_TEXTURE_ADDRESS_MODE::D3D12_TEXTURE_ADDRESS_MODE_WRAP;
+        sampler.AddressW = D3D12_TEXTURE_ADDRESS_MODE::D3D12_TEXTURE_ADDRESS_MODE_WRAP;
+        sampler.ComparisonFunc = D3D12_COMPARISON_FUNC::D3D12_COMPARISON_FUNC_LESS_EQUAL;
+        sampler.MinLOD = 0;
+        sampler.MaxLOD = FLT_MAX;
+        mSamplerInfo = mDeviceResource->getHeapManager()->allocate(DescriptorHeapType::Sampler);
+        mDeviceResource->getDevice()->CreateSampler(&sampler, mSamplerInfo.cpuHandle);
     }
 }
-
 void Scene::reset() {
     mDXRDevice.reset();
     mGpuTimer.reset();
@@ -368,6 +379,17 @@ void Scene::render() {
     commandList->RSSetScissorRects(1, &mDeviceResource->getScissorRect());
     commandList->SetGraphicsRootSignature(mDefaultRootSignature.getRootSignature());
     commandList->SetPipelineState(mGrayScalePipelineState.getPipelineState());
+    mDeviceResource->getHeapManager()->setDescriptorHeap(
+        commandList, DescriptorHeapType::CbvSrvUav, DescriptorHeapType::Sampler);
+
+    DescriptorSet grayScaleSet;
+    grayScaleSet.setSrvHandle(0, mRaytracingOutputUAV.getInfo().cpuHandle);
+    grayScaleSet.setSamplerHandle(0, mSamplerInfo.cpuHandle);
+    mDeviceResource->getHeapManager()->copyAndSetGraphicsDescriptorHeap(
+        DescriptorHeapType::CbvSrvUav, mDeviceResource, commandList, grayScaleSet);
+    mDeviceResource->getHeapManager()->copyAndSetGraphicsDescriptorHeap(
+        DescriptorHeapType::Sampler, mDeviceResource, commandList, grayScaleSet);
+
     mQuadVertex.setCommandList(commandList);
     mQuadIndex.setCommandList(commandList);
     mQuadIndex.draw(commandList);

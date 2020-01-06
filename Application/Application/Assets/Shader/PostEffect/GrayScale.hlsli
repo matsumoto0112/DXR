@@ -20,6 +20,11 @@ struct PSOutput {
     float4 color : SV_TARGET;
 };
 
+float4 grayScale(float4 color) {
+    float c = color.r * 0.2126 + color.g * 0.7152 + color.b * 0.0722;
+    return float4(c, c, c, 1.0);
+}
+
 VSOutput vsMain(VSInput v) {
     VSOutput o = (VSOutput)0;
     o.pos = float4(v.pos, 1.0);
@@ -29,8 +34,7 @@ VSOutput vsMain(VSInput v) {
 
 PSOutput psMain(PSInput i) {
     PSOutput o = (PSOutput)0;
-    /*flaot4 color = mainTexture.Sample(samLinear,i.uv);*/
-    o.color = float4(1, 0, 0, 1);
+    o.color = grayScale(mainTexture.Sample(samLinear, i.uv));
     return o;
 }
 
