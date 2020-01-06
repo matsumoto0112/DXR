@@ -1,3 +1,8 @@
+/**
+ * @file ByteReader.h
+ * @brief バイナリデータを読み込み
+ */
+
 #pragma once
 
 namespace Framework::Utility {
@@ -7,6 +12,10 @@ namespace Framework::Utility {
      */
     class ByteReader {
     public:
-        static std::vector<BYTE> read(_In_ const std::filesystem::path& path);
+        /**
+         * @brief ファイルの読み込み
+         * @param path ファイルパス
+         */
+        static std::vector<BYTE> read(const std::filesystem::path& path);
     };
 } // namespace Framework::Utility

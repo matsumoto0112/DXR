@@ -23,6 +23,6 @@ namespace Framework::Utility {
         static Desc::TextureDesc loadFromMemory(const std::vector<BYTE>& data);
 
     private:
-        static constexpr UINT BYTES_PER_PIXEL = 4;
+        static constexpr UINT BYTES_PER_PIXEL = 4; //!< 1ピクセルのバイトサイズ
     };
 } // namespace Framework::Utility

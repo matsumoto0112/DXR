@@ -1,6 +1,5 @@
 #pragma once
 #include "DX/Shader/DepthStencilView.h"
-#include "Utility/Color4.h"
 
 namespace Framework::DX {
     class DeviceResource;
@@ -37,7 +36,6 @@ namespace Framework::DX {
         const Buffer& getBuffer() const {
             return mBuffer;
         }
-
         /**
          * @brief ƒrƒ…[‚Ìæ“¾
          */

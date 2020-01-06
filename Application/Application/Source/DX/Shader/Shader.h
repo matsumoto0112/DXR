@@ -1,3 +1,8 @@
+/**
+ * @file Shader.h
+ * @brief シェーダー
+ */
+
 #pragma once
 
 namespace Framework::DX {
@@ -11,15 +16,16 @@ namespace Framework::DX {
 
     public:
         /**
-         * @brief
+         * @brief コンストラクタ
+         * @param filepath シェーダーファイルへのパス
          */
         Shader(const std::filesystem::path& filepath);
         /**
-         * @brief
+         * @brief デストラクタ
          */
         virtual ~Shader();
         /**
-         * @brief
+         * @brief シェーダーコードの取得
          */
         CD3DX12_SHADER_BYTECODE get() const {
             return CD3DX12_SHADER_BYTECODE(mShaderCode.data(), mShaderCode.size());
@@ -31,28 +37,29 @@ namespace Framework::DX {
 
     /**
      * @class VertexShader
-     * @brief discription
+     * @brief 頂点シェーダー
      */
     class VertexShader final : public Shader {
     public:
         /**
-         * @brief
+         * @brief コンストラクタ
+         * @param filepath シェーダーファイルへのパス
          */
         VertexShader(const std::filesystem::path& filepath);
         /**
-         * @brief
+         * @brief デストラクタ
          */
         ~VertexShader();
         /**
-         * @brief
+         * @brief 入力レイアウトの取得
          */
         D3D12_INPUT_LAYOUT_DESC getLayout() {
             return { mInputElements.data(), static_cast<UINT>(mInputElements.size()) };
         }
 
     private:
-        std::vector<LPCSTR> mSemanticNames;
-        std::vector<D3D12_INPUT_ELEMENT_DESC> mInputElements;
+        std::vector<LPCSTR> mSemanticNames; //!< セマンティクス名
+        std::vector<D3D12_INPUT_ELEMENT_DESC> mInputElements; //!< 入力エレメントリスト
     };
 
     using PixelShader = Shader;

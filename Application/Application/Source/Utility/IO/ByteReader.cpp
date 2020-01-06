@@ -5,7 +5,7 @@ namespace Framework::Utility {
     //ÉfÅ[É^ÇÃì«Ç›çûÇ›
     std::vector<BYTE> ByteReader::read(const std::filesystem::path& path) {
         std::ifstream ifs(path.string().c_str(), std::ios::binary | std::ios::in);
-        if (!ifs) { MY_THROW_IF_FALSE(false); }
+        MY_THROW_IF_FALSE(!!ifs);
 
         ifs.seekg(0, std::ios::end);
         std::vector<BYTE> res(ifs.tellg());
