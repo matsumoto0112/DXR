@@ -33,19 +33,18 @@ namespace Framework::DX {
          */
         void beginFrame();
         /**
+         * @brief ディスクリプタのコピーをし、コンピュートシェーダーにセットする
+         */
+        void copyAndSetComputeDescriptorHeap(DescriptorHeapType type, DeviceResource* device,
+            ID3D12GraphicsCommandList* commandList, const DescriptorSet& set);
+        /**
          * @brief ディスクリプタヒープのセット
          * @param commandList コマンドリスト
          * @param types セットするヒープの種類
          * @details typesはDescriptorHeapTypeしか受け付けない
          */
         template <class... Types>
-        auto setDescriptorHeap(ID3D12GraphicsCommandList* commandList, Types... types) -> decltype(
-            std::initializer_list<DescriptorHeapType>{ types... }, std::declval<void>());
-        /**
-         * @brief ディスクリプタのコピーをし、コンピュートシェーダーにセットする
-         */
-        void copyAndSetComputeDescriptorHeap(DescriptorHeapType type, DeviceResource* device,
-            ID3D12GraphicsCommandList* commandList, const DescriptorSet& set);
+        void setDescriptorHeap(ID3D12GraphicsCommandList* commandList, Types... types);
 
     private:
         /**
@@ -57,9 +56,8 @@ namespace Framework::DX {
         RaytracingDescriptorManager mRaytracingDescriptor;
     };
     template <class... Types>
-    inline auto DescriptorHeapManager::setDescriptorHeap(
-        ID3D12GraphicsCommandList* commandList, Types... types)
-        -> decltype(std::initializer_list<DescriptorHeapType>{ types... }, std::declval<void>()) {
+    inline void DescriptorHeapManager::setDescriptorHeap(
+        ID3D12GraphicsCommandList* commandList, Types... types) {
         //たかだか5個しかないので予約はしないで追加していく
         std::vector<ID3D12DescriptorHeap*> heaps;
         for (auto&& type : { types... }) { heaps.emplace_back(getHeapFromType(type)); }
